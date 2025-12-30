@@ -1,0 +1,1 @@
+../by-category/calculator-modules/2025-10-19_kfr-holistic-fix.md

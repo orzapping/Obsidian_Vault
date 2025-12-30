@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-AUM Test Data Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#10b981;--accent-hi:#34d399;--muted:#9ca3af;--subtle:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1000px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#10b981,#059669);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    h2{margin:0 0 16px;color:#6ee7b7;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s;margin-right:10px}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .btn-secondary{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    .range-container{margin:16px 0}
+    .range-label{display:flex;justify-content:space-between;margin-bottom:8px}
+    .range-value{color:var(--accent);font-weight:600}
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}
+    .checkbox-item{display:flex;align-items:center;gap:8px}
+    .checkbox-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
+    .preview{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre}
+    .stat-box{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:12px;text-align:center}
+    .stat-box h4{margin:0 0 4px;color:var(--muted);font-size:.85rem;font-weight:500}
+    .stat-box p{margin:0;font-size:1.2rem;font-weight:700;color:var(--accent)}
+    .pattern-desc{background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(5,150,105,0.1));border:1px solid var(--accent);border-radius:.5rem;padding:12px;margin:12px 0;font-size:.9rem}
+    .download-info{background:#0f172a;border:1px solid #10b981;border-radius:.5rem;padding:16px;margin-top:20px;text-align:center}
+    .download-info h3{margin:0 0 8px;color:#10b981}
+    .scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:16px 0}
+    .scenario-card{background:#0f172a;border:2px solid var(--border);border-radius:.5rem;padding:16px;cursor:pointer;transition:all 0.3s}
+    .scenario-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .scenario-card.selected{border-color:var(--accent);background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(5,150,105,0.1))}
+    .scenario-card h3{margin:0 0 8px;color:var(--accent);font-size:1rem}
+    .scenario-card p{margin:0;font-size:.85rem;color:var(--muted)}
+    .event-indicator{display:inline-block;padding:2px 6px;border-radius:.25rem;font-size:.75rem;font-weight:600;margin-left:8px}
+    .event-up{background:#15803d;color:#bbf7d0}
+    .event-down{background:#b91c1c;color:#fecaca}
+    .timeline-hint{background:#1e293b;border-left:3px solid var(--accent);padding:12px;margin:16px 0;font-size:.9rem}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>K-AUM Test Data Generator</h1>
+    <p class="subtitle">Generate realistic monthly AUM data • Asset Manager Patterns</p>
+
+    <div class="card">
+      <h2>Quick Scenarios</h2>
+      <div class="scenario-grid">
+        <div class="scenario-card" onclick="loadScenario('traditional')">
+          <h3>Traditional Manager</h3>
+          <p>£2-5B AUM, steady growth, quarterly performance patterns. Index-relative.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('roboAdvisor')">
+          <h3>Robo-Advisor</h3>
+          <p>Rapid scaling from £100M to £2B. High client acquisition, low churn.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('hedgeFund')">
+          <h3>Hedge Fund</h3>
+          <p>£500M-1B, volatile performance, quarterly redemptions, high-water marks.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('wealthManager')">
+          <h3>Private Wealth</h3>
+          <p>£10B+ AUM, large tickets, stable base, occasional whale wins/losses.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Data Configuration</h2>
+      <div class="timeline-hint">
+        💡 <strong>K-AUM requires 15 months minimum.</strong> Generate at least 18 months for proper testing.
+      </div>
+      
+      <div class="row">
+        <div>
+          <label class="label" for="startMonth">Start Month</label>
+          <input type="month" id="startMonth" class="input" />
+        </div>
+        <div>
+          <label class="label" for="endMonth">End Month</label>
+          <input type="month" id="endMonth" class="input" />
+        </div>
+      </div>
+      
+      <div class="row" style="margin-top:16px">
+        <div>
+          <label class="label" for="firmType">Manager Type</label>
+          <select id="firmType" class="select" onchange="updateFirmType()">
+            <option value="traditional">Traditional Asset Manager</option>
+            <option value="discretionary">Discretionary Manager</option>
+            <option value="advisory">Advisory (Non-Discretionary)</option>
+            <option value="mixed">Mixed Model</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="feeModel">Fee Model</label>
+          <select id="feeModel" class="select">
+            <option value="management">Management Fee Only</option>
+            <option value="performance">Management + Performance</option>
+            <option value="flat">Flat Fee</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>AUM Parameters</h2>
+      
+      <h3 style="color:#10b981;font-size:1.1rem;margin-bottom:16px">Base Configuration</h3>
+      <div class="range-container">
+        <div class="range-label">
+          <span>Starting AUM</span>
+          <span class="range-value" id="baseAUMValue">£2,000,000,000</span>
+        </div>
+        <input type="range" id="baseAUM" class="input" min="10000000" max="50000000000" step="10000000" value="2000000000" 
+               oninput="updateValue('baseAUM', 'baseAUMValue')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Annual Growth Target</span>
+          <span class="range-value" id="growthValue">10%</span>
+        </div>
+        <input type="range" id="growth" class="input" min="-20" max="50" step="2" value="10" 
+               oninput="updateValue('growth', 'growthValue', '%')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Market Beta</span>
+          <span class="range-value" id="betaValue">0.8</span>
+        </div>
+        <input type="range" id="beta" class="input" min="0" max="2" step="0.1" value="0.8" 
+               oninput="updateValue('beta', 'betaValue', '')" />
+        <div class="note">How much AUM tracks market movements (0 = no correlation, 1 = market matching)</div>
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Monthly Volatility</span>
+          <span class="range-value" id="volatilityValue">3%</span>
+        </div>
+        <input type="range" id="volatility" class="input" min="0" max="15" step="0.5" value="3" 
+               oninput="updateValue('volatility', 'volatilityValue', '%')" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Business Events & Patterns</h2>
+      <div class="pattern-desc">
+        Configure realistic business events that affect AUM
+      </div>
+      
+      <div class="checkbox-group">
+        <div class="checkbox-item">
+          <input type="checkbox" id="clientWins" checked>
+          <label for="clientWins">Client Wins (step increases)</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="clientLosses">
+          <label for="clientLosses">Client Losses (step decreases)</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="quarterlyFlows" checked>
+          <label for="quarterlyFlows">Quarterly Flow Patterns</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="performanceFees">
+          <label for="performanceFees">Performance Fee Impacts</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="marketStress">
+          <label for="marketStress">Market Stress Event</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="seasonality">
+          <label for="seasonality">Seasonal Patterns</label>
+        </div>
+      </div>
+      
+      <div class="range-container" id="clientWinSection" style="display:none">
+        <div class="range-label">
+          <span>Average Client Win Size</span>
+          <span class="range-value" id="winSizeValue">5%</span>
+        </div>
+        <input type="range" id="winSize" class="input" min="1" max="20" step="1" value="5" 
+               oninput="updateValue('winSize', 'winSizeValue', '%')" />
+        <div class="note">Percentage of AUM added per win event</div>
+      </div>
+      
+      <div class="range-container" id="stressSection" style="display:none">
+        <div class="range-label">
+          <span>Stress Event Impact</span>
+          <span class="range-value" id="stressValue">-20%</span>
+        </div>
+        <input type="range" id="stressSeverity" class="input" min="-40" max="-5" step="5" value="-20" 
+               oninput="updateValue('stressSeverity', 'stressValue', '%')" />
+        <div class="note">Market stress drawdown over 2-3 months</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Generate Data</h2>
+      <div style="margin-bottom:16px">
+        <button class="btn" onclick="generateData()">Generate CSV</button>
+        <button class="btn btn-secondary" onclick="previewData()">Preview First 6 Months</button>
+      </div>
+      
+      <div id="stats" class="grid" style="display:none;margin-bottom:16px"></div>
+      <div id="preview" class="preview" style="display:none"></div>
+      
+      <div id="downloadSection" class="download-info" style="display:none">
+        <h3>✓ Data Generated Successfully!</h3>
+        <p id="downloadInfo"></p>
+        <button class="btn" id="downloadBtn" style="margin-top:12px">Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Initialize dates
+function initDates() {
+  const end = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 2); // 2 years of data
+  
+  document.getElementById('startMonth').value = formatMonthInput(start);
+  document.getElementById('endMonth').value = formatMonthInput(end);
+}
+
+function formatMonthInput(date) {
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+function formatMonthOutput(date) {
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+// Format currency for large values
+function formatLargeCurrency(value) {
+  if (value >= 1e12) {
+    return '£' + (value/1e12).toFixed(2) + 'T';
+  } else if (value >= 1e9) {
+    return '£' + (value/1e9).toFixed(2) + 'B';
+  } else if (value >= 1e6) {
+    return '£' + (value/1e6).toFixed(2) + 'M';
+  }
+  return '£' + value.toLocaleString('en-GB');
+}
+
+// Update display values
+function updateValue(inputId, displayId, suffix = '') {
+  const value = parseFloat(document.getElementById(inputId).value);
+  const display = document.getElementById(displayId);
+  
+  if (suffix === '%') {
+    display.textContent = value + suffix;
+  } else if (suffix === '') {
+    display.textContent = value;
+  } else {
+    display.textContent = formatLargeCurrency(value);
+  }
+}
+
+function updateFirmType() {
+  const type = document.getElementById('firmType').value;
+  // Could add specific adjustments per firm type if needed
+}
+
+// Pattern handlers
+document.getElementById('clientWins').addEventListener('change', function(e) {
+  document.getElementById('clientWinSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+document.getElementById('marketStress').addEventListener('change', function(e) {
+  document.getElementById('stressSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+// Load scenarios
+function loadScenario(scenario) {
+  // Clear all checkboxes first
+  document.querySelectorAll('.checkbox-item input').forEach(cb => cb.checked = false);
+  
+  // Remove selected class from all cards
+  document.querySelectorAll('.scenario-card').forEach(card => card.classList.remove('selected'));
+  
+  // Add selected class to clicked card
+  event.currentTarget.classList.add('selected');
+  
+  switch(scenario) {
+    case 'traditional':
+      document.getElementById('firmType').value = 'traditional';
+      document.getElementById('feeModel').value = 'management';
+      document.getElementById('baseAUM').value = 3000000000; // £3B
+      document.getElementById('growth').value = 8;
+      document.getElementById('beta').value = 0.9;
+      document.getElementById('volatility').value = 3;
+      document.getElementById('quarterlyFlows').checked = true;
+      document.getElementById('seasonality').checked = true;
+      updateValue('baseAUM', 'baseAUMValue');
+      updateValue('growth', 'growthValue', '%');
+      updateValue('beta', 'betaValue', '');
+      updateValue('volatility', 'volatilityValue', '%');
+      break;
+      
+    case 'roboAdvisor':
+      document.getElementById('firmType').value = 'discretionary';
+      document.getElementById('feeModel').value = 'flat';
+      document.getElementById('baseAUM').value = 100000000; // £100M
+      document.getElementById('growth').value = 40;
+      document.getElementById('beta').value = 0.7;
+      document.getElementById('volatility').value = 2;
+      document.getElementById('clientWins').checked = true;
+      document.getElementById('clientWinSection').style.display = 'block';
+      document.getElementById('winSize').value = 3;
+      updateValue('baseAUM', 'baseAUMValue');
+      updateValue('growth', 'growthValue', '%');
+      updateValue('beta', 'betaValue', '');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('winSize', 'winSizeValue', '%');
+      break;
+      
+    case 'hedgeFund':
+      document.getElementById('firmType').value = 'discretionary';
+      document.getElementById('feeModel').value = 'performance';
+      document.getElementById('baseAUM').value = 750000000; // £750M
+      document.getElementById('growth').value = 5;
+      document.getElementById('beta').value = 0.3;
+      document.getElementById('volatility').value = 8;
+      document.getElementById('quarterlyFlows').checked = true;
+      document.getElementById('performanceFees').checked = true;
+      document.getElementById('clientLosses').checked = true;
+      updateValue('baseAUM', 'baseAUMValue');
+      updateValue('growth', 'growthValue', '%');
+      updateValue('beta', 'betaValue', '');
+      updateValue('volatility', 'volatilityValue', '%');
+      break;
+      
+    case 'wealthManager':
+      document.getElementById('firmType').value = 'mixed';
+      document.getElementById('feeModel').value = 'management';
+      document.getElementById('baseAUM').value = 12000000000; // £12B
+      document.getElementById('growth').value = 6;
+      document.getElementById('beta').value = 0.6;
+      document.getElementById('volatility').value = 1.5;
+      document.getElementById('clientWins').checked = true;
+      document.getElementById('clientLosses').checked = true;
+      document.getElementById('seasonality').checked = true;
+      document.getElementById('clientWinSection').style.display = 'block';
+      document.getElementById('winSize').value = 8;
+      updateValue('baseAUM', 'baseAUMValue');
+      updateValue('growth', 'growthValue', '%');
+      updateValue('beta', 'betaValue', '');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('winSize', 'winSizeValue', '%');
+      break;
+  }
+}
+
+// Simulate market returns (monthly)
+function generateMarketReturns(months, annualReturn) {
+  const monthlyReturn = annualReturn / 12;
+  const monthlyVol = 0.04; // ~4% monthly vol for equity markets
+  
+  const returns = [];
+  let cumulative = 1;
+  
+  for (let i = 0; i < months; i++) {
+    // Random normal distribution approximation
+    const z = (Math.random() + Math.random() + Math.random() + Math.random() - 2) / 0.8165;
+    const monthReturn = monthlyReturn + (monthlyVol * z);
+    cumulative *= (1 + monthReturn);
+    returns.push(cumulative);
+  }
+  
+  return returns;
+}
+
+// Generate data
+function generateData() {
+  const startMonth = document.getElementById('startMonth').value;
+  const endMonth = document.getElementById('endMonth').value;
+  
+  if (!startMonth || !endMonth) {
+    alert('Please select start and end months');
+    return;
+  }
+  
+  const start = new Date(startMonth + '-01');
+  const end = new Date(endMonth + '-01');
+  
+  // Get parameters
+  const baseAUM = parseFloat(document.getElementById('baseAUM').value);
+  const growth = parseFloat(document.getElementById('growth').value) / 100;
+  const beta = parseFloat(document.getElementById('beta').value);
+  const volatility = parseFloat(document.getElementById('volatility').value) / 100;
+  const feeModel = document.getElementById('feeModel').value;
+  
+  // Get patterns
+  const patterns = {
+    clientWins: document.getElementById('clientWins').checked,
+    clientLosses: document.getElementById('clientLosses').checked,
+    quarterlyFlows: document.getElementById('quarterlyFlows').checked,
+    performanceFees: document.getElementById('performanceFees').checked,
+    marketStress: document.getElementById('marketStress').checked,
+    seasonality: document.getElementById('seasonality').checked,
+    winSize: parseFloat(document.getElementById('winSize').value) / 100,
+    stressSeverity: parseFloat(document.getElementById('stressSeverity').value) / 100
+  };
+  
+  // Calculate number of months
+  const totalMonths = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 30)) + 1;
+  
+  // Generate market returns
+  const marketReturns = generateMarketReturns(totalMonths, 0.08); // 8% annual market return
+  
+  // Generate data
+  const data = [];
+  let currentDate = new Date(start);
+  let currentAUM = baseAUM;
+  let monthIndex = 0;
+  
+  // Determine stress event timing (if enabled)
+  const stressMonth = patterns.marketStress ? 
+    Math.floor(totalMonths * 0.6 + Math.random() * totalMonths * 0.2) : -1;
+  
+  while (currentDate <= end) {
+    const month = currentDate.getMonth();
+    const isQuarterEnd = month === 2 || month === 5 || month === 8 || month === 11;
+    
+    // Base growth component
+    const organicGrowth = growth / 12;
+    
+    // Market component
+    const marketReturn = marketReturns[monthIndex] ? 
+      (marketReturns[monthIndex] - (monthIndex > 0 ? marketReturns[monthIndex-1] : 1)) : 0;
+    const marketImpact = marketReturn * beta;
+    
+    // Random volatility
+    const randomComponent = (Math.random() - 0.5) * volatility * 2;
+    
+    // Combined base change
+    let monthlyChange = organicGrowth + marketImpact + randomComponent;
+    
+    // Client wins (random timing)
+    if (patterns.clientWins && Math.random() < 0.1) {
+      const winImpact = patterns.winSize * (0.5 + Math.random());
+      monthlyChange += winImpact;
+    }
+    
+    // Client losses (less frequent)
+    if (patterns.clientLosses && Math.random() < 0.05) {
+      const lossImpact = patterns.winSize * (0.3 + Math.random() * 0.7);
+      monthlyChange -= lossImpact;
+    }
+    
+    // Quarterly flows
+    if (patterns.quarterlyFlows && isQuarterEnd) {
+      // Net flows tend to be positive at quarter ends
+      monthlyChange += (Math.random() - 0.3) * 0.02;
+    }
+    
+    // Performance fee impacts (quarter ends)
+    if (patterns.performanceFees && isQuarterEnd && feeModel === 'performance') {
+      // If positive performance, AUM might decrease slightly due to fee crystallisation
+      if (monthlyChange > 0.02) {
+        monthlyChange -= 0.005;
+      }
+    }
+    
+    // Market stress event
+    if (patterns.marketStress) {
+      if (monthIndex === stressMonth) {
+        monthlyChange += patterns.stressSeverity * 0.4; // First impact
+      } else if (monthIndex === stressMonth + 1) {
+        monthlyChange += patterns.stressSeverity * 0.4; // Continued stress
+      } else if (monthIndex === stressMonth + 2) {
+        monthlyChange += patterns.stressSeverity * 0.2; // Final impact
+      } else if (monthIndex > stressMonth + 2 && monthIndex < stressMonth + 8) {
+        monthlyChange += 0.01; // Recovery phase
+      }
+    }
+    
+    // Seasonality
+    if (patterns.seasonality) {
+      if (month === 11 || month === 0) { // December/January
+        monthlyChange += 0.01; // Year-end/new-year allocations
+      } else if (month === 7) { // August
+        monthlyChange -= 0.005; // Summer lull
+      }
+    }
+    
+    // Apply change
+    currentAUM *= (1 + monthlyChange);
+    
+    // Ensure non-negative
+    currentAUM = Math.max(0, currentAUM);
+    
+    data.push({
+      month: formatMonthOutput(currentDate),
+      aum: Math.round(currentAUM)
+    });
+    
+    // Move to next month
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    monthIndex++;
+  }
+  
+  // Generate CSV
+  let csv = 'Month,AUM_Value\n';
+  data.forEach(row => {
+    csv += `${row.month},${row.aum}\n`;
+  });
+  
+  // Store for download
+  window.generatedCSV = csv;
+  window.generatedData = data;
+  
+  // Show stats
+  showStats(data);
+  
+  // Show download section
+  const downloadSection = document.getElementById('downloadSection');
+  downloadSection.style.display = 'block';
+  document.getElementById('downloadInfo').textContent = 
+    `Generated ${data.length} months of data from ${data[0].month} to ${data[data.length-1].month}`;
+}
+
+function showStats(data) {
+  const statsDiv = document.getElementById('stats');
+  statsDiv.style.display = 'grid';
+  statsDiv.innerHTML = '';
+  
+  // Calculate stats
+  const aumValues = data.map(d => d.aum);
+  const avgAUM = aumValues.reduce((a,b) => a+b, 0) / aumValues.length;
+  const minAUM = Math.min(...aumValues);
+  const maxAUM = Math.max(...aumValues);
+  
+  // Calculate annualised growth
+  const startAUM = aumValues[0];
+  const endAUM = aumValues[aumValues.length - 1];
+  const years = data.length / 12;
+  const annualisedGrowth = (Math.pow(endAUM / startAUM, 1 / years) - 1) * 100;
+  
+  const stats = [
+    {
+      label: 'Total Months',
+      value: data.length
+    },
+    {
+      label: 'Average AUM',
+      value: formatLargeCurrency(avgAUM)
+    },
+    {
+      label: 'AUM Range',
+      value: formatLargeCurrency(minAUM) + ' - ' + formatLargeCurrency(maxAUM)
+    },
+    {
+      label: 'Annualised Growth',
+      value: annualisedGrowth.toFixed(1) + '%',
+      indicator: annualisedGrowth > 0 ? 'up' : 'down'
+    }
+  ];
+  
+  stats.forEach(stat => {
+    const box = document.createElement('div');
+    box.className = 'stat-box';
+    let indicatorHtml = '';
+    if (stat.indicator) {
+      indicatorHtml = `<span class="event-indicator event-${stat.indicator}">${stat.indicator === 'up' ? '↑' : '↓'}</span>`;
+    }
+    box.innerHTML = `<h4>${stat.label}</h4><p>${stat.value}${indicatorHtml}</p>`;
+    statsDiv.appendChild(box);
+  });
+}
+
+function previewData() {
+  if (!window.generatedData) {
+    alert('Generate data first!');
+    return;
+  }
+  
+  const preview = document.getElementById('preview');
+  preview.style.display = 'block';
+  
+  let text = 'Month,AUM_Value\n';
+  window.generatedData.slice(0, 6).forEach(row => {
+    text += `${row.month},${row.aum.toLocaleString('en-GB')}\n`;
+  });
+  
+  if (window.generatedData.length > 6) {
+    text += '...\n';
+    text += `(${window.generatedData.length - 6} more months)`;
+  }
+  
+  preview.textContent = text;
+}
+
+// Download handler
+document.getElementById('downloadBtn').addEventListener('click', function() {
+  const blob = new Blob([window.generatedCSV], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kaum_test_data_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// Initialize
+initDates();
+// Set initial visibility
+document.getElementById('clientWinSection').style.display = 'block';
+</script>
+</body>
+</html>

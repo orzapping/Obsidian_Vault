@@ -1,0 +1,1 @@
+../by-category/calculator-modules/2025-10-24_kfr-rtm-rtf-integration.md

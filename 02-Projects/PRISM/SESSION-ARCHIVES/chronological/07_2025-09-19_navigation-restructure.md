@@ -1,0 +1,1 @@
+../by-category/architecture/2025-09-19_navigation-restructure.md

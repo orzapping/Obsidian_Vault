@@ -1,0 +1,1 @@
+../by-category/architecture/2025-09-17_ui-standardization-full.md

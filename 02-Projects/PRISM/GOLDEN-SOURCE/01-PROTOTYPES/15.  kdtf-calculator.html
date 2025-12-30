@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-DTF Calculator - MIFIDPRU Compliant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#ef4444;--accent-hi:#f87171;--muted:#9ca3af;--subtle:#6b7280;--cash:#ec4899;--deriv:#be123c}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1200px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#ef4444,#ec4899);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    .card:hover{border-color:var(--accent);transition:border-color 0.3s}
+    h2{margin:0 0 16px;color:#f87171;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+    .stat{background:#0f172a;border:1px solid #1e293b;border-radius:.75rem;padding:16px}
+    .stat h3{margin:0 0 8px;font-size:.9rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+    .stat p{margin:0;font-size:1.5rem;font-weight:700}
+    .stat.primary{border-color:var(--accent);background:linear-gradient(135deg,rgba(239,68,68,0.1),rgba(236,72,153,0.1))}
+    .stat.cash{border-color:var(--cash)}
+    .stat.deriv{border-color:var(--deriv)}
+    .badge{display:inline-block;padding:4px 8px;border-radius:.375rem;font-size:.8rem;font-weight:600;margin-left:8px}
+    .ok{background:#15803d;color:#bbf7d0}
+    .warn{background:#ca8a04;color:#fef08a}
+    .err{background:#b91c1c;color:#fecaca}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    canvas{background:#0f172a;border-radius:.75rem;border:1px solid #1e293b}
+    .mt{margin-top:20px}
+    .mb{margin-bottom:20px}
+    .debug{background:#1e293b;padding:16px;border-radius:.5rem;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--border)}
+    .info-box{background:linear-gradient(135deg,rgba(239,68,68,0.1),rgba(236,72,153,0.1));border:1px solid var(--accent);border-radius:.75rem;padding:16px;margin-bottom:20px}
+    .info-box strong{color:#f87171}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .formula{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.9rem;overflow-x:auto}
+    .formula-title{color:var(--accent);font-weight:600;margin-bottom:8px}
+    .timeline{display:flex;align-items:center;justify-content:space-between;margin:20px 0;padding:20px;background:#0f172a;border-radius:.75rem;border:1px solid var(--border)}
+    .timeline-item{text-align:center;flex:1;position:relative}
+    .timeline-item::after{content:'→';position:absolute;right:-20px;top:50%;transform:translateY(-50%);color:var(--muted)}
+    .timeline-item:last-child::after{display:none}
+    .timeline-period{color:var(--accent);font-weight:600;font-size:.9rem}
+    .timeline-desc{color:var(--muted);font-size:.8rem;margin-top:4px}
+    .excluded{opacity:0.5;text-decoration:line-through}
+    .spinner{border:3px solid rgba(255,255,255,0.1);border-radius:50%;border-top-color:var(--accent);width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .trading-note{background:#1e293b;border-left:3px solid var(--accent);padding:12px;margin:16px 0;font-size:.9rem}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>K-DTF Calculator</h1>
+    <p class="subtitle">MIFIDPRU Compliant • Daily Trading Flow • Own Account Trading</p>
+
+    <div class="card">
+      <h2>Instructions & Requirements</h2>
+      <div class="content">
+        <div class="info-box">
+          <strong>CSV Format Required:</strong> Three columns - Date, Cash_DTF, Derivatives_DTF<br>
+          <strong>Date formats accepted:</strong> dd.mm.yyyy, dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd<br>
+          <strong>Values:</strong> Total daily trading flow (purchases + sales) when dealing on own account<br>
+          <strong>Important:</strong> Use 0 or leave blank where not applicable<br>
+          <strong>Note:</strong> K-DTF applies only to proprietary trading and matched principal business
+        </div>
+        
+        <div class="trading-note">
+          <strong>⚠️ K-DTF vs K-COH:</strong> A transaction is either DTF (own account) or COH (client order), never both. K-DTF captures where the firm is principal or counterparty.
+        </div>
+        
+        <label class="label" for="csv">Upload DTF Data (CSV)</label>
+        <input id="csv" class="input" type="file" accept=".csv,text/csv" />
+        <div id="fileInfo" class="note"></div>
+        
+        <div class="row mt">
+          <div>
+            <label class="label" for="currency">Reporting Currency</label>
+            <select id="currency" class="select">
+              <option value="GBP">GBP (£)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="own">Own Funds</label>
+            <input id="own" class="input" type="number" placeholder="50000000" value="50000000" />
+          </div>
+        </div>
+        
+        <div class="mt mb">
+          <button class="btn" id="calculate">Calculate K-DTF</button>
+        </div>
+        
+        <div id="debugPanel" class="debug" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card" id="methodCard" style="display:none">
+      <h2>Calculation Methodology</h2>
+      <div class="content">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-period">Month 6</div>
+            <div class="timeline-desc">6 months ago</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-period">Month 5</div>
+            <div class="timeline-desc">5 months ago</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-period">Month 4</div>
+            <div class="timeline-desc">4 months ago</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 3</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 2</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 1</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+        </div>
+        
+        <div class="formula">
+          <div class="formula-title">MIFIDPRU 4.14 Formula:</div>
+          1. Take daily DTF for past 6 months<br>
+          2. Exclude most recent 3 months<br>
+          3. Average remaining 3 months (months 4-6)<br>
+          4. K-DTF (Cash) = Average Cash DTF × 0.1%<br>
+          5. K-DTF (Derivatives) = Average Derivatives DTF × 0.01%<br>
+          6. K-DTF Total = K-DTF (Cash) + K-DTF (Derivatives)
+        </div>
+        
+        <div id="calcDetails" class="note mt"></div>
+      </div>
+    </div>
+
+    <div class="card" id="resultsCard" style="display:none">
+      <h2>K-DTF Requirements</h2>
+      <div class="content">
+        <div class="grid mb">
+          <div class="stat cash">
+            <h3>K-DTF (Cash)</h3>
+            <p id="kdtfCash">£0</p>
+            <div class="note">0.1% of average Cash DTF</div>
+          </div>
+          <div class="stat deriv">
+            <h3>K-DTF (Derivatives)</h3>
+            <p id="kdtfDeriv">£0</p>
+            <div class="note">0.01% of average Derivatives DTF</div>
+          </div>
+          <div class="stat primary">
+            <h3>K-DTF Total</h3>
+            <p id="kdtfTotal">£0</p>
+            <div class="note">Combined requirement</div>
+          </div>
+        </div>
+        
+        <div class="grid">
+          <div class="stat">
+            <h3>Average Cash DTF</h3>
+            <p id="avgCash">£0</p>
+          </div>
+          <div class="stat">
+            <h3>Average Derivatives DTF</h3>
+            <p id="avgDeriv">£0</p>
+          </div>
+          <div class="stat">
+            <h3>DTF Mix</h3>
+            <p id="dtfMix">0%</p>
+            <div class="note">Cash / Total DTF</div>
+          </div>
+        </div>
+        
+        <div class="grid mt">
+          <div class="stat">
+            <h3>Headroom</h3>
+            <p id="headroom">£0</p>
+            <div class="note">Own Funds - K-DTF</div>
+          </div>
+          <div class="stat">
+            <h3>Headroom Ratio</h3>
+            <p id="headroomRatio">0%</p>
+          </div>
+          <div class="stat">
+            <h3>Peak DTF Day</h3>
+            <p id="peakDay">£0</p>
+            <div class="note">Highest daily flow</div>
+          </div>
+        </div>
+        
+        <div id="dataInfo" class="note mt"></div>
+      </div>
+    </div>
+
+    <div class="card" id="chartsCard" style="display:none">
+      <h2>DTF Trends & Analysis</h2>
+      <div class="content">
+        <canvas id="trendChart" height="120"></canvas>
+        <div class="mt">
+          <canvas id="breakdownChart" height="80"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Currency symbols
+const CURRENCY_SYMBOLS = {
+  'GBP': '£',
+  'USD': '$',
+  'EUR': '€',
+  'OTHER': ''
+};
+
+// Parse European date formats
+function parseDate(dateStr) {
+  const s = dateStr.trim();
+  if (!s) return null;
+  
+  // Try different date formats
+  if (/^\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}$/.test(s)) {
+    const parts = s.split(/[.\/-]/);
+    const [d, m, y] = parts;
+    return new Date(y, m-1, d);
+  }
+  
+  if (/^\d{8}$/.test(s)) {
+    return new Date(s.slice(4,8), s.slice(2,4)-1, s.slice(0,2));
+  }
+  
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return new Date(s);
+  }
+  
+  return null;
+}
+
+// Format date as yyyy-mm-dd
+function formatDate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+// Format currency
+function formatCurrency(value, currency) {
+  const symbol = CURRENCY_SYMBOLS[currency];
+  const absValue = Math.abs(value);
+  
+  if (absValue >= 1e9) {
+    return symbol + (value/1e9).toFixed(2) + 'B';
+  } else if (absValue >= 1e6) {
+    return symbol + (value/1e6).toFixed(2) + 'M';
+  } else if (absValue >= 1e3) {
+    return symbol + (value/1e3).toFixed(2) + 'K';
+  }
+  
+  return symbol + value.toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+// Parse CSV
+function parseCSV(text) {
+  const debug = document.getElementById('debugPanel');
+  debug.style.display = 'block';
+  debug.textContent = '=== CSV Processing ===\n';
+  
+  // Remove BOM if present
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  
+  // Split into lines
+  const lines = text.trim().split(/\r?\n/);
+  debug.textContent += `Total lines: ${lines.length}\n`;
+  
+  // Parse header
+  const headers = lines[0].toLowerCase().split(/[,;\t]/).map(h => h.trim());
+  debug.textContent += `Headers: [${headers.join(', ')}]\n`;
+  
+  // Find columns
+  const dateIdx = headers.findIndex(h => h.includes('date'));
+  const cashIdx = headers.findIndex(h => h.includes('cash'));
+  const derivIdx = headers.findIndex(h => h.includes('deriv'));
+  
+  if (dateIdx === -1) throw new Error('Date column not found');
+  if (cashIdx === -1 && derivIdx === -1) throw new Error('Neither Cash_DTF nor Derivatives_DTF column found');
+  
+  debug.textContent += `Column indices - Date: ${dateIdx}, Cash: ${cashIdx}, Derivatives: ${derivIdx}\n\n`;
+  
+  // Parse data
+  const data = new Map();
+  let errors = 0;
+  
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(/[,;\t]/);
+    if (parts.length <= dateIdx) continue;
+    
+    const date = parseDate(parts[dateIdx]);
+    if (!date) {
+      errors++;
+      if (errors <= 3) debug.textContent += `Line ${i+1}: Invalid date "${parts[dateIdx]}"\n`;
+      continue;
+    }
+    
+    const dateStr = formatDate(date);
+    const cash = cashIdx >= 0 ? parseFloat(parts[cashIdx]?.replace(/[,\s]/g, '') || '0') : 0;
+    const deriv = derivIdx >= 0 ? parseFloat(parts[derivIdx]?.replace(/[,\s]/g, '') || '0') : 0;
+    
+    if (!data.has(dateStr)) {
+      data.set(dateStr, { cash: 0, deriv: 0 });
+    }
+    
+    // Aggregate if multiple entries for same date
+    const existing = data.get(dateStr);
+    existing.cash += isNaN(cash) ? 0 : cash;
+    existing.deriv += isNaN(deriv) ? 0 : deriv;
+  }
+  
+  debug.textContent += `\nParsing complete:\n`;
+  debug.textContent += `- Valid dates: ${data.size}\n`;
+  debug.textContent += `- Parse errors: ${errors}\n`;
+  
+  if (data.size > 0) {
+    const dates = Array.from(data.keys()).sort();
+    debug.textContent += `- Date range: ${dates[0]} to ${dates[dates.length-1]}\n`;
+  }
+  
+  return data;
+}
+
+// Calculate K-DTF using MIFIDPRU methodology
+function calculateKDTF(data) {
+  const debug = document.getElementById('debugPanel');
+  debug.textContent += '\n=== K-DTF Calculation (MIFIDPRU 4.14) ===\n';
+  
+  // Get all dates sorted
+  const allDates = Array.from(data.keys()).sort();
+  if (allDates.length === 0) throw new Error('No data to calculate');
+  
+  const endDate = new Date(allDates[allDates.length - 1]);
+  const sixMonthsAgo = new Date(endDate);
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  
+  debug.textContent += `Calculation date: ${formatDate(endDate)}\n`;
+  debug.textContent += `6 months ago: ${formatDate(sixMonthsAgo)}\n`;
+  
+  // Get dates in 6-month window
+  const sixMonthDates = allDates.filter(d => new Date(d) > sixMonthsAgo && new Date(d) <= endDate);
+  debug.textContent += `Dates in 6-month window: ${sixMonthDates.length}\n`;
+  
+  // Calculate which 3 months to exclude
+  const threeMonthsAgo = new Date(endDate);
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  
+  debug.textContent += `3 months ago (cutoff): ${formatDate(threeMonthsAgo)}\n`;
+  
+  // Get dates to average (months 4-6)
+  const datesToAverage = sixMonthDates.filter(d => new Date(d) <= threeMonthsAgo);
+  debug.textContent += `Dates to average (months 4-6): ${datesToAverage.length}\n`;
+  
+  if (datesToAverage.length === 0) {
+    debug.textContent += '\nWARNING: No data in months 4-6, using all available data\n';
+    datesToAverage.push(...sixMonthDates);
+  }
+  
+  // Calculate averages
+  let totalCash = 0, totalDeriv = 0;
+  let peakTotal = 0;
+  datesToAverage.forEach(date => {
+    const day = data.get(date);
+    totalCash += day.cash;
+    totalDeriv += day.deriv;
+    
+    const dayTotal = day.cash + day.deriv;
+    if (dayTotal > peakTotal) peakTotal = dayTotal;
+  });
+  
+  const avgCash = datesToAverage.length > 0 ? totalCash / datesToAverage.length : 0;
+  const avgDeriv = datesToAverage.length > 0 ? totalDeriv / datesToAverage.length : 0;
+  
+  // Apply coefficients
+  const kdtfCash = avgCash * 0.001;  // 0.1%
+  const kdtfDeriv = avgDeriv * 0.0001; // 0.01%
+  const kdtfTotal = kdtfCash + kdtfDeriv;
+  
+  debug.textContent += `\nCalculation results:\n`;
+  debug.textContent += `- Average Cash DTF: ${avgCash.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Average Derivatives DTF: ${avgDeriv.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- K-DTF (Cash @ 0.1%): ${kdtfCash.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- K-DTF (Derivatives @ 0.01%): ${kdtfDeriv.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- K-DTF Total: ${kdtfTotal.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Peak daily flow: ${peakTotal.toLocaleString('en-GB')}\n`;
+  
+  return {
+    avgCash,
+    avgDeriv,
+    kdtfCash,
+    kdtfDeriv,
+    kdtfTotal,
+    peakTotal,
+    allDates,
+    sixMonthDates,
+    datesToAverage,
+    endDate,
+    sixMonthsAgo,
+    threeMonthsAgo
+  };
+}
+
+// Draw charts
+let trendChart = null, breakdownChart = null;
+
+function drawCharts(data, results, currency) {
+  // Trend chart
+  if (trendChart) trendChart.destroy();
+  
+  const ctx1 = document.getElementById('trendChart').getContext('2d');
+  const dates = results.sixMonthDates.slice(-90); // Last 90 days
+  const cashValues = dates.map(d => data.get(d).cash);
+  const derivValues = dates.map(d => data.get(d).deriv);
+  
+  trendChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'Cash DTF',
+        data: cashValues,
+        borderColor: '#ec4899',
+        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }, {
+        label: 'Derivatives DTF',
+        data: derivValues,
+        borderColor: '#be123c',
+        backgroundColor: 'rgba(190, 18, 60, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#e0e7ff' }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ' + formatCurrency(context.raw, currency);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 15
+          }
+        },
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            callback: function(value) {
+              return formatCurrency(value, currency);
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Breakdown chart
+  if (breakdownChart) breakdownChart.destroy();
+  
+  const ctx2 = document.getElementById('breakdownChart').getContext('2d');
+  breakdownChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Cash K-DTF', 'Derivatives K-DTF'],
+      datasets: [{
+        data: [results.kdtfCash, results.kdtfDeriv],
+        backgroundColor: ['#ec4899', '#be123c'],
+        borderColor: ['#f9a8d4', '#e11d48'],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return formatCurrency(context.raw, currency);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            callback: function(value) {
+              return formatCurrency(value, currency);
+            }
+          }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#e0e7ff' }
+        }
+      }
+    }
+  });
+}
+
+// Main calculation
+function runCalculation() {
+  try {
+    const fileInput = document.getElementById('csv');
+    if (!fileInput.files.length) {
+      alert('Please select a CSV file');
+      return;
+    }
+    
+    const currency = document.getElementById('currency').value;
+    const ownFunds = parseFloat(document.getElementById('own').value) || 50000000;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        // Parse CSV
+        const data = parseCSV(e.target.result);
+        
+        if (data.size === 0) {
+          alert('No valid data found in CSV');
+          return;
+        }
+        
+        // Calculate K-DTF
+        const results = calculateKDTF(data);
+        
+        // Display results
+        document.getElementById('kdtfCash').textContent = formatCurrency(results.kdtfCash, currency);
+        document.getElementById('kdtfDeriv').textContent = formatCurrency(results.kdtfDeriv, currency);
+        document.getElementById('kdtfTotal').textContent = formatCurrency(results.kdtfTotal, currency);
+        
+        document.getElementById('avgCash').textContent = formatCurrency(results.avgCash, currency);
+        document.getElementById('avgDeriv').textContent = formatCurrency(results.avgDeriv, currency);
+        
+        // DTF Mix
+        const totalDTF = results.avgCash + results.avgDeriv;
+        const cashMix = totalDTF > 0 ? (results.avgCash / totalDTF * 100) : 0;
+        document.getElementById('dtfMix').textContent = cashMix.toFixed(1) + '%';
+        
+        // Headroom
+        const headroom = ownFunds - results.kdtfTotal;
+        document.getElementById('headroom').textContent = formatCurrency(headroom, currency);
+        
+        const headroomRatio = ((headroom / ownFunds) * 100).toFixed(2);
+        document.getElementById('headroomRatio').textContent = headroomRatio + '%';
+        
+        // Peak day
+        document.getElementById('peakDay').textContent = formatCurrency(results.peakTotal, currency);
+        
+        // Data info
+        const info = document.getElementById('dataInfo');
+        info.innerHTML = `Data period: ${results.allDates[0]} to ${results.allDates[results.allDates.length-1]} (${results.allDates.length} days)<br>`;
+        info.innerHTML += `Calculation window: ${formatDate(results.sixMonthsAgo)} to ${formatDate(results.endDate)}<br>`;
+        info.innerHTML += `Averaged period: ${formatDate(results.sixMonthsAgo)} to ${formatDate(results.threeMonthsAgo)} (${results.datesToAverage.length} days)`;
+        
+        // Calculation details
+        const calcDetails = document.getElementById('calcDetails');
+        calcDetails.innerHTML = `Using ${results.datesToAverage.length} days from months 4-6 for averaging<br>`;
+        calcDetails.innerHTML += `Excluded ${results.sixMonthDates.length - results.datesToAverage.length} days from most recent 3 months`;
+        
+        // Draw charts
+        drawCharts(data, results, currency);
+        
+        // Show all cards
+        document.getElementById('methodCard').style.display = 'block';
+        document.getElementById('resultsCard').style.display = 'block';
+        document.getElementById('chartsCard').style.display = 'block';
+        
+      } catch (error) {
+        alert('Error: ' + error.message);
+        console.error(error);
+      }
+    };
+    
+    reader.readAsText(fileInput.files[0]);
+    
+  } catch (error) {
+    alert('Error: ' + error.message);
+    console.error(error);
+  }
+}
+
+// Event handlers
+document.getElementById('csv').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('fileInfo').textContent = 
+      `Selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    document.getElementById('debugPanel').style.display = 'none';
+  }
+});
+
+document.getElementById('calculate').addEventListener('click', runCalculation);
+
+// Set Chart.js defaults
+Chart.defaults.color = '#e0e7ff';
+Chart.defaults.borderColor = '#334155';
+</script>
+</body>
+</html>

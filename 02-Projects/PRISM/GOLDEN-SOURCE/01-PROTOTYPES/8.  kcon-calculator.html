@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-CON Concentration Risk Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+        }
+        .input-field {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+        }
+        .input-field:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.5);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+        }
+        .risk-weight-low { background: rgba(34, 197, 94, 0.2); border-left: 4px solid #22c55e; }
+        .risk-weight-medium { background: rgba(251, 146, 60, 0.2); border-left: 4px solid #fb923c; }
+        .risk-weight-high { background: rgba(239, 68, 68, 0.2); border-left: 4px solid #ef4444; }
+        .concentration-bar {
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .concentration-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); }
+        .modal-content { background: #111827; margin: 3% auto; padding: 0; border-radius: 20px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); border: 1px solid #334155; animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-600">
+                K-CON Concentration Risk Calculator
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">MiFIDPRU 4.14 - Concentration Risk K-Factor Requirement</p>
+        </header>
+
+        <!-- Own Funds Input Section -->
+        <div class="card p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-purple-400">Own Funds & Thresholds</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Total Own Funds (£)</label>
+                    <input type="number" id="ownFunds" class="input-field w-full p-3" placeholder="Enter own funds amount" value="1000000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">25% Threshold</label>
+                    <div class="text-2xl font-bold text-yellow-400" id="threshold25">£250,000</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Large Exposure Limit (500%)</label>
+                    <div class="text-2xl font-bold text-red-400" id="largeExpLimit">£5,000,000</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exposure Management Section -->
+        <div class="card p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-cyan-400">Counterparty Exposures</h2>
+                <button onclick="showExposureModal()" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">
+                    + Add Exposure
+                </button>
+            </div>
+            
+            <!-- Exposures List -->
+            <div id="exposuresList" class="space-y-4">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+
+        <!-- K-CON Calculation Results -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Summary Card -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-emerald-400">K-CON Summary</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Total Exposures:</span>
+                        <span class="font-bold" id="totalExposures">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Exposures > 25% Threshold:</span>
+                        <span class="font-bold text-yellow-400" id="exposuresOverThreshold">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Total EVE (Exposure Value Excess):</span>
+                        <span class="font-bold text-orange-400" id="totalEVE">£0</span>
+                    </div>
+                    <div class="pt-3 border-t border-gray-600">
+                        <div class="flex justify-between">
+                            <span class="text-lg">Total K-CON Requirement:</span>
+                            <span class="text-2xl font-bold text-purple-400" id="totalKCON">£0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Distribution Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-rose-400">Concentration Risk Distribution</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="concentrationChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Weight Reference -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-4 text-indigo-400">Risk Weight Reference (MiFIDPRU 4.14.8)</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="risk-weight-low p-3 rounded">
+                    <h4 class="font-semibold">Low Risk (25%)</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Credit institutions/investment firms</li>
+                        <li>• Exposures < 10 business days</li>
+                        <li>• Central governments (0% risk weight)</li>
+                    </ul>
+                </div>
+                <div class="risk-weight-medium p-3 rounded">
+                    <h4 class="font-semibold">Medium Risk (50%)</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Other regulated financial institutions</li>
+                        <li>• Exposures 10-20 business days</li>
+                        <li>• Covered bonds</li>
+                    </ul>
+                </div>
+                <div class="risk-weight-high p-3 rounded">
+                    <h4 class="font-semibold">High Risk (100%)</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Corporate counterparties</li>
+                        <li>• Exposures > 20 business days</li>
+                        <li>• Other counterparties</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Exposure Modal -->
+    <div id="exposureModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Add Counterparty Exposure</h2>
+                    <button onclick="closeExposureModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="exposureForm" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Counterparty Name</label>
+                        <input type="text" id="counterpartyName" class="input-field w-full p-3" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Group ID (if applicable)</label>
+                        <input type="text" id="groupId" class="input-field w-full p-3" placeholder="Leave blank if standalone">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Exposure Amount (£)</label>
+                        <input type="number" id="exposureAmount" class="input-field w-full p-3" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Exposure Type</label>
+                        <select id="exposureType" class="input-field w-full p-3">
+                            <option value="trading">Trading Book</option>
+                            <option value="nontrading">Non-Trading Book</option>
+                            <option value="derivative">OTC Derivative</option>
+                            <option value="sft">Securities Financing Transaction</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Counterparty Type</label>
+                        <select id="counterpartyType" class="input-field w-full p-3">
+                            <option value="institution">Credit Institution/Investment Firm</option>
+                            <option value="financial">Other Financial Institution</option>
+                            <option value="corporate">Corporate</option>
+                            <option value="government">Central Government</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Days to Maturity/Settlement</label>
+                        <input type="number" id="daysToMaturity" class="input-field w-full p-3" value="30">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">Eligible Collateral Held (£)</label>
+                    <input type="number" id="collateral" class="input-field w-full p-3" value="0">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeExposureModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 btn-primary text-white rounded-lg">
+                        Add Exposure
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global data storage
+        let ownFundsAmount = 1000000;
+        let exposures = [];
+        let concentrationChart = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load saved data if exists
+            loadData();
+            
+            // Set up event listeners
+            document.getElementById('ownFunds').addEventListener('input', updateOwnFunds);
+            document.getElementById('exposureForm').addEventListener('submit', addExposure);
+            
+            // Initial calculations
+            updateOwnFunds();
+            renderExposures();
+            calculateKCON();
+        });
+
+        function loadData() {
+            const savedData = localStorage.getItem('kcon_data');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                ownFundsAmount = data.ownFunds || 1000000;
+                exposures = data.exposures || [];
+                document.getElementById('ownFunds').value = ownFundsAmount;
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('kcon_data', JSON.stringify({
+                ownFunds: ownFundsAmount,
+                exposures: exposures
+            }));
+        }
+
+        function updateOwnFunds() {
+            ownFundsAmount = parseFloat(document.getElementById('ownFunds').value) || 0;
+            const threshold25 = ownFundsAmount * 0.25;
+            const largeExpLimit = ownFundsAmount * 5; // 500% limit
+            
+            document.getElementById('threshold25').textContent = `£${threshold25.toLocaleString()}`;
+            document.getElementById('largeExpLimit').textContent = `£${largeExpLimit.toLocaleString()}`;
+            
+            calculateKCON();
+            saveData();
+        }
+
+        function showExposureModal() {
+            document.getElementById('exposureModal').style.display = 'block';
+            document.getElementById('exposureForm').reset();
+        }
+
+        function closeExposureModal() {
+            document.getElementById('exposureModal').style.display = 'none';
+        }
+
+        function addExposure(e) {
+            e.preventDefault();
+            
+            const exposure = {
+                id: Date.now(),
+                name: document.getElementById('counterpartyName').value,
+                groupId: document.getElementById('groupId').value || null,
+                amount: parseFloat(document.getElementById('exposureAmount').value),
+                type: document.getElementById('exposureType').value,
+                counterpartyType: document.getElementById('counterpartyType').value,
+                daysToMaturity: parseInt(document.getElementById('daysToMaturity').value),
+                collateral: parseFloat(document.getElementById('collateral').value) || 0
+            };
+            
+            exposures.push(exposure);
+            closeExposureModal();
+            renderExposures();
+            calculateKCON();
+            saveData();
+        }
+
+        function deleteExposure(id) {
+            exposures = exposures.filter(e => e.id !== id);
+            renderExposures();
+            calculateKCON();
+            saveData();
+        }
+
+        function getRiskWeight(exposure) {
+            // Implement risk weights per MiFIDPRU 4.14.8 Table 6
+            if (exposure.counterpartyType === 'government') return 0;
+            
+            if (exposure.daysToMaturity < 10) {
+                return exposure.counterpartyType === 'institution' ? 0.25 : 0.5;
+            } else if (exposure.daysToMaturity <= 20) {
+                return exposure.counterpartyType === 'institution' ? 0.5 : 0.75;
+            } else {
+                return 1.0; // Default 100% risk weight
+            }
+        }
+
+        function groupExposures() {
+            // Group connected counterparties
+            const groups = {};
+            const standalone = [];
+            
+            exposures.forEach(exp => {
+                if (exp.groupId) {
+                    if (!groups[exp.groupId]) {
+                        groups[exp.groupId] = [];
+                    }
+                    groups[exp.groupId].push(exp);
+                } else {
+                    standalone.push(exp);
+                }
+            });
+            
+            return { groups, standalone };
+        }
+
+        function calculateKCON() {
+            const threshold = ownFundsAmount * 0.25;
+            const { groups, standalone } = groupExposures();
+            
+            let totalEVE = 0;
+            let totalKCON = 0;
+            let exposuresOverThreshold = 0;
+            let totalExposureAmount = 0;
+            
+            // Process grouped exposures
+            Object.entries(groups).forEach(([groupId, groupExposures]) => {
+                const groupTotal = groupExposures.reduce((sum, exp) => sum + (exp.amount - exp.collateral), 0);
+                totalExposureAmount += groupTotal;
+                
+                if (groupTotal > threshold) {
+                    exposuresOverThreshold++;
+                    const eve = groupTotal - threshold;
+                    totalEVE += eve;
+                    
+                    // Apply weighted average risk weight for the group
+                    const weightedRiskWeight = groupExposures.reduce((sum, exp) => {
+                        const netExposure = exp.amount - exp.collateral;
+                        return sum + (getRiskWeight(exp) * netExposure);
+                    }, 0) / groupTotal;
+                    
+                    totalKCON += eve * weightedRiskWeight;
+                }
+            });
+            
+            // Process standalone exposures
+            standalone.forEach(exp => {
+                const netExposure = exp.amount - exp.collateral;
+                totalExposureAmount += netExposure;
+                
+                if (netExposure > threshold) {
+                    exposuresOverThreshold++;
+                    const eve = netExposure - threshold;
+                    totalEVE += eve;
+                    totalKCON += eve * getRiskWeight(exp);
+                }
+            });
+            
+            // Update display
+            document.getElementById('totalExposures').textContent = `£${totalExposureAmount.toLocaleString()}`;
+            document.getElementById('exposuresOverThreshold').textContent = exposuresOverThreshold;
+            document.getElementById('totalEVE').textContent = `£${Math.round(totalEVE).toLocaleString()}`;
+            document.getElementById('totalKCON').textContent = `£${Math.round(totalKCON).toLocaleString()}`;
+            
+            // Update chart
+            updateConcentrationChart();
+            
+            // Update main calculator if integrated
+            if (window.parent && window.parent.updateKFactorValue) {
+                window.parent.updateKFactorValue('kcon', totalKCON);
+            }
+        }
+
+        function renderExposures() {
+            const container = document.getElementById('exposuresList');
+            const threshold = ownFundsAmount * 0.25;
+            const { groups, standalone } = groupExposures();
+            
+            let html = '';
+            
+            // Render grouped exposures
+            Object.entries(groups).forEach(([groupId, groupExposures]) => {
+                const groupTotal = groupExposures.reduce((sum, exp) => sum + (exp.amount - exp.collateral), 0);
+                const percentOfOwnFunds = (groupTotal / ownFundsAmount) * 100;
+                
+                html += `
+                    <div class="card p-4 ${groupTotal > threshold ? 'border-l-4 border-yellow-500' : ''}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="font-bold text-lg">Group: ${groupId}</h4>
+                                <p class="text-sm text-gray-400">${groupExposures.length} exposures</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xl font-bold">£${groupTotal.toLocaleString()}</div>
+                                <div class="text-sm ${percentOfOwnFunds > 25 ? 'text-yellow-400' : 'text-gray-400'}">
+                                    ${percentOfOwnFunds.toFixed(1)}% of own funds
+                                </div>
+                            </div>
+                        </div>
+                        <div class="concentration-bar mb-3">
+                            <div class="concentration-fill ${percentOfOwnFunds > 500 ? 'bg-red-500' : percentOfOwnFunds > 25 ? 'bg-yellow-500' : 'bg-green-500'}" 
+                                 style="width: ${Math.min(percentOfOwnFunds, 100)}%"></div>
+                        </div>
+                        <div class="space-y-2">
+                            ${groupExposures.map(exp => renderExposureItem(exp, true)).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Render standalone exposures
+            standalone.forEach(exp => {
+                html += renderExposureItem(exp, false);
+            });
+            
+            container.innerHTML = html || '<p class="text-gray-500 text-center py-8">No exposures added yet</p>';
+        }
+
+        function renderExposureItem(exp, isGrouped = false) {
+            const netExposure = exp.amount - exp.collateral;
+            const percentOfOwnFunds = (netExposure / ownFundsAmount) * 100;
+            const threshold = ownFundsAmount * 0.25;
+            const riskWeight = getRiskWeight(exp);
+            
+            return `
+                <div class="card p-4 ${!isGrouped && netExposure > threshold ? 'border-l-4 border-yellow-500' : ''} ${isGrouped ? 'ml-4' : ''}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h4 class="font-bold ${isGrouped ? 'text-base' : 'text-lg'}">${exp.name}</h4>
+                            <div class="text-sm text-gray-400 mt-1">
+                                <span>${exp.type} • ${exp.counterpartyType} • ${exp.daysToMaturity} days</span>
+                                ${exp.collateral > 0 ? `<span class="text-green-400"> • Collateral: £${exp.collateral.toLocaleString()}</span>` : ''}
+                            </div>
+                            <div class="text-xs mt-2">
+                                Risk Weight: <span class="font-bold ${riskWeight <= 0.25 ? 'text-green-400' : riskWeight <= 0.5 ? 'text-yellow-400' : 'text-red-400'}">
+                                    ${(riskWeight * 100).toFixed(0)}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-right ml-4">
+                            <div class="text-xl font-bold">£${netExposure.toLocaleString()}</div>
+                            <div class="text-sm ${percentOfOwnFunds > 25 ? 'text-yellow-400' : 'text-gray-400'}">
+                                ${percentOfOwnFunds.toFixed(1)}% of own funds
+                            </div>
+                            <button onclick="deleteExposure(${exp.id})" class="mt-2 text-red-400 hover:text-red-300 text-sm">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                    ${!isGrouped ? `
+                        <div class="concentration-bar mt-3">
+                            <div class="concentration-fill ${percentOfOwnFunds > 500 ? 'bg-red-500' : percentOfOwnFunds > 25 ? 'bg-yellow-500' : 'bg-green-500'}" 
+                                 style="width: ${Math.min(percentOfOwnFunds, 100)}%"></div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function updateConcentrationChart() {
+            const ctx = document.getElementById('concentrationChart').getContext('2d');
+            const threshold = ownFundsAmount * 0.25;
+            
+            // Prepare data
+            const chartData = [];
+            const { groups, standalone } = groupExposures();
+            
+            // Add grouped exposures
+            Object.entries(groups).forEach(([groupId, groupExposures]) => {
+                const groupTotal = groupExposures.reduce((sum, exp) => sum + (exp.amount - exp.collateral), 0);
+                chartData.push({
+                    label: `Group: ${groupId}`,
+                    value: groupTotal,
+                    isOver: groupTotal > threshold
+                });
+            });
+            
+            // Add standalone exposures
+            standalone.forEach(exp => {
+                const netExposure = exp.amount - exp.collateral;
+                chartData.push({
+                    label: exp.name,
+                    value: netExposure,
+                    isOver: netExposure > threshold
+                });
+            });
+            
+            // Sort by value descending
+            chartData.sort((a, b) => b.value - a.value);
+            
+            const data = {
+                labels: chartData.map(d => d.label),
+                datasets: [{
+                    label: 'Exposure Amount',
+                    data: chartData.map(d => d.value),
+                    backgroundColor: chartData.map(d => d.isOver ? 'rgba(251, 146, 60, 0.6)' : 'rgba(34, 197, 94, 0.6)'),
+                    borderColor: chartData.map(d => d.isOver ? '#fb923c' : '#22c55e'),
+                    borderWidth: 2
+                }, {
+                    label: '25% Threshold',
+                    data: new Array(chartData.length).fill(threshold),
+                    type: 'line',
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }]
+            };
+            
+            if (concentrationChart) {
+                concentrationChart.data = data;
+                concentrationChart.update();
+            } else {
+                concentrationChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: { color: '#e0e7ff' }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.dataset.label === '25% Threshold') {
+                                            return `Threshold: £${context.parsed.y.toLocaleString()}`;
+                                        }
+                                        const percent = ((context.parsed.y / ownFundsAmount) * 100).toFixed(1);
+                                        return `${context.dataset.label}: £${context.parsed.y.toLocaleString()} (${percent}% of own funds)`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#1e293b' }
+                            },
+                            x: {
+                                ticks: { color: '#e0e7ff' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

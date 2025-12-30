@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-ASA Test Data Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#0891b2;--accent-hi:#22d3ee;--muted:#9ca3af;--subtle:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1000px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#06b6d4,#0284c7);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    h2{margin:0 0 16px;color:#67e8f9;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s;margin-right:10px}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .btn-secondary{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    .range-container{margin:16px 0}
+    .range-label{display:flex;justify-content:space-between;margin-bottom:8px}
+    .range-value{color:var(--accent);font-weight:600}
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}
+    .checkbox-item{display:flex;align-items:center;gap:8px}
+    .checkbox-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
+    .preview{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre}
+    .stat-box{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:12px;text-align:center}
+    .stat-box h4{margin:0 0 4px;color:var(--muted);font-size:.85rem;font-weight:500}
+    .stat-box p{margin:0;font-size:1.2rem;font-weight:700;color:var(--accent)}
+    .pattern-desc{background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.1));border:1px solid var(--accent);border-radius:.5rem;padding:12px;margin:12px 0;font-size:.9rem}
+    .download-info{background:#0f172a;border:1px solid #10b981;border-radius:.5rem;padding:16px;margin-top:20px;text-align:center}
+    .download-info h3{margin:0 0 8px;color:#10b981}
+    .scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:16px 0}
+    .scenario-card{background:#0f172a;border:2px solid var(--border);border-radius:.5rem;padding:16px;cursor:pointer;transition:all 0.3s}
+    .scenario-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .scenario-card.selected{border-color:var(--accent);background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.1))}
+    .scenario-card h3{margin:0 0 8px;color:var(--accent);font-size:1rem}
+    .scenario-card p{margin:0;font-size:.85rem;color:var(--muted)}
+    .market-indicator{display:inline-block;padding:2px 6px;border-radius:.25rem;font-size:.75rem;font-weight:600;margin-left:8px}
+    .market-up{background:#15803d;color:#bbf7d0}
+    .market-down{background:#b91c1c;color:#fecaca}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>K-ASA Test Data Generator</h1>
+    <p class="subtitle">Generate realistic ASA data for testing • Market-correlated patterns</p>
+
+    <div class="card">
+      <h2>Quick Scenarios</h2>
+      <div class="scenario-grid">
+        <div class="scenario-card" onclick="loadScenario('custodyGiant')">
+          <h3>Custody Giant</h3>
+          <p>£50B+ AUA with stable growth. Minimal volatility, steady client base.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('wealthManager')">
+          <h3>Wealth Manager</h3>
+          <p>£5-10B AUA tracking markets. Moderate volatility, active trading.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('startupCustodian')">
+          <h3>Startup Custodian</h3>
+          <p>Rapid growth from £100M to £1B. Client onboarding driven.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('marketVolatile')">
+          <h3>Market Stressed</h3>
+          <p>High correlation with volatile markets. Tests stress scenarios.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Data Configuration</h2>
+      <div class="row">
+        <div>
+          <label class="label" for="startDate">Start Date</label>
+          <input type="date" id="startDate" class="input" />
+        </div>
+        <div>
+          <label class="label" for="endDate">End Date</label>
+          <input type="date" id="endDate" class="input" />
+        </div>
+      </div>
+      
+      <div class="row" style="margin-top:16px">
+        <div>
+          <label class="label" for="firmSize">Firm Size Category</label>
+          <select id="firmSize" class="select" onchange="updateFirmSize()">
+            <option value="small">Small (< £1B AUA)</option>
+            <option value="medium">Medium (£1B - £10B)</option>
+            <option value="large">Large (£10B - £50B)</option>
+            <option value="xlarge">Extra Large (> £50B)</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="includeWeekends">Weekend Values</label>
+          <select id="includeWeekends" class="select">
+            <option value="carry">Carry Forward Friday Values</option>
+            <option value="zero">Zero on Weekends</option>
+            <option value="same">Include with Same Values</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>ASA Parameters</h2>
+      
+      <h3 style="color:#06b6d4;font-size:1.1rem;margin-bottom:16px">Base AUA Configuration</h3>
+      <div class="range-container">
+        <div class="range-label">
+          <span>Base AUA</span>
+          <span class="range-value" id="baseAUAValue">£5,000,000,000</span>
+        </div>
+        <input type="range" id="baseAUA" class="input" min="10000000" max="100000000000" step="10000000" value="5000000000" 
+               oninput="updateValue('baseAUA', 'baseAUAValue')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Daily Volatility</span>
+          <span class="range-value" id="volatilityValue">2%</span>
+        </div>
+        <input type="range" id="volatility" class="input" min="0" max="10" step="0.5" value="2" 
+               oninput="updateValue('volatility', 'volatilityValue', '%')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Market Correlation</span>
+          <span class="range-value" id="correlationValue">70%</span>
+        </div>
+        <input type="range" id="correlation" class="input" min="0" max="100" step="5" value="70" 
+               oninput="updateValue('correlation', 'correlationValue', '%')" />
+        <div class="note">How closely ASA tracks equity market movements</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Market & Business Patterns</h2>
+      <div class="pattern-desc">
+        Configure realistic patterns for ASA movements
+      </div>
+      
+      <div class="checkbox-group">
+        <div class="checkbox-item">
+          <input type="checkbox" id="marketTrend" checked>
+          <label for="marketTrend">Market Trend (bull/bear cycles)</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="quarterEnd" checked>
+          <label for="quarterEnd">Quarter-end Window Dressing</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="clientFlows">
+          <label for="clientFlows">Client In/Outflows</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="corpActions">
+          <label for="corpActions">Corporate Actions (5% spikes)</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="marketCrash">
+          <label for="marketCrash">Market Crash Event</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="seasonality">
+          <label for="seasonality">Seasonal Patterns</label>
+        </div>
+      </div>
+      
+      <div class="range-container" id="trendSection" style="display:none">
+        <div class="range-label">
+          <span>Market Trend</span>
+          <span class="range-value" id="trendValue">+8% annual growth</span>
+        </div>
+        <input type="range" id="trend" class="input" min="-30" max="30" step="2" value="8" 
+               oninput="updateTrend()" />
+        <div class="note">Simulated annual market return</div>
+      </div>
+      
+      <div class="range-container" id="crashSection" style="display:none">
+        <div class="range-label">
+          <span>Crash Severity</span>
+          <span class="range-value" id="crashValue">-30%</span>
+        </div>
+        <input type="range" id="crashSeverity" class="input" min="-50" max="-10" step="5" value="-30" 
+               oninput="updateValue('crashSeverity', 'crashValue', '%')" />
+        <div class="note">Maximum drawdown during crash event</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Generate Data</h2>
+      <div style="margin-bottom:16px">
+        <button class="btn" onclick="generateData()">Generate CSV</button>
+        <button class="btn btn-secondary" onclick="previewData()">Preview First 10 Days</button>
+      </div>
+      
+      <div id="stats" class="grid" style="display:none;margin-bottom:16px"></div>
+      <div id="preview" class="preview" style="display:none"></div>
+      
+      <div id="downloadSection" class="download-info" style="display:none">
+        <h3>✓ Data Generated Successfully!</h3>
+        <p id="downloadInfo"></p>
+        <button class="btn" id="downloadBtn" style="margin-top:12px">Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Initialize dates
+function initDates() {
+  const end = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 1); // 1 year of data
+  
+  document.getElementById('startDate').value = formatDateInput(start);
+  document.getElementById('endDate').value = formatDateInput(end);
+}
+
+function formatDateInput(date) {
+  return date.toISOString().split('T')[0];
+}
+
+function formatDateOutput(date) {
+  const d = date.getDate().toString().padStart(2, '0');
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}.${m}.${y}`;
+}
+
+// Format currency for large values
+function formatLargeCurrency(value) {
+  if (value >= 1e12) {
+    return '£' + (value/1e12).toFixed(2) + 'T';
+  } else if (value >= 1e9) {
+    return '£' + (value/1e9).toFixed(2) + 'B';
+  } else if (value >= 1e6) {
+    return '£' + (value/1e6).toFixed(2) + 'M';
+  }
+  return '£' + value.toLocaleString('en-GB');
+}
+
+// Update display values
+function updateValue(inputId, displayId, suffix = '') {
+  const value = parseFloat(document.getElementById(inputId).value);
+  const display = document.getElementById(displayId);
+  
+  if (suffix === '%') {
+    display.textContent = value + suffix;
+  } else {
+    display.textContent = formatLargeCurrency(value);
+  }
+}
+
+function updateTrend() {
+  const value = parseInt(document.getElementById('trend').value);
+  const display = document.getElementById('trendValue');
+  
+  if (value > 0) {
+    display.textContent = `+${value}% annual growth`;
+  } else if (value < 0) {
+    display.textContent = `${value}% annual decline`;
+  } else {
+    display.textContent = 'Flat market';
+  }
+}
+
+function updateFirmSize() {
+  const size = document.getElementById('firmSize').value;
+  const baseAUA = document.getElementById('baseAUA');
+  
+  switch(size) {
+    case 'small':
+      baseAUA.value = 500000000; // £500M
+      break;
+    case 'medium':
+      baseAUA.value = 5000000000; // £5B
+      break;
+    case 'large':
+      baseAUA.value = 25000000000; // £25B
+      break;
+    case 'xlarge':
+      baseAUA.value = 75000000000; // £75B
+      break;
+  }
+  
+  updateValue('baseAUA', 'baseAUAValue');
+}
+
+// Pattern handlers
+document.getElementById('marketTrend').addEventListener('change', function(e) {
+  document.getElementById('trendSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+document.getElementById('marketCrash').addEventListener('change', function(e) {
+  document.getElementById('crashSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+// Load scenarios
+function loadScenario(scenario) {
+  // Clear all checkboxes first
+  document.querySelectorAll('.checkbox-item input').forEach(cb => cb.checked = false);
+  
+  // Remove selected class from all cards
+  document.querySelectorAll('.scenario-card').forEach(card => card.classList.remove('selected'));
+  
+  // Add selected class to clicked card
+  event.currentTarget.classList.add('selected');
+  
+  switch(scenario) {
+    case 'custodyGiant':
+      document.getElementById('firmSize').value = 'xlarge';
+      updateFirmSize();
+      document.getElementById('volatility').value = 1;
+      document.getElementById('correlation').value = 50;
+      document.getElementById('marketTrend').checked = true;
+      document.getElementById('trend').value = 5;
+      document.getElementById('trendSection').style.display = 'block';
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('correlation', 'correlationValue', '%');
+      updateTrend();
+      break;
+      
+    case 'wealthManager':
+      document.getElementById('firmSize').value = 'medium';
+      updateFirmSize();
+      document.getElementById('volatility').value = 3;
+      document.getElementById('correlation').value = 80;
+      document.getElementById('marketTrend').checked = true;
+      document.getElementById('quarterEnd').checked = true;
+      document.getElementById('clientFlows').checked = true;
+      document.getElementById('trend').value = 8;
+      document.getElementById('trendSection').style.display = 'block';
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('correlation', 'correlationValue', '%');
+      updateTrend();
+      break;
+      
+    case 'startupCustodian':
+      document.getElementById('firmSize').value = 'small';
+      updateFirmSize();
+      document.getElementById('baseAUA').value = 100000000; // Start at £100M
+      document.getElementById('volatility').value = 2;
+      document.getElementById('marketTrend').checked = true;
+      document.getElementById('clientFlows').checked = true;
+      document.getElementById('trend').value = 25; // High growth
+      document.getElementById('trendSection').style.display = 'block';
+      updateValue('baseAUA', 'baseAUAValue');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateTrend();
+      break;
+      
+    case 'marketVolatile':
+      document.getElementById('firmSize').value = 'large';
+      updateFirmSize();
+      document.getElementById('volatility').value = 5;
+      document.getElementById('correlation').value = 95;
+      document.getElementById('marketTrend').checked = true;
+      document.getElementById('marketCrash').checked = true;
+      document.getElementById('corpActions').checked = true;
+      document.getElementById('trend').value = -5;
+      document.getElementById('crashSeverity').value = -35;
+      document.getElementById('trendSection').style.display = 'block';
+      document.getElementById('crashSection').style.display = 'block';
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('correlation', 'correlationValue', '%');
+      updateValue('crashSeverity', 'crashValue', '%');
+      updateTrend();
+      break;
+  }
+}
+
+// Simulate market returns (simplified random walk with drift)
+function generateMarketReturns(days, annualReturn, volatility) {
+  const dailyReturn = annualReturn / 252; // Trading days
+  const dailyVol = volatility / Math.sqrt(252);
+  
+  const returns = [];
+  let cumulative = 1;
+  
+  for (let i = 0; i < days; i++) {
+    // Random normal distribution approximation
+    const z = (Math.random() + Math.random() + Math.random() + Math.random() - 2) / 0.8165;
+    const dayReturn = dailyReturn + (dailyVol * z);
+    cumulative *= (1 + dayReturn);
+    returns.push(cumulative);
+  }
+  
+  return returns;
+}
+
+// Generate data
+function generateData() {
+  const startDate = new Date(document.getElementById('startDate').value);
+  const endDate = new Date(document.getElementById('endDate').value);
+  const weekendMode = document.getElementById('includeWeekends').value;
+  
+  // Get parameters
+  const baseAUA = parseFloat(document.getElementById('baseAUA').value);
+  const volatility = parseFloat(document.getElementById('volatility').value) / 100;
+  const correlation = parseFloat(document.getElementById('correlation').value) / 100;
+  
+  // Get patterns
+  const patterns = {
+    marketTrend: document.getElementById('marketTrend').checked,
+    quarterEnd: document.getElementById('quarterEnd').checked,
+    clientFlows: document.getElementById('clientFlows').checked,
+    corpActions: document.getElementById('corpActions').checked,
+    marketCrash: document.getElementById('marketCrash').checked,
+    seasonality: document.getElementById('seasonality').checked,
+    trendValue: parseFloat(document.getElementById('trend').value) / 100,
+    crashSeverity: parseFloat(document.getElementById('crashSeverity').value) / 100
+  };
+  
+  // Calculate total days
+  const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+  
+  // Generate market returns if trend is enabled
+  let marketReturns = [];
+  if (patterns.marketTrend) {
+    marketReturns = generateMarketReturns(totalDays, patterns.trendValue, volatility * 2);
+  }
+  
+  // Generate data
+  const data = [];
+  let currentDate = new Date(startDate);
+  let dayIndex = 0;
+  let currentAUA = baseAUA;
+  let lastValue = baseAUA;
+  
+  // Market crash timing (random day in middle third of period)
+  const crashDay = patterns.marketCrash ? 
+    Math.floor(totalDays / 3 + Math.random() * totalDays / 3) : -1;
+  let inCrash = false;
+  let crashRecoveryDays = 0;
+  
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getDay();
+    const dayOfMonth = currentDate.getDate();
+    const month = currentDate.getMonth();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Handle weekends
+    if (isWeekend && weekendMode === 'zero') {
+      data.push({
+        date: formatDateOutput(currentDate),
+        asa: 0
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayIndex++;
+      continue;
+    }
+    
+    // Calculate base value with market correlation
+    let dayValue = currentAUA;
+    
+    // Apply market returns if enabled
+    if (patterns.marketTrend && marketReturns[dayIndex]) {
+      const marketComponent = (marketReturns[dayIndex] - 1) * correlation;
+      const idioComponent = (Math.random() - 0.5) * volatility * (1 - correlation);
+      dayValue = currentAUA * (1 + marketComponent + idioComponent);
+    } else {
+      // Pure random walk
+      const randomReturn = (Math.random() - 0.5) * volatility;
+      dayValue = currentAUA * (1 + randomReturn);
+    }
+    
+    // Market crash event
+    if (patterns.marketCrash && dayIndex === crashDay) {
+      inCrash = true;
+      crashRecoveryDays = 30 + Math.floor(Math.random() * 60); // 30-90 days recovery
+    }
+    
+    if (inCrash) {
+      if (crashRecoveryDays > 60) {
+        // Initial crash phase
+        dayValue *= (1 + patterns.crashSeverity / 10); // Spread crash over ~10 days
+      } else if (crashRecoveryDays > 0) {
+        // Recovery phase
+        dayValue *= 1.005; // Gradual recovery
+      } else {
+        inCrash = false;
+      }
+      crashRecoveryDays--;
+    }
+    
+    // Quarter-end window dressing
+    if (patterns.quarterEnd) {
+      const isQuarterEnd = (month === 2 || month === 5 || month === 8 || month === 11) && dayOfMonth >= 25;
+      if (isQuarterEnd) {
+        dayValue *= 1.02 + Math.random() * 0.03; // 2-5% boost
+      }
+    }
+    
+    // Client flows (random in/outflows)
+    if (patterns.clientFlows && Math.random() < 0.05) {
+      const flowSize = (Math.random() - 0.4) * 0.05; // Slightly biased to inflows
+      dayValue *= (1 + flowSize);
+    }
+    
+    // Corporate actions
+    if (patterns.corpActions && Math.random() < 0.02) {
+      dayValue *= 1.01 + Math.random() * 0.04; // 1-5% spike
+    }
+    
+    // Seasonality (lower in August, higher in Q4)
+    if (patterns.seasonality) {
+      if (month === 7) { // August
+        dayValue *= 0.98;
+      } else if (month >= 9 && month <= 11) { // Q4
+        dayValue *= 1.01;
+      }
+    }
+    
+    // Handle weekend carry-forward
+    if (isWeekend && weekendMode === 'carry') {
+      dayValue = lastValue;
+    }
+    
+    // Ensure non-negative
+    dayValue = Math.max(0, dayValue);
+    
+    data.push({
+      date: formatDateOutput(currentDate),
+      asa: Math.round(dayValue)
+    });
+    
+    // Update for next iteration
+    if (!isWeekend || weekendMode === 'same') {
+      currentAUA = dayValue;
+      lastValue = dayValue;
+    }
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+    dayIndex++;
+  }
+  
+  // Generate CSV
+  let csv = 'Date,ASA_Value\n';
+  data.forEach(row => {
+    csv += `${row.date},${row.asa}\n`;
+  });
+  
+  // Store for download
+  window.generatedCSV = csv;
+  window.generatedData = data;
+  
+  // Show stats
+  showStats(data);
+  
+  // Show download section
+  const downloadSection = document.getElementById('downloadSection');
+  downloadSection.style.display = 'block';
+  document.getElementById('downloadInfo').textContent = 
+    `Generated ${data.length} days of data from ${data[0].date} to ${data[data.length-1].date}`;
+}
+
+function showStats(data) {
+  const statsDiv = document.getElementById('stats');
+  statsDiv.style.display = 'grid';
+  statsDiv.innerHTML = '';
+  
+  // Calculate stats
+  const asaValues = data.map(d => d.asa).filter(v => v > 0);
+  const avgASA = asaValues.reduce((a,b) => a+b, 0) / asaValues.length;
+  const minASA = Math.min(...asaValues);
+  const maxASA = Math.max(...asaValues);
+  
+  // Calculate returns
+  const startASA = asaValues[0];
+  const endASA = asaValues[asaValues.length - 1];
+  const totalReturn = ((endASA - startASA) / startASA * 100).toFixed(2);
+  
+  const stats = [
+    {
+      label: 'Total Days',
+      value: data.length.toLocaleString()
+    },
+    {
+      label: 'Average ASA',
+      value: formatLargeCurrency(avgASA)
+    },
+    {
+      label: 'Min / Max ASA',
+      value: formatLargeCurrency(minASA) + ' / ' + formatLargeCurrency(maxASA)
+    },
+    {
+      label: 'Total Return',
+      value: totalReturn + '%',
+      indicator: totalReturn > 0 ? 'up' : 'down'
+    }
+  ];
+  
+  stats.forEach(stat => {
+    const box = document.createElement('div');
+    box.className = 'stat-box';
+    let indicatorHtml = '';
+    if (stat.indicator) {
+      indicatorHtml = `<span class="market-indicator market-${stat.indicator}">${stat.indicator === 'up' ? '↑' : '↓'}</span>`;
+    }
+    box.innerHTML = `<h4>${stat.label}</h4><p>${stat.value}${indicatorHtml}</p>`;
+    statsDiv.appendChild(box);
+  });
+}
+
+function previewData() {
+  if (!window.generatedData) {
+    alert('Generate data first!');
+    return;
+  }
+  
+  const preview = document.getElementById('preview');
+  preview.style.display = 'block';
+  
+  let text = 'Date,ASA_Value\n';
+  window.generatedData.slice(0, 10).forEach(row => {
+    text += `${row.date},${row.asa.toLocaleString('en-GB')}\n`;
+  });
+  
+  if (window.generatedData.length > 10) {
+    text += '...\n';
+    text += `(${window.generatedData.length - 10} more rows)`;
+  }
+  
+  preview.textContent = text;
+}
+
+// Download handler
+document.getElementById('downloadBtn').addEventListener('click', function() {
+  const blob = new Blob([window.generatedCSV], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kasa_test_data_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// Initialize
+initDates();
+// Set initial trend section visibility
+document.getElementById('trendSection').style.display = 'block';
+</script>
+</body>
+</html>

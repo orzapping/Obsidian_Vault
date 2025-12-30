@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-COH Test Data Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#f97316;--accent-hi:#fb923c;--muted:#9ca3af;--subtle:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1000px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#f97316,#ec4899);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    h2{margin:0 0 16px;color:#fbbf24;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s;margin-right:10px}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .btn-secondary{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    .range-container{margin:16px 0}
+    .range-label{display:flex;justify-content:space-between;margin-bottom:8px}
+    .range-value{color:var(--accent);font-weight:600}
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}
+    .checkbox-item{display:flex;align-items:center;gap:8px}
+    .checkbox-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
+    .preview{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre}
+    .stat-box{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:12px;text-align:center}
+    .stat-box h4{margin:0 0 4px;color:var(--muted);font-size:.85rem;font-weight:500}
+    .stat-box p{margin:0;font-size:1.2rem;font-weight:700;color:var(--accent)}
+    .pattern-desc{background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(236,72,153,0.1));border:1px solid var(--accent);border-radius:.5rem;padding:12px;margin:12px 0;font-size:.9rem}
+    .download-info{background:#0f172a;border:1px solid #10b981;border-radius:.5rem;padding:16px;margin-top:20px;text-align:center}
+    .download-info h3{margin:0 0 8px;color:#10b981}
+    .scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:16px 0}
+    .scenario-card{background:#0f172a;border:2px solid var(--border);border-radius:.5rem;padding:16px;cursor:pointer;transition:all 0.3s}
+    .scenario-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .scenario-card.selected{border-color:var(--accent);background:linear-gradient(135deg,rgba(249,115,22,0.1),rgba(236,72,153,0.1))}
+    .scenario-card h3{margin:0 0 8px;color:var(--accent);font-size:1rem}
+    .scenario-card p{margin:0;font-size:.85rem;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>K-COH Test Data Generator</h1>
+    <p class="subtitle">Generate realistic COH data for testing</p>
+
+    <div class="card">
+      <h2>Quick Scenarios</h2>
+      <div class="scenario-grid">
+        <div class="scenario-card" onclick="loadScenario('steady')">
+          <h3>Steady Eddie</h3>
+          <p>Consistent daily volumes with minimal variation. Good for baseline testing.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('growth')">
+          <h3>Growth Story</h3>
+          <p>Increasing volumes over time. Simulates a growing business.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('volatile')">
+          <h3>Wild Rider</h3>
+          <p>High volatility with random spikes. Tests edge cases.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('seasonal')">
+          <h3>Seasonal Patterns</h3>
+          <p>Month-end spikes, quiet summers. Realistic for many firms.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Data Configuration</h2>
+      <div class="row">
+        <div>
+          <label class="label" for="startDate">Start Date</label>
+          <input type="date" id="startDate" class="input" />
+        </div>
+        <div>
+          <label class="label" for="endDate">End Date</label>
+          <input type="date" id="endDate" class="input" />
+        </div>
+      </div>
+      
+      <div class="row" style="margin-top:16px">
+        <div>
+          <label class="label" for="firmType">Firm Type</label>
+          <select id="firmType" class="select" onchange="updateFirmType()">
+            <option value="both">Cash & Derivatives</option>
+            <option value="cash">Cash Only</option>
+            <option value="derivatives">Derivatives Only</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="includeWeekends">Weekend Activity</label>
+          <select id="includeWeekends" class="select">
+            <option value="no">Weekdays Only</option>
+            <option value="some">Occasional Weekends (10%)</option>
+            <option value="yes">Include All Weekends</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Volume Parameters</h2>
+      
+      <div id="cashSection">
+        <h3 style="color:#8b5cf6;font-size:1.1rem;margin-bottom:16px">Cash COH</h3>
+        <div class="range-container">
+          <div class="range-label">
+            <span>Base Daily Volume</span>
+            <span class="range-value" id="cashBaseValue">£5,000,000</span>
+          </div>
+          <input type="range" id="cashBase" class="input" min="100000" max="50000000" step="100000" value="5000000" 
+                 oninput="updateValue('cashBase', 'cashBaseValue')" />
+        </div>
+        
+        <div class="range-container">
+          <div class="range-label">
+            <span>Daily Variation</span>
+            <span class="range-value" id="cashVariationValue">20%</span>
+          </div>
+          <input type="range" id="cashVariation" class="input" min="0" max="100" step="5" value="20" 
+                 oninput="updateValue('cashVariation', 'cashVariationValue', '%')" />
+        </div>
+      </div>
+      
+      <div id="derivSection" style="margin-top:24px">
+        <h3 style="color:#e11d48;font-size:1.1rem;margin-bottom:16px">Derivatives COH</h3>
+        <div class="range-container">
+          <div class="range-label">
+            <span>Base Daily Volume</span>
+            <span class="range-value" id="derivBaseValue">£15,000,000</span>
+          </div>
+          <input type="range" id="derivBase" class="input" min="100000" max="100000000" step="500000" value="15000000" 
+                 oninput="updateValue('derivBase', 'derivBaseValue')" />
+        </div>
+        
+        <div class="range-container">
+          <div class="range-label">
+            <span>Daily Variation</span>
+            <span class="range-value" id="derivVariationValue">30%</span>
+          </div>
+          <input type="range" id="derivVariation" class="input" min="0" max="100" step="5" value="30" 
+                 oninput="updateValue('derivVariation', 'derivVariationValue', '%')" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Patterns & Anomalies</h2>
+      <div class="pattern-desc">
+        Select patterns to make your test data more realistic
+      </div>
+      
+      <div class="checkbox-group">
+        <div class="checkbox-item">
+          <input type="checkbox" id="weeklyPattern" checked>
+          <label for="weeklyPattern">Weekly Pattern (higher Mon/Fri)</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="monthEndSpikes" checked>
+          <label for="monthEndSpikes">Month-end Spikes</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="quarterEndSpikes">
+          <label for="quarterEndSpikes">Quarter-end Super Spikes</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="randomSpikes">
+          <label for="randomSpikes">Random Spike Days (5%)</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="zerosDays">
+          <label for="zerosDays">Random Zero Days (2%)</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="trends">
+          <label for="trends">Long-term Trends</label>
+        </div>
+      </div>
+      
+      <div class="range-container" id="trendSection" style="display:none">
+        <div class="range-label">
+          <span>Trend Direction</span>
+          <span class="range-value" id="trendValue">+10% growth</span>
+        </div>
+        <input type="range" id="trend" class="input" min="-50" max="50" step="5" value="10" 
+               oninput="updateTrend()" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Generate Data</h2>
+      <div style="margin-bottom:16px">
+        <button class="btn" onclick="generateData()">Generate CSV</button>
+        <button class="btn btn-secondary" onclick="previewData()">Preview First 10 Days</button>
+      </div>
+      
+      <div id="stats" class="grid" style="display:none;margin-bottom:16px"></div>
+      <div id="preview" class="preview" style="display:none"></div>
+      
+      <div id="downloadSection" class="download-info" style="display:none">
+        <h3>✓ Data Generated Successfully!</h3>
+        <p id="downloadInfo"></p>
+        <button class="btn" id="downloadBtn" style="margin-top:12px">Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Initialize dates
+function initDates() {
+  const end = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 1); // 1 year of data
+  
+  document.getElementById('startDate').value = formatDateInput(start);
+  document.getElementById('endDate').value = formatDateInput(end);
+}
+
+function formatDateInput(date) {
+  return date.toISOString().split('T')[0];
+}
+
+function formatDateOutput(date) {
+  const d = date.getDate().toString().padStart(2, '0');
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}.${m}.${y}`;
+}
+
+// Update display values
+function updateValue(inputId, displayId, suffix = '') {
+  const value = parseInt(document.getElementById(inputId).value);
+  const display = document.getElementById(displayId);
+  
+  if (suffix === '%') {
+    display.textContent = value + suffix;
+  } else {
+    display.textContent = '£' + value.toLocaleString('en-GB');
+  }
+}
+
+function updateTrend() {
+  const value = parseInt(document.getElementById('trend').value);
+  const display = document.getElementById('trendValue');
+  
+  if (value > 0) {
+    display.textContent = `+${value}% growth`;
+  } else if (value < 0) {
+    display.textContent = `${value}% decline`;
+  } else {
+    display.textContent = 'No trend';
+  }
+}
+
+function updateFirmType() {
+  const type = document.getElementById('firmType').value;
+  document.getElementById('cashSection').style.display = (type === 'derivatives') ? 'none' : 'block';
+  document.getElementById('derivSection').style.display = (type === 'cash') ? 'none' : 'block';
+}
+
+// Pattern handlers
+document.getElementById('trends').addEventListener('change', function(e) {
+  document.getElementById('trendSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+// Load scenarios
+function loadScenario(scenario) {
+  // Clear all checkboxes first
+  document.querySelectorAll('.checkbox-item input').forEach(cb => cb.checked = false);
+  
+  // Remove selected class from all cards
+  document.querySelectorAll('.scenario-card').forEach(card => card.classList.remove('selected'));
+  
+  // Add selected class to clicked card
+  event.currentTarget.classList.add('selected');
+  
+  switch(scenario) {
+    case 'steady':
+      document.getElementById('cashBase').value = 5000000;
+      document.getElementById('cashVariation').value = 10;
+      document.getElementById('derivBase').value = 15000000;
+      document.getElementById('derivVariation').value = 10;
+      updateValue('cashBase', 'cashBaseValue');
+      updateValue('cashVariation', 'cashVariationValue', '%');
+      updateValue('derivBase', 'derivBaseValue');
+      updateValue('derivVariation', 'derivVariationValue', '%');
+      break;
+      
+    case 'growth':
+      document.getElementById('cashBase').value = 3000000;
+      document.getElementById('derivBase').value = 10000000;
+      document.getElementById('trends').checked = true;
+      document.getElementById('trend').value = 30;
+      document.getElementById('trendSection').style.display = 'block';
+      updateValue('cashBase', 'cashBaseValue');
+      updateValue('derivBase', 'derivBaseValue');
+      updateTrend();
+      break;
+      
+    case 'volatile':
+      document.getElementById('cashVariation').value = 50;
+      document.getElementById('derivVariation').value = 70;
+      document.getElementById('randomSpikes').checked = true;
+      document.getElementById('zerosDays').checked = true;
+      updateValue('cashVariation', 'cashVariationValue', '%');
+      updateValue('derivVariation', 'derivVariationValue', '%');
+      break;
+      
+    case 'seasonal':
+      document.getElementById('weeklyPattern').checked = true;
+      document.getElementById('monthEndSpikes').checked = true;
+      document.getElementById('quarterEndSpikes').checked = true;
+      break;
+  }
+}
+
+// Generate data
+function generateData() {
+  const startDate = new Date(document.getElementById('startDate').value);
+  const endDate = new Date(document.getElementById('endDate').value);
+  const firmType = document.getElementById('firmType').value;
+  const weekendActivity = document.getElementById('includeWeekends').value;
+  
+  // Get parameters
+  const cashBase = parseInt(document.getElementById('cashBase').value);
+  const cashVar = parseInt(document.getElementById('cashVariation').value) / 100;
+  const derivBase = parseInt(document.getElementById('derivBase').value);
+  const derivVar = parseInt(document.getElementById('derivVariation').value) / 100;
+  
+  // Get patterns
+  const patterns = {
+    weekly: document.getElementById('weeklyPattern').checked,
+    monthEnd: document.getElementById('monthEndSpikes').checked,
+    quarterEnd: document.getElementById('quarterEndSpikes').checked,
+    randomSpikes: document.getElementById('randomSpikes').checked,
+    zeroDays: document.getElementById('zerosDays').checked,
+    trends: document.getElementById('trends').checked,
+    trendValue: parseInt(document.getElementById('trend').value) / 100
+  };
+  
+  // Generate data
+  const data = [];
+  let currentDate = new Date(startDate);
+  let dayCount = 0;
+  
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getDay();
+    const dayOfMonth = currentDate.getDate();
+    const month = currentDate.getMonth();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Skip weekends based on setting
+    if (isWeekend) {
+      if (weekendActivity === 'no') {
+        currentDate.setDate(currentDate.getDate() + 1);
+        continue;
+      } else if (weekendActivity === 'some' && Math.random() > 0.1) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        continue;
+      }
+    }
+    
+    // Calculate multipliers
+    let cashMultiplier = 1;
+    let derivMultiplier = 1;
+    
+    // Weekly pattern
+    if (patterns.weekly && !isWeekend) {
+      if (dayOfWeek === 1) { // Monday
+        cashMultiplier *= 1.2;
+        derivMultiplier *= 1.3;
+      } else if (dayOfWeek === 5) { // Friday
+        cashMultiplier *= 1.15;
+        derivMultiplier *= 1.25;
+      }
+    }
+    
+    // Month-end spikes
+    if (patterns.monthEnd && dayOfMonth >= 28) {
+      cashMultiplier *= 1.5;
+      derivMultiplier *= 1.7;
+    }
+    
+    // Quarter-end spikes
+    if (patterns.quarterEnd && (month === 2 || month === 5 || month === 8 || month === 11) && dayOfMonth >= 28) {
+      cashMultiplier *= 2;
+      derivMultiplier *= 2.5;
+    }
+    
+    // Random spikes
+    if (patterns.randomSpikes && Math.random() < 0.05) {
+      cashMultiplier *= 2 + Math.random() * 2;
+      derivMultiplier *= 2 + Math.random() * 3;
+    }
+    
+    // Trends
+    if (patterns.trends) {
+      const progress = dayCount / 365;
+      const trendMultiplier = 1 + (patterns.trendValue * progress);
+      cashMultiplier *= trendMultiplier;
+      derivMultiplier *= trendMultiplier;
+    }
+    
+    // Calculate values
+    let cashValue = 0;
+    let derivValue = 0;
+    
+    // Random zero days
+    if (patterns.zeroDays && Math.random() < 0.02) {
+      if (firmType === 'both') {
+        // Randomly zero out one or both
+        if (Math.random() < 0.5) cashValue = 0;
+        if (Math.random() < 0.5) derivValue = 0;
+      } else {
+        cashValue = 0;
+        derivValue = 0;
+      }
+    } else {
+      // Normal calculation
+      if (firmType !== 'derivatives') {
+        const randomCash = 1 + (Math.random() - 0.5) * 2 * cashVar;
+        cashValue = Math.round(cashBase * cashMultiplier * randomCash);
+      }
+      
+      if (firmType !== 'cash') {
+        const randomDeriv = 1 + (Math.random() - 0.5) * 2 * derivVar;
+        derivValue = Math.round(derivBase * derivMultiplier * randomDeriv);
+      }
+    }
+    
+    data.push({
+      date: formatDateOutput(currentDate),
+      cash: cashValue,
+      deriv: derivValue
+    });
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+    dayCount++;
+  }
+  
+  // Generate CSV
+  let csv = 'Date,Cash_COH,Derivatives_COH\n';
+  data.forEach(row => {
+    csv += `${row.date},${row.cash},${row.deriv}\n`;
+  });
+  
+  // Store for download
+  window.generatedCSV = csv;
+  window.generatedData = data;
+  
+  // Show stats
+  showStats(data);
+  
+  // Show download section
+  const downloadSection = document.getElementById('downloadSection');
+  downloadSection.style.display = 'block';
+  document.getElementById('downloadInfo').textContent = 
+    `Generated ${data.length} days of data from ${data[0].date} to ${data[data.length-1].date}`;
+}
+
+function showStats(data) {
+  const statsDiv = document.getElementById('stats');
+  statsDiv.style.display = 'grid';
+  statsDiv.innerHTML = '';
+  
+  // Calculate stats
+  const cashValues = data.map(d => d.cash).filter(v => v > 0);
+  const derivValues = data.map(d => d.deriv).filter(v => v > 0);
+  
+  const stats = [
+    {
+      label: 'Total Days',
+      value: data.length.toLocaleString()
+    },
+    {
+      label: 'Avg Cash COH',
+      value: '£' + Math.round(cashValues.reduce((a,b) => a+b, 0) / cashValues.length).toLocaleString('en-GB')
+    },
+    {
+      label: 'Avg Deriv COH',
+      value: '£' + Math.round(derivValues.reduce((a,b) => a+b, 0) / derivValues.length).toLocaleString('en-GB')
+    },
+    {
+      label: 'Zero Days',
+      value: data.filter(d => d.cash === 0 || d.deriv === 0).length
+    }
+  ];
+  
+  stats.forEach(stat => {
+    const box = document.createElement('div');
+    box.className = 'stat-box';
+    box.innerHTML = `<h4>${stat.label}</h4><p>${stat.value}</p>`;
+    statsDiv.appendChild(box);
+  });
+}
+
+function previewData() {
+  if (!window.generatedData) {
+    alert('Generate data first!');
+    return;
+  }
+  
+  const preview = document.getElementById('preview');
+  preview.style.display = 'block';
+  
+  let text = 'Date,Cash_COH,Derivatives_COH\n';
+  window.generatedData.slice(0, 10).forEach(row => {
+    text += `${row.date},${row.cash.toLocaleString('en-GB')},${row.deriv.toLocaleString('en-GB')}\n`;
+  });
+  
+  if (window.generatedData.length > 10) {
+    text += '...\n';
+    text += `(${window.generatedData.length - 10} more rows)`;
+  }
+  
+  preview.textContent = text;
+}
+
+// Download handler
+document.getElementById('downloadBtn').addEventListener('click', function() {
+  const blob = new Blob([window.generatedCSV], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kcoh_test_data_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// Initialize
+initDates();
+</script>
+</body>
+</html>

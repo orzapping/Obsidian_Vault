@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-DTF Test Data Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#ef4444;--accent-hi:#f87171;--muted:#9ca3af;--subtle:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1000px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#ef4444,#be123c);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    h2{margin:0 0 16px;color:#f87171;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s;margin-right:10px}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .btn-secondary{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    .range-container{margin:16px 0}
+    .range-label{display:flex;justify-content:space-between;margin-bottom:8px}
+    .range-value{color:var(--accent);font-weight:600}
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}
+    .checkbox-item{display:flex;align-items:center;gap:8px}
+    .checkbox-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
+    .preview{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre}
+    .stat-box{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:12px;text-align:center}
+    .stat-box h4{margin:0 0 4px;color:var(--muted);font-size:.85rem;font-weight:500}
+    .stat-box p{margin:0;font-size:1.2rem;font-weight:700;color:var(--accent)}
+    .pattern-desc{background:linear-gradient(135deg,rgba(239,68,68,0.1),rgba(190,18,60,0.1));border:1px solid var(--accent);border-radius:.5rem;padding:12px;margin:12px 0;font-size:.9rem}
+    .download-info{background:#0f172a;border:1px solid #10b981;border-radius:.5rem;padding:16px;margin-top:20px;text-align:center}
+    .download-info h3{margin:0 0 8px;color:#10b981}
+    .scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:16px 0}
+    .scenario-card{background:#0f172a;border:2px solid var(--border);border-radius:.5rem;padding:16px;cursor:pointer;transition:all 0.3s}
+    .scenario-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .scenario-card.selected{border-color:var(--accent);background:linear-gradient(135deg,rgba(239,68,68,0.1),rgba(190,18,60,0.1))}
+    .scenario-card h3{margin:0 0 8px;color:var(--accent);font-size:1rem}
+    .scenario-card p{margin:0;font-size:.85rem;color:var(--muted)}
+    .trading-badge{display:inline-block;padding:2px 6px;border-radius:.25rem;font-size:.75rem;font-weight:600;margin-left:4px;background:#ef4444;color:#fff}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>K-DTF Test Data Generator</h1>
+    <p class="subtitle">Generate realistic daily trading flow data • Proprietary & Matched Principal</p>
+
+    <div class="card">
+      <h2>Quick Scenarios</h2>
+      <div class="scenario-grid">
+        <div class="scenario-card" onclick="loadScenario('marketMaker')">
+          <h3>Market Maker <span class="trading-badge">High Vol</span></h3>
+          <p>Two-way quotes, balanced flow, tight spreads. High volume, low directional risk.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('propShop')">
+          <h3>Prop Trading Desk <span class="trading-badge">Directional</span></h3>
+          <p>Directional positions, volatile P&L, risk-on/risk-off cycles.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('matched')">
+          <h3>Matched Principal <span class="trading-badge">Client Driven</span></h3>
+          <p>Back-to-back trades, client-driven volumes, minimal inventory.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('hybrid')">
+          <h3>Hybrid Dealer <span class="trading-badge">Mixed</span></h3>
+          <p>Mix of prop and facilitation, varied strategies, complex flow.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Data Configuration</h2>
+      <div class="row">
+        <div>
+          <label class="label" for="startDate">Start Date</label>
+          <input type="date" id="startDate" class="input" />
+        </div>
+        <div>
+          <label class="label" for="endDate">End Date</label>
+          <input type="date" id="endDate" class="input" />
+        </div>
+      </div>
+      
+      <div class="row" style="margin-top:16px">
+        <div>
+          <label class="label" for="tradingStyle">Trading Style</label>
+          <select id="tradingStyle" class="select" onchange="updateTradingStyle()">
+            <option value="marketMaking">Market Making</option>
+            <option value="directional">Directional Trading</option>
+            <option value="arbitrage">Arbitrage</option>
+            <option value="matched">Matched Principal</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="includeWeekends">Weekend Activity</label>
+          <select id="includeWeekends" class="select">
+            <option value="no">Weekdays Only</option>
+            <option value="crypto">Crypto Markets (24/7)</option>
+            <option value="reduced">Reduced (FX only)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Trading Flow Parameters</h2>
+      
+      <h3 style="color:#ef4444;font-size:1.1rem;margin-bottom:16px">Volume Configuration</h3>
+      <div class="range-container">
+        <div class="range-label">
+          <span>Base Daily Cash DTF</span>
+          <span class="range-value" id="baseCashValue">£20,000,000</span>
+        </div>
+        <input type="range" id="baseCash" class="input" min="1000000" max="200000000" step="1000000" value="20000000" 
+               oninput="updateValue('baseCash', 'baseCashValue')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Base Daily Derivatives DTF</span>
+          <span class="range-value" id="baseDerivValue">£50,000,000</span>
+        </div>
+        <input type="range" id="baseDeriv" class="input" min="1000000" max="500000000" step="5000000" value="50000000" 
+               oninput="updateValue('baseDeriv', 'baseDerivValue')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Daily Volatility</span>
+          <span class="range-value" id="volatilityValue">30%</span>
+        </div>
+        <input type="range" id="volatility" class="input" min="5" max="100" step="5" value="30" 
+               oninput="updateValue('volatility', 'volatilityValue', '%')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Directional Bias</span>
+          <span class="range-value" id="biasValue">Neutral</span>
+        </div>
+        <input type="range" id="bias" class="input" min="-50" max="50" step="10" value="0" 
+               oninput="updateBias()" />
+        <div class="note">Tendency to increase/decrease positions over time</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Market Patterns & Events</h2>
+      <div class="pattern-desc">
+        Configure realistic market conditions and trading patterns
+      </div>
+      
+      <div class="checkbox-group">
+        <div class="checkbox-item">
+          <input type="checkbox" id="volatilityRegimes" checked>
+          <label for="volatilityRegimes">Volatility Regime Changes</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="riskOnOff" checked>
+          <label for="riskOnOff">Risk-On/Risk-Off Cycles</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="monthEndRebalance">
+          <label for="monthEndRebalance">Month-end Rebalancing</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="earningsSeason">
+          <label for="earningsSeason">Earnings Season Spikes</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="flashCrash">
+          <label for="flashCrash">Flash Crash Event</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="regulatoryEvent">
+          <label for="regulatoryEvent">Regulatory Shutdown</label>
+        </div>
+      </div>
+      
+      <div class="range-container" id="volRegimeSection" style="display:none">
+        <div class="range-label">
+          <span>High Vol Period Impact</span>
+          <span class="range-value" id="volImpactValue">2x</span>
+        </div>
+        <input type="range" id="volImpact" class="input" min="1.5" max="5" step="0.5" value="2" 
+               oninput="updateValue('volImpact', 'volImpactValue', 'x')" />
+        <div class="note">Volume multiplier during high volatility periods</div>
+      </div>
+      
+      <div class="range-container" id="flashSection" style="display:none">
+        <div class="range-label">
+          <span>Flash Crash Spike</span>
+          <span class="range-value" id="flashValue">10x</span>
+        </div>
+        <input type="range" id="flashSpike" class="input" min="5" max="20" step="1" value="10" 
+               oninput="updateValue('flashSpike', 'flashValue', 'x')" />
+        <div class="note">Volume spike during market disruption</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Generate Data</h2>
+      <div style="margin-bottom:16px">
+        <button class="btn" onclick="generateData()">Generate CSV</button>
+        <button class="btn btn-secondary" onclick="previewData()">Preview First 10 Days</button>
+      </div>
+      
+      <div id="stats" class="grid" style="display:none;margin-bottom:16px"></div>
+      <div id="preview" class="preview" style="display:none"></div>
+      
+      <div id="downloadSection" class="download-info" style="display:none">
+        <h3>✓ Data Generated Successfully!</h3>
+        <p id="downloadInfo"></p>
+        <button class="btn" id="downloadBtn" style="margin-top:12px">Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Initialize dates
+function initDates() {
+  const end = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 1); // 1 year of data
+  
+  document.getElementById('startDate').value = formatDateInput(start);
+  document.getElementById('endDate').value = formatDateInput(end);
+}
+
+function formatDateInput(date) {
+  return date.toISOString().split('T')[0];
+}
+
+function formatDateOutput(date) {
+  const d = date.getDate().toString().padStart(2, '0');
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}.${m}.${y}`;
+}
+
+// Update display values
+function updateValue(inputId, displayId, suffix = '') {
+  const value = parseFloat(document.getElementById(inputId).value);
+  const display = document.getElementById(displayId);
+  
+  if (suffix === '%') {
+    display.textContent = value + suffix;
+  } else if (suffix === 'x') {
+    display.textContent = value + suffix;
+  } else {
+    display.textContent = '£' + value.toLocaleString('en-GB');
+  }
+}
+
+function updateBias() {
+  const value = parseInt(document.getElementById('bias').value);
+  const display = document.getElementById('biasValue');
+  
+  if (value > 0) {
+    display.textContent = `Bullish (+${value}%)`;
+  } else if (value < 0) {
+    display.textContent = `Bearish (${value}%)`;
+  } else {
+    display.textContent = 'Neutral';
+  }
+}
+
+function updateTradingStyle() {
+  const style = document.getElementById('tradingStyle').value;
+  
+  // Adjust volatility based on trading style
+  switch(style) {
+    case 'marketMaking':
+      document.getElementById('volatility').value = 20;
+      document.getElementById('bias').value = 0;
+      break;
+    case 'directional':
+      document.getElementById('volatility').value = 50;
+      break;
+    case 'arbitrage':
+      document.getElementById('volatility').value = 15;
+      document.getElementById('bias').value = 0;
+      break;
+    case 'matched':
+      document.getElementById('volatility').value = 25;
+      break;
+  }
+  
+  updateValue('volatility', 'volatilityValue', '%');
+  updateBias();
+}
+
+// Pattern handlers
+document.getElementById('volatilityRegimes').addEventListener('change', function(e) {
+  document.getElementById('volRegimeSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+document.getElementById('flashCrash').addEventListener('change', function(e) {
+  document.getElementById('flashSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+// Load scenarios
+function loadScenario(scenario) {
+  // Clear all checkboxes first
+  document.querySelectorAll('.checkbox-item input').forEach(cb => cb.checked = false);
+  
+  // Remove selected class from all cards
+  document.querySelectorAll('.scenario-card').forEach(card => card.classList.remove('selected'));
+  
+  // Add selected class to clicked card
+  event.currentTarget.classList.add('selected');
+  
+  switch(scenario) {
+    case 'marketMaker':
+      document.getElementById('tradingStyle').value = 'marketMaking';
+      document.getElementById('baseCash').value = 50000000;
+      document.getElementById('baseDeriv').value = 100000000;
+      document.getElementById('volatility').value = 20;
+      document.getElementById('bias').value = 0;
+      document.getElementById('volatilityRegimes').checked = true;
+      document.getElementById('monthEndRebalance').checked = true;
+      document.getElementById('volRegimeSection').style.display = 'block';
+      updateValue('baseCash', 'baseCashValue');
+      updateValue('baseDeriv', 'baseDerivValue');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateBias();
+      break;
+      
+    case 'propShop':
+      document.getElementById('tradingStyle').value = 'directional';
+      document.getElementById('baseCash').value = 20000000;
+      document.getElementById('baseDeriv').value = 80000000;
+      document.getElementById('volatility').value = 60;
+      document.getElementById('bias').value = 20;
+      document.getElementById('riskOnOff').checked = true;
+      document.getElementById('earningsSeason').checked = true;
+      document.getElementById('flashCrash').checked = true;
+      document.getElementById('flashSection').style.display = 'block';
+      updateValue('baseCash', 'baseCashValue');
+      updateValue('baseDeriv', 'baseDerivValue');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateBias();
+      break;
+      
+    case 'matched':
+      document.getElementById('tradingStyle').value = 'matched';
+      document.getElementById('baseCash').value = 30000000;
+      document.getElementById('baseDeriv').value = 10000000;
+      document.getElementById('volatility').value = 25;
+      document.getElementById('bias').value = 0;
+      document.getElementById('monthEndRebalance').checked = true;
+      updateValue('baseCash', 'baseCashValue');
+      updateValue('baseDeriv', 'baseDerivValue');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateBias();
+      break;
+      
+    case 'hybrid':
+      document.getElementById('tradingStyle').value = 'directional';
+      document.getElementById('baseCash').value = 40000000;
+      document.getElementById('baseDeriv').value = 60000000;
+      document.getElementById('volatility').value = 35;
+      document.getElementById('bias').value = 10;
+      document.getElementById('volatilityRegimes').checked = true;
+      document.getElementById('riskOnOff').checked = true;
+      document.getElementById('earningsSeason').checked = true;
+      document.getElementById('volRegimeSection').style.display = 'block';
+      updateValue('baseCash', 'baseCashValue');
+      updateValue('baseDeriv', 'baseDerivValue');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateBias();
+      break;
+  }
+}
+
+// Generate data
+function generateData() {
+  const startDate = new Date(document.getElementById('startDate').value);
+  const endDate = new Date(document.getElementById('endDate').value);
+  const tradingStyle = document.getElementById('tradingStyle').value;
+  const weekendActivity = document.getElementById('includeWeekends').value;
+  
+  // Get parameters
+  const baseCash = parseInt(document.getElementById('baseCash').value);
+  const baseDeriv = parseInt(document.getElementById('baseDeriv').value);
+  const volatility = parseInt(document.getElementById('volatility').value) / 100;
+  const bias = parseInt(document.getElementById('bias').value) / 100;
+  
+  // Get patterns
+  const patterns = {
+    volRegimes: document.getElementById('volatilityRegimes').checked,
+    riskOnOff: document.getElementById('riskOnOff').checked,
+    monthEnd: document.getElementById('monthEndRebalance').checked,
+    earnings: document.getElementById('earningsSeason').checked,
+    flash: document.getElementById('flashCrash').checked,
+    regulatory: document.getElementById('regulatoryEvent').checked,
+    volImpact: parseFloat(document.getElementById('volImpact').value),
+    flashSpike: parseFloat(document.getElementById('flashSpike').value)
+  };
+  
+  // Generate data
+  const data = [];
+  let currentDate = new Date(startDate);
+  let dayCount = 0;
+  
+  // Track volatility regime
+  let inHighVol = false;
+  let volRegimeCount = 0;
+  
+  // Risk on/off cycle
+  let riskOn = true;
+  let riskCycleCount = 0;
+  
+  // Determine flash crash day (if enabled)
+  const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+  const flashDay = patterns.flash ? Math.floor(totalDays * 0.4 + Math.random() * totalDays * 0.3) : -1;
+  
+  // Regulatory event (temporary shutdown)
+  const regDay = patterns.regulatory ? Math.floor(totalDays * 0.7 + Math.random() * totalDays * 0.2) : -1;
+  
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getDay();
+    const dayOfMonth = currentDate.getDate();
+    const month = currentDate.getMonth();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Skip weekends based on setting
+    if (isWeekend && weekendActivity === 'no') {
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayCount++;
+      continue;
+    }
+    
+    // Calculate base multipliers
+    let cashMultiplier = 1;
+    let derivMultiplier = 1;
+    
+    // Apply directional bias (cumulative drift)
+    if (bias !== 0) {
+      const drift = 1 + (bias * dayCount / 365);
+      cashMultiplier *= drift;
+      derivMultiplier *= drift;
+    }
+    
+    // Volatility regimes (switch every 20-40 days)
+    if (patterns.volRegimes) {
+      volRegimeCount++;
+      if (volRegimeCount > 20 + Math.random() * 20) {
+        inHighVol = !inHighVol;
+        volRegimeCount = 0;
+      }
+      
+      if (inHighVol) {
+        cashMultiplier *= patterns.volImpact;
+        derivMultiplier *= patterns.volImpact;
+      }
+    }
+    
+    // Risk on/off cycles
+    if (patterns.riskOnOff) {
+      riskCycleCount++;
+      if (riskCycleCount > 15 + Math.random() * 15) {
+        riskOn = !riskOn;
+        riskCycleCount = 0;
+      }
+      
+      if (!riskOn) {
+        derivMultiplier *= 0.5; // Derivatives drop more in risk-off
+        cashMultiplier *= 0.8;
+      }
+    }
+    
+    // Month-end rebalancing
+    if (patterns.monthEnd && dayOfMonth >= 27) {
+      cashMultiplier *= 1.3;
+      derivMultiplier *= 1.5;
+    }
+    
+    // Earnings season (quarterly, mid-month)
+    if (patterns.earnings) {
+      const isEarnings = (month === 0 || month === 3 || month === 6 || month === 9) && 
+                        (dayOfMonth >= 10 && dayOfMonth <= 20);
+      if (isEarnings) {
+        cashMultiplier *= 1.4;
+        derivMultiplier *= 1.6;
+      }
+    }
+    
+    // Flash crash event
+    if (patterns.flash && dayCount === flashDay) {
+      cashMultiplier *= patterns.flashSpike;
+      derivMultiplier *= patterns.flashSpike * 1.5; // Derivatives spike more
+    }
+    
+    // Regulatory shutdown
+    if (patterns.regulatory && dayCount >= regDay && dayCount < regDay + 5) {
+      cashMultiplier *= 0.1; // 90% reduction for a week
+      derivMultiplier *= 0.05; // 95% reduction for derivatives
+    }
+    
+    // Weekend reduction
+    if (isWeekend) {
+      if (weekendActivity === 'crypto') {
+        cashMultiplier *= 0.8;
+        derivMultiplier *= 1.2; // Crypto derivatives active on weekends
+      } else if (weekendActivity === 'reduced') {
+        cashMultiplier *= 0.3; // FX only
+        derivMultiplier *= 0.1;
+      }
+    }
+    
+    // Apply daily randomness
+    const randomCash = 1 + (Math.random() - 0.5) * 2 * volatility;
+    const randomDeriv = 1 + (Math.random() - 0.5) * 2 * volatility * 1.2; // Derivatives more volatile
+    
+    // Calculate final values
+    let cashDTF = baseCash * cashMultiplier * randomCash;
+    let derivDTF = baseDeriv * derivMultiplier * randomDeriv;
+    
+    // Trading style adjustments
+    switch(tradingStyle) {
+      case 'marketMaking':
+        // Market makers have more consistent flow
+        cashDTF = cashDTF * (0.8 + Math.random() * 0.4);
+        derivDTF = derivDTF * (0.8 + Math.random() * 0.4);
+        break;
+      case 'arbitrage':
+        // Arbitrage has bursts when opportunities arise
+        if (Math.random() < 0.1) {
+          cashDTF *= 3;
+          derivDTF *= 3;
+        }
+        break;
+      case 'matched':
+        // Matched principal follows client patterns
+        if (dayOfWeek === 1 || dayOfWeek === 5) {
+          cashDTF *= 1.2;
+        }
+        break;
+    }
+    
+    // Ensure non-negative
+    cashDTF = Math.max(0, cashDTF);
+    derivDTF = Math.max(0, derivDTF);
+    
+    data.push({
+      date: formatDateOutput(currentDate),
+      cash: Math.round(cashDTF),
+      deriv: Math.round(derivDTF)
+    });
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+    dayCount++;
+  }
+  
+  // Generate CSV
+  let csv = 'Date,Cash_DTF,Derivatives_DTF\n';
+  data.forEach(row => {
+    csv += `${row.date},${row.cash},${row.deriv}\n`;
+  });
+  
+  // Store for download
+  window.generatedCSV = csv;
+  window.generatedData = data;
+  
+  // Show stats
+  showStats(data);
+  
+  // Show download section
+  const downloadSection = document.getElementById('downloadSection');
+  downloadSection.style.display = 'block';
+  document.getElementById('downloadInfo').textContent = 
+    `Generated ${data.length} days of data from ${data[0].date} to ${data[data.length-1].date}`;
+}
+
+function showStats(data) {
+  const statsDiv = document.getElementById('stats');
+  statsDiv.style.display = 'grid';
+  statsDiv.innerHTML = '';
+  
+  // Calculate stats
+  const cashValues = data.map(d => d.cash).filter(v => v > 0);
+  const derivValues = data.map(d => d.deriv).filter(v => v > 0);
+  
+  const avgCash = cashValues.reduce((a,b) => a+b, 0) / cashValues.length;
+  const avgDeriv = derivValues.reduce((a,b) => a+b, 0) / derivValues.length;
+  const maxTotal = Math.max(...data.map(d => d.cash + d.deriv));
+  const zerodays = data.filter(d => d.cash === 0 && d.deriv === 0).length;
+  
+  const stats = [
+    {
+      label: 'Total Days',
+      value: data.length.toLocaleString()
+    },
+    {
+      label: 'Avg Cash DTF',
+      value: '£' + Math.round(avgCash).toLocaleString('en-GB')
+    },
+    {
+      label: 'Avg Deriv DTF',
+      value: '£' + Math.round(avgDeriv).toLocaleString('en-GB')
+    },
+    {
+      label: 'Peak Day',
+      value: '£' + Math.round(maxTotal).toLocaleString('en-GB')
+    }
+  ];
+  
+  stats.forEach(stat => {
+    const box = document.createElement('div');
+    box.className = 'stat-box';
+    box.innerHTML = `<h4>${stat.label}</h4><p>${stat.value}</p>`;
+    statsDiv.appendChild(box);
+  });
+}
+
+function previewData() {
+  if (!window.generatedData) {
+    alert('Generate data first!');
+    return;
+  }
+  
+  const preview = document.getElementById('preview');
+  preview.style.display = 'block';
+  
+  let text = 'Date,Cash_DTF,Derivatives_DTF\n';
+  window.generatedData.slice(0, 10).forEach(row => {
+    text += `${row.date},${row.cash.toLocaleString('en-GB')},${row.deriv.toLocaleString('en-GB')}\n`;
+  });
+  
+  if (window.generatedData.length > 10) {
+    text += '...\n';
+    text += `(${window.generatedData.length - 10} more rows)`;
+  }
+  
+  preview.textContent = text;
+}
+
+// Download handler
+document.getElementById('downloadBtn').addEventListener('click', function() {
+  const blob = new Blob([window.generatedCSV], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kdtf_test_data_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// Initialize
+initDates();
+// Set initial visibility
+document.getElementById('volRegimeSection').style.display = 'block';
+</script>
+</body>
+</html>

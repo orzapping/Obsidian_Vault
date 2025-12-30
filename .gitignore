@@ -1,0 +1,23 @@
+# Obsidian workspace and cache (volatile, machine-specific)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/.obsidian-git-state
+
+# macOS metadata
+.DS_Store
+._*
+
+# Thumbnails
+.thumbnails
+
+# Local config that shouldn't sync
+.trash/
+
+# Editor backup files
+*~
+*.swp
+*.swo
+
+# Claude Code local settings (if any)
+.claude/settings.local.json

@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wind-Down Assessment (WDA) Calculator - Enhanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+        }
+        .input-field {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+        }
+        .input-field:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        .formula-box {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+        .timeline-slider {
+            background: linear-gradient(to right, #4f46e5 0%, #4f46e5 var(--value), #1e293b var(--value), #1e293b 100%);
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #4f46e5;
+            border: 3px solid #e0e7ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        .modal-content {
+            background: #111827;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+        .tab-button:hover {
+            background: rgba(79, 70, 229, 0.1);
+        }
+        .tab-button.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .metric-card {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        .phase-card {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .critical-item {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">
+                Wind-Down Assessment (WDA) Calculator
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">MiFIDPRU 7.8 - Orderly Wind-Down Capital Requirement</p>
+        </header>
+
+        <!-- Main Formula Display -->
+        <div class="card p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-orange-400">WDA Formula</h2>
+            <div class="formula-box text-center text-lg">
+                WDA = Total Wind-Down Costs over Wind-Down Period
+                <div class="text-sm mt-2 text-gray-400">
+                    Ensuring orderly closure without harm to clients or markets
+                </div>
+            </div>
+        </div>
+
+        <!-- Wind-Down Timeline -->
+        <div class="card p-6 mb-6 bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-500">
+            <h3 class="text-xl font-bold mb-4 text-orange-400">Wind-Down Timeline</h3>
+            <div class="mb-4">
+                <input type="range" id="winddownPeriod" class="timeline-slider w-full" 
+                       min="3" max="24" value="12" 
+                       oninput="updateWinddownPeriod(this.value)"
+                       style="--value: 37.5%">
+            </div>
+            <div class="flex justify-between text-sm text-gray-400">
+                <span>3 months</span>
+                <span class="text-2xl font-bold text-white" id="periodDisplay">12 months</span>
+                <span>24 months</span>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <button onclick="showPhasingModal()" class="card p-4 text-center hover:border-orange-500 transition-all">
+                <div class="text-2xl mb-2">📅</div>
+                <div class="font-bold">Cost Phasing</div>
+                <div class="text-sm text-gray-400">Timeline distribution</div>
+            </button>
+            <button onclick="showCriticalPathModal()" class="card p-4 text-center hover:border-orange-500 transition-all">
+                <div class="text-2xl mb-2">🎯</div>
+                <div class="font-bold">Critical Path</div>
+                <div class="text-sm text-gray-400">Key activities</div>
+            </button>
+            <button onclick="showStressModal()" class="card p-4 text-center hover:border-orange-500 transition-all">
+                <div class="text-2xl mb-2">⚡</div>
+                <div class="font-bold">Stress Scenarios</div>
+                <div class="text-sm text-gray-400">Adverse conditions</div>
+            </button>
+        </div>
+
+        <!-- Calculation Approach Selector -->
+        <div class="card p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-cyan-400">Calculation Method</h2>
+                <div class="flex gap-2">
+                    <button id="consolidatedBtn" onclick="setApproach('consolidated')" class="tab-button active">
+                        Consolidated
+                    </button>
+                    <button id="granularBtn" onclick="setApproach('granular')" class="tab-button">
+                        Granular
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Consolidated Approach -->
+            <div id="consolidatedTab" class="tab-content active">
+                <p class="text-gray-400 mb-4">Enter your total estimated wind-down costs</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Total Wind-Down Costs (£)</label>
+                        <input type="number" id="totalCosts" class="input-field" 
+                               placeholder="0" oninput="calculateConsolidated()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Last Review Date</label>
+                        <input type="date" id="reviewDate" class="input-field">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Granular Approach -->
+            <div id="granularTab" class="tab-content">
+                <p class="text-gray-400 mb-4">Break down wind-down costs by category. Enter totals or expand for detailed subcategories.</p>
+                <div id="granularInputs" class="space-y-4">
+                    <!-- Dynamic granular inputs will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- WDA Calculation Result -->
+        <div class="card p-6 mb-6 bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-500">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-2">Wind-Down Assessment (WDA)</h3>
+                <div class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">
+                    £<span id="wdaResult">0</span>
+                </div>
+                <div class="mt-4 text-gray-400">
+                    <span id="monthlyBreakdown"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Cost Timeline Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-purple-400">Cost Distribution Timeline</h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Category Breakdown Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-green-400">Category Breakdown</h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="breakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="monthlyBurn">£0</div>
+                <div class="text-sm text-gray-400">Monthly Burn Rate</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="upfrontCosts">£0</div>
+                <div class="text-sm text-gray-400">Upfront Costs</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="criticalActivities">0</div>
+                <div class="text-sm text-gray-400">Critical Activities</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="stressFactor">1.0x</div>
+                <div class="text-sm text-gray-400">Stress Factor</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-4 justify-center">
+            <button onclick="exportData()" class="btn-primary">
+                📥 Export Assessment
+            </button>
+            <button onclick="generateReport()" class="btn-primary">
+                📄 Generate Report
+            </button>
+            <button onclick="compareScenarios()" class="btn-primary">
+                🔄 Compare Scenarios
+            </button>
+        </div>
+    </div>
+
+    <!-- Cost Phasing Modal -->
+    <div id="phasingModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Wind-Down Cost Phasing</h2>
+                    <button onclick="closeModal('phasingModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <p class="text-gray-400 mb-6">
+                    Define how costs are distributed across the wind-down period
+                </p>
+
+                <div class="space-y-4">
+                    <div class="phase-card">
+                        <h4 class="font-bold text-green-400 mb-2">Phase 1: Immediate (0-3 months)</h4>
+                        <input type="range" id="phase1Percent" min="0" max="100" value="40" 
+                               oninput="updatePhasing()" class="w-full mb-2">
+                        <div class="flex justify-between text-sm">
+                            <span>Percentage: <span id="phase1Display">40%</span></span>
+                            <span>Amount: £<span id="phase1Amount">0</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="phase-card">
+                        <h4 class="font-bold text-yellow-400 mb-2">Phase 2: Core Wind-Down (3-9 months)</h4>
+                        <input type="range" id="phase2Percent" min="0" max="100" value="40" 
+                               oninput="updatePhasing()" class="w-full mb-2">
+                        <div class="flex justify-between text-sm">
+                            <span>Percentage: <span id="phase2Display">40%</span></span>
+                            <span>Amount: £<span id="phase2Amount">0</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="phase-card">
+                        <h4 class="font-bold text-orange-400 mb-2">Phase 3: Final Activities (9+ months)</h4>
+                        <input type="range" id="phase3Percent" min="0" max="100" value="20" 
+                               oninput="updatePhasing()" class="w-full mb-2">
+                        <div class="flex justify-between text-sm">
+                            <span>Percentage: <span id="phase3Display">20%</span></span>
+                            <span>Amount: £<span id="phase3Amount">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <div class="text-sm text-gray-400">Total must equal 100%</div>
+                    <div class="text-2xl font-bold" id="phasingTotal">100%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critical Path Modal -->
+    <div id="criticalPathModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Critical Path Activities</h2>
+                    <button onclick="closeModal('criticalPathModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="space-y-4" id="criticalPathList">
+                    <!-- Dynamic critical path items -->
+                </div>
+
+                <button onclick="addCriticalActivity()" class="btn-primary w-full mt-4">
+                    + Add Critical Activity
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stress Scenarios Modal -->
+    <div id="stressModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Wind-Down Stress Scenarios</h2>
+                    <button onclick="closeModal('stressModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-bold mb-3 text-red-400">Adverse Market Scenario</h3>
+                        <label class="block text-sm mb-2">Client Transfer Delays (%)</label>
+                        <input type="number" id="transferDelay" class="input-field mb-3" value="25">
+                        
+                        <label class="block text-sm mb-2">Regulatory Complexity (%)</label>
+                        <input type="number" id="regComplexity" class="input-field mb-3" value="20">
+                        
+                        <label class="block text-sm mb-2">Market Volatility Impact (%)</label>
+                        <input type="number" id="marketVolatility" class="input-field" value="15">
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold mb-3 text-yellow-400">Operational Challenges</h3>
+                        <label class="block text-sm mb-2">Key Staff Retention Cost (%)</label>
+                        <input type="number" id="staffRetention" class="input-field mb-3" value="30">
+                        
+                        <label class="block text-sm mb-2">System Migration Issues (%)</label>
+                        <input type="number" id="systemIssues" class="input-field mb-3" value="20">
+                        
+                        <label class="block text-sm mb-2">Legal Complexity (%)</label>
+                        <input type="number" id="legalComplexity" class="input-field" value="25">
+                    </div>
+                </div>
+
+                <button onclick="applyStressScenarios()" class="btn-primary w-full mt-6">
+                    Apply Stress Scenarios
+                </button>
+
+                <div id="stressResults" class="mt-6 hidden">
+                    <!-- Stress results will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let calculationApproach = 'consolidated';
+        let winddownPeriod = 12;
+        let costCategories = {
+            staff: { 
+                name: 'Staff Costs', 
+                value: 0, 
+                icon: '👥',
+                subcategories: {
+                    redundancy: { name: 'Redundancy Payments', value: 0 },
+                    notice: { name: 'Notice Period Costs', value: 0 },
+                    retention: { name: 'Retention Bonuses', value: 0 },
+                    outplacement: { name: 'Outplacement Services', value: 0 }
+                }
+            },
+            professional: { 
+                name: 'Professional Fees', 
+                value: 0, 
+                icon: '⚖️',
+                subcategories: {
+                    legal: { name: 'Legal (Closure/Transfer)', value: 0 },
+                    accounting: { name: 'Final Audit & Accounting', value: 0 },
+                    insolvency: { name: 'Insolvency Practitioners', value: 0 },
+                    advisory: { name: 'Specialist Advisory', value: 0 }
+                }
+            },
+            technology: { 
+                name: 'Technology/IT Costs', 
+                value: 0, 
+                icon: '💻',
+                subcategories: {
+                    migration: { name: 'Data Migration', value: 0 },
+                    decommission: { name: 'System Decommissioning', value: 0 },
+                    licenses: { name: 'License Termination', value: 0 },
+                    security: { name: 'Security & Archival', value: 0 }
+                }
+            },
+            occupancy: { 
+                name: 'Occupancy & Facilities', 
+                value: 0, 
+                icon: '🏢',
+                subcategories: {
+                    leasebreak: { name: 'Lease Break Costs', value: 0 },
+                    dilapidations: { name: 'Dilapidations', value: 0 },
+                    removal: { name: 'Removal & Storage', value: 0 },
+                    utilities: { name: 'Final Utilities', value: 0 }
+                }
+            },
+            regulatory: { 
+                name: 'Regulatory & Compliance', 
+                value: 0, 
+                icon: '📋',
+                subcategories: {
+                    notifications: { name: 'Regulatory Notifications', value: 0 },
+                    finalreports: { name: 'Final Reports & Filings', value: 0 },
+                    surrender: { name: 'License Surrender', value: 0 },
+                    closeout: { name: 'Compliance Closeout', value: 0 }
+                }
+            },
+            client: { 
+                name: 'Client Transfer Costs', 
+                value: 0, 
+                icon: '🤝',
+                subcategories: {
+                    transfer: { name: 'Asset Transfer Costs', value: 0 },
+                    communication: { name: 'Client Communications', value: 0 },
+                    compensation: { name: 'Compensation/Goodwill', value: 0 },
+                    support: { name: 'Transition Support', value: 0 }
+                }
+            }
+        };
+        let phasing = { phase1: 40, phase2: 40, phase3: 20 };
+        let criticalActivities = [];
+        let stressFactors = {};
+        let timelineChart = null;
+        let breakdownChart = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            setupGranularInputs();
+            updateCharts();
+            calculateWDA();
+            
+            // Set initial approach UI
+            setApproach(calculationApproach);
+            
+            // Initialize default critical activities
+            initializeDefaultCriticalActivities();
+        });
+
+        function updateWinddownPeriod(value) {
+            winddownPeriod = parseInt(value);
+            document.getElementById('periodDisplay').textContent = `${winddownPeriod} months`;
+            
+            // Update slider visual
+            const percent = ((value - 3) / 21) * 100;
+            document.getElementById('winddownPeriod').style.setProperty('--value', `${percent}%`);
+            
+            calculateWDA();
+            updateCharts();
+            saveData();
+        }
+
+        function setApproach(approach) {
+            calculationApproach = approach;
+            
+            // Update UI
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            
+            if (approach === 'consolidated') {
+                document.getElementById('consolidatedBtn').classList.add('active');
+                document.getElementById('consolidatedTab').classList.add('active');
+                calculateConsolidated();
+            } else {
+                document.getElementById('granularBtn').classList.add('active');
+                document.getElementById('granularTab').classList.add('active');
+                // Ensure granular inputs are set up
+                if (document.getElementById('granularInputs').innerHTML === '') {
+                    setupGranularInputs();
+                }
+                calculateGranular();
+            }
+            
+            saveData();
+        }
+
+        function setupGranularInputs() {
+            const container = document.getElementById('granularInputs');
+            if (!container) return;
+            
+            container.innerHTML = Object.entries(costCategories).map(([key, category]) => {
+                if (!category.subcategories) {
+                    console.error(`Missing subcategories for ${key}`);
+                    return '';
+                }
+                
+                return `
+                <div class="card p-4 mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">${category.icon}</span>
+                            <h3 class="font-bold text-lg">${category.name}</h3>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="${key}Total" class="input-field w-40" 
+                                   placeholder="0" value="${category.value || 0}"
+                                   oninput="updateCategoryTotal('${key}', this.value)">
+                            <button onclick="toggleSubcategories('${key}')" 
+                                    class="text-sm text-orange-400 hover:text-orange-300">
+                                <span id="${key}Toggle">▼ Detail</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="${key}Subcategories" class="hidden pl-10 space-y-2">
+                        ${Object.entries(category.subcategories).map(([subKey, subcat]) => `
+                            <div class="grid grid-cols-12 gap-3 items-center">
+                                <div class="col-span-7 text-sm text-gray-400">
+                                    ${subcat.name}
+                                </div>
+                                <div class="col-span-5">
+                                    <input type="number" id="${key}_${subKey}" 
+                                           class="input-field text-sm" 
+                                           placeholder="0" value="${subcat.value || 0}"
+                                           oninput="updateSubcategory('${key}', '${subKey}', this.value)">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function toggleSubcategories(category) {
+            const subcatDiv = document.getElementById(`${category}Subcategories`);
+            const toggleSpan = document.getElementById(`${category}Toggle`);
+            
+            if (!subcatDiv || !toggleSpan) return;
+            
+            if (subcatDiv.classList.contains('hidden')) {
+                subcatDiv.classList.remove('hidden');
+                toggleSpan.textContent = '▲ Hide';
+            } else {
+                subcatDiv.classList.add('hidden');
+                toggleSpan.textContent = '▼ Detail';
+            }
+        }
+
+        function updateCategoryTotal(category, value) {
+            if (!costCategories[category]) return;
+            
+            costCategories[category].value = parseFloat(value) || 0;
+            // Clear subcategories when total is manually entered
+            if (costCategories[category].subcategories) {
+                Object.keys(costCategories[category].subcategories).forEach(subKey => {
+                    costCategories[category].subcategories[subKey].value = 0;
+                    const input = document.getElementById(`${category}_${subKey}`);
+                    if (input) input.value = 0;
+                });
+            }
+            calculateGranular();
+        }
+
+        function updateSubcategory(category, subcategory, value) {
+            if (!costCategories[category] || !costCategories[category].subcategories) return;
+            
+            costCategories[category].subcategories[subcategory].value = parseFloat(value) || 0;
+            // Update category total based on subcategories
+            const total = Object.values(costCategories[category].subcategories)
+                .reduce((sum, sub) => sum + sub.value, 0);
+            costCategories[category].value = total;
+            const totalInput = document.getElementById(`${category}Total`);
+            if (totalInput) totalInput.value = total;
+            calculateGranular();
+        }
+
+        function calculateConsolidated() {
+            const totalCosts = parseFloat(document.getElementById('totalCosts').value) || 0;
+            const stressFactor = Object.values(stressFactors).length > 0 
+                ? 1 + (Object.values(stressFactors).reduce((sum, val) => sum + val, 0) / 100)
+                : 1;
+            const wdaValue = totalCosts * stressFactor;
+            
+            updateResults(wdaValue, totalCosts);
+            saveData();
+        }
+
+        function calculateGranular() {
+            const totalCosts = Object.values(costCategories).reduce((sum, cat) => sum + cat.value, 0);
+            const stressFactor = Object.values(stressFactors).length > 0 
+                ? 1 + (Object.values(stressFactors).reduce((sum, val) => sum + val, 0) / 100)
+                : 1;
+            const wdaValue = totalCosts * stressFactor;
+            
+            updateResults(wdaValue, totalCosts);
+            updateCharts();
+            saveData();
+        }
+
+        function calculateWDA() {
+            if (calculationApproach === 'consolidated') {
+                calculateConsolidated();
+            } else {
+                calculateGranular();
+            }
+        }
+
+        function updateResults(wdaValue, baseCosts) {
+            // Update main result
+            document.getElementById('wdaResult').textContent = Math.round(wdaValue).toLocaleString();
+            
+            // Update period breakdown
+            const monthlyBurn = baseCosts / winddownPeriod;
+            document.getElementById('monthlyBreakdown').textContent = 
+                `Over ${winddownPeriod} months at £${Math.round(monthlyBurn).toLocaleString()}/month (base costs)`;
+            
+            // Update metrics
+            document.getElementById('monthlyBurn').textContent = 
+                `£${Math.round(monthlyBurn).toLocaleString()}`;
+            
+            // Calculate upfront costs based on phasing
+            const upfront = baseCosts * (phasing.phase1 / 100);
+            document.getElementById('upfrontCosts').textContent = 
+                `£${Math.round(upfront).toLocaleString()}`;
+            
+            document.getElementById('criticalActivities').textContent = criticalActivities.length;
+            
+            const stressFactor = wdaValue / baseCosts;
+            document.getElementById('stressFactor').textContent = `${stressFactor.toFixed(2)}x`;
+        }
+
+        function updateCharts() {
+            updateTimelineChart();
+            updateBreakdownChart();
+        }
+
+        function updateTimelineChart() {
+            const ctx = document.getElementById('timelineChart');
+            if (!ctx) return;
+            
+            // Generate monthly cost distribution based on phasing
+            const months = Array.from({length: winddownPeriod}, (_, i) => `Month ${i + 1}`);
+            const totalCosts = calculationApproach === 'consolidated' 
+                ? parseFloat(document.getElementById('totalCosts').value) || 0
+                : Object.values(costCategories).reduce((sum, cat) => sum + cat.value, 0);
+            
+            const monthlyData = months.map((_, index) => {
+                const progress = index / winddownPeriod;
+                if (progress < 0.25) return totalCosts * phasing.phase1 / 100 / (winddownPeriod * 0.25);
+                if (progress < 0.75) return totalCosts * phasing.phase2 / 100 / (winddownPeriod * 0.5);
+                return totalCosts * phasing.phase3 / 100 / (winddownPeriod * 0.25);
+            });
+            
+            const chartData = {
+                labels: months,
+                datasets: [{
+                    label: 'Monthly Wind-Down Costs',
+                    data: monthlyData,
+                    backgroundColor: 'rgba(251, 146, 60, 0.5)',
+                    borderColor: '#fb923c',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            };
+            
+            if (timelineChart) {
+                timelineChart.data = chartData;
+                timelineChart.update();
+            } else {
+                timelineChart = new Chart(ctx.getContext('2d'), {
+                    type: 'line',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#1e293b' }
+                            },
+                            x: {
+                                ticks: { color: '#e0e7ff' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateBreakdownChart() {
+            const ctx = document.getElementById('breakdownChart');
+            if (!ctx) return;
+            
+            const data = Object.entries(costCategories)
+                .filter(([_, cat]) => cat.value > 0)
+                .map(([key, cat]) => ({
+                    label: cat.name,
+                    value: cat.value
+                }));
+            
+            if (data.length === 0) {
+                if (breakdownChart) {
+                    breakdownChart.destroy();
+                    breakdownChart = null;
+                }
+                return;
+            }
+            
+            const chartData = {
+                labels: data.map(d => d.label),
+                datasets: [{
+                    data: data.map(d => d.value),
+                    backgroundColor: [
+                        '#3b82f6', '#ec4899', '#10b981', '#f59e0b', 
+                        '#8b5cf6', '#ef4444'
+                    ]
+                }]
+            };
+            
+            if (breakdownChart) {
+                breakdownChart.data = chartData;
+                breakdownChart.update();
+            } else {
+                breakdownChart = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#e0e7ff' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function showPhasingModal() {
+            updatePhasingDisplay();
+            document.getElementById('phasingModal').style.display = 'block';
+        }
+
+        function showCriticalPathModal() {
+            updateCriticalPathDisplay();
+            document.getElementById('criticalPathModal').style.display = 'block';
+        }
+
+        function showStressModal() {
+            document.getElementById('stressModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function updatePhasing() {
+            const phase1 = parseInt(document.getElementById('phase1Percent').value);
+            const phase2 = parseInt(document.getElementById('phase2Percent').value);
+            const phase3 = parseInt(document.getElementById('phase3Percent').value);
+            
+            const total = phase1 + phase2 + phase3;
+            
+            if (total === 100) {
+                phasing = { phase1, phase2, phase3 };
+                updatePhasingDisplay();
+                calculateWDA();
+                saveData();
+            }
+            
+            document.getElementById('phasingTotal').textContent = `${total}%`;
+            document.getElementById('phasingTotal').style.color = total === 100 ? '#10b981' : '#ef4444';
+        }
+
+        function updatePhasingDisplay() {
+            const totalCosts = calculationApproach === 'consolidated' 
+                ? parseFloat(document.getElementById('totalCosts').value) || 0
+                : Object.values(costCategories).reduce((sum, cat) => sum + cat.value, 0);
+            
+            document.getElementById('phase1Display').textContent = `${phasing.phase1}%`;
+            document.getElementById('phase2Display').textContent = `${phasing.phase2}%`;
+            document.getElementById('phase3Display').textContent = `${phasing.phase3}%`;
+            
+            document.getElementById('phase1Amount').textContent = Math.round(totalCosts * phasing.phase1 / 100).toLocaleString();
+            document.getElementById('phase2Amount').textContent = Math.round(totalCosts * phasing.phase2 / 100).toLocaleString();
+            document.getElementById('phase3Amount').textContent = Math.round(totalCosts * phasing.phase3 / 100).toLocaleString();
+            
+            document.getElementById('phase1Percent').value = phasing.phase1;
+            document.getElementById('phase2Percent').value = phasing.phase2;
+            document.getElementById('phase3Percent').value = phasing.phase3;
+        }
+
+        function initializeDefaultCriticalActivities() {
+            if (criticalActivities.length === 0) {
+                criticalActivities = [
+                    { id: 1, activity: 'Client notification and consent', month: 1, status: 'pending' },
+                    { id: 2, activity: 'Regulatory wind-down notification', month: 1, status: 'pending' },
+                    { id: 3, activity: 'Staff consultation and redundancy', month: 2, status: 'pending' },
+                    { id: 4, activity: 'Client asset transfer initiation', month: 3, status: 'pending' },
+                    { id: 5, activity: 'Final regulatory reporting', month: winddownPeriod - 1, status: 'pending' }
+                ];
+            }
+        }
+
+        function updateCriticalPathDisplay() {
+            const container = document.getElementById('criticalPathList');
+            
+            if (criticalActivities.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No critical activities defined</p>';
+                return;
+            }
+            
+            container.innerHTML = criticalActivities
+                .sort((a, b) => a.month - b.month)
+                .map(activity => `
+                    <div class="critical-item flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold">${activity.activity}</div>
+                            <div class="text-sm text-gray-400">Month ${activity.month}</div>
+                        </div>
+                        <button onclick="removeCriticalActivity(${activity.id})" 
+                                class="text-red-400 hover:text-red-300">
+                            Remove
+                        </button>
+                    </div>
+                `).join('');
+        }
+
+        function addCriticalActivity() {
+            const activity = prompt('Critical activity description:');
+            if (!activity) return;
+            
+            const month = parseInt(prompt(`In which month (1-${winddownPeriod})?`));
+            if (isNaN(month) || month < 1 || month > winddownPeriod) return;
+            
+            criticalActivities.push({
+                id: Date.now(),
+                activity,
+                month,
+                status: 'pending'
+            });
+            
+            updateCriticalPathDisplay();
+            document.getElementById('criticalActivities').textContent = criticalActivities.length;
+            saveData();
+        }
+
+        function removeCriticalActivity(id) {
+            criticalActivities = criticalActivities.filter(a => a.id !== id);
+            updateCriticalPathDisplay();
+            document.getElementById('criticalActivities').textContent = criticalActivities.length;
+            saveData();
+        }
+
+        function applyStressScenarios() {
+            // Collect stress factors
+            stressFactors = {
+                transferDelay: parseFloat(document.getElementById('transferDelay').value) || 0,
+                regComplexity: parseFloat(document.getElementById('regComplexity').value) || 0,
+                marketVolatility: parseFloat(document.getElementById('marketVolatility').value) || 0,
+                staffRetention: parseFloat(document.getElementById('staffRetention').value) || 0,
+                systemIssues: parseFloat(document.getElementById('systemIssues').value) || 0,
+                legalComplexity: parseFloat(document.getElementById('legalComplexity').value) || 0
+            };
+            
+            const totalStress = Object.values(stressFactors).reduce((sum, val) => sum + val, 0);
+            const stressFactor = 1 + (totalStress / 100);
+            
+            // Display results
+            const resultsDiv = document.getElementById('stressResults');
+            resultsDiv.classList.remove('hidden');
+            
+            const baseCosts = calculationApproach === 'consolidated' 
+                ? parseFloat(document.getElementById('totalCosts').value) || 0
+                : Object.values(costCategories).reduce((sum, cat) => sum + cat.value, 0);
+            
+            const stressedCosts = baseCosts * stressFactor;
+            
+            resultsDiv.innerHTML = `
+                <div class="card p-4 border-red-500">
+                    <h4 class="font-bold text-red-400 mb-2">Stressed Wind-Down Assessment</h4>
+                    <p class="text-2xl font-bold">£${Math.round(stressedCosts).toLocaleString()}</p>
+                    <p class="text-sm text-gray-400 mt-1">
+                        Stress factor: ${stressFactor.toFixed(2)}x (${totalStress.toFixed(0)}% increase)
+                    </p>
+                    <div class="mt-3 text-sm">
+                        <div>Base WDA: £${Math.round(baseCosts).toLocaleString()}</div>
+                        <div>Stress Buffer: £${Math.round(stressedCosts - baseCosts).toLocaleString()}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Recalculate with stress
+            calculateWDA();
+            closeModal('stressModal');
+        }
+
+        function exportData() {
+            const data = {
+                approach: calculationApproach,
+                winddownPeriod,
+                timestamp: new Date().toISOString(),
+                wdaRequirement: document.getElementById('wdaResult').textContent,
+                costCategories: calculationApproach === 'granular' ? costCategories : null,
+                phasing,
+                criticalActivities,
+                stressFactors
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `WDA_Assessment_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function generateReport() {
+            alert('Wind-Down Assessment Report generated! This would create a comprehensive PDF report with all calculations, timelines, and critical activities.');
+        }
+
+        function compareScenarios() {
+            alert('Scenario comparison launched! This would allow comparison of multiple wind-down scenarios side by side.');
+        }
+
+        function saveData() {
+            const data = {
+                approach: calculationApproach,
+                winddownPeriod,
+                costCategories,
+                phasing,
+                criticalActivities,
+                stressFactors
+            };
+            localStorage.setItem('wda_calculator_data', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('wda_calculator_data');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    calculationApproach = data.approach || 'consolidated';
+                    winddownPeriod = data.winddownPeriod || 12;
+                    phasing = data.phasing || { phase1: 40, phase2: 40, phase3: 20 };
+                    criticalActivities = data.criticalActivities || [];
+                    stressFactors = data.stressFactors || {};
+                    
+                    // Update wind-down period display
+                    document.getElementById('winddownPeriod').value = winddownPeriod;
+                    updateWinddownPeriod(winddownPeriod);
+                    
+                    // Merge saved categories with defaults
+                    if (data.costCategories) {
+                        Object.keys(costCategories).forEach(key => {
+                            if (data.costCategories[key]) {
+                                costCategories[key].value = data.costCategories[key].value || 0;
+                                if (data.costCategories[key].subcategories) {
+                                    Object.keys(costCategories[key].subcategories).forEach(subKey => {
+                                        if (data.costCategories[key].subcategories[subKey]) {
+                                            costCategories[key].subcategories[subKey].value = 
+                                                data.costCategories[key].subcategories[subKey].value || 0;
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

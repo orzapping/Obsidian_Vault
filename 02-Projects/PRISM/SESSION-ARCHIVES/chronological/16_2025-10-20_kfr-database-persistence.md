@@ -1,0 +1,1 @@
+../by-category/infrastructure/2025-10-20_kfr-database-persistence.md

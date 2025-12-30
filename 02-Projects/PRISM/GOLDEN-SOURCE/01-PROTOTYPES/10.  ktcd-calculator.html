@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-TCD Trading Counterparty Default Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+        }
+        .input-field {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+        }
+        .input-field:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.5);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+        }
+        .asset-class-ir { border-left: 4px solid #3b82f6; }
+        .asset-class-fx { border-left: 4px solid #10b981; }
+        .asset-class-credit { border-left: 4px solid #f59e0b; }
+        .asset-class-equity { border-left: 4px solid #ec4899; }
+        .asset-class-commodity { border-left: 4px solid #8b5cf6; }
+        .formula-box {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+        .calculation-step {
+            background: rgba(30, 41, 59, 0.3);
+            border-left: 3px solid #6366f1;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); }
+        .modal-content { background: #111827; margin: 3% auto; padding: 0; border-radius: 20px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); border: 1px solid #334155; animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .tab-button.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+                K-TCD Calculator (SA-CCR)
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">Trading Counterparty Default Risk - Standardised Approach</p>
+        </header>
+
+        <!-- Main Formula Display -->
+        <div class="card p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-blue-400">K-TCD Formula</h2>
+            <div class="formula-box text-center text-lg">
+                K-TCD = Σ (EAD × Risk Weight × CVA Multiplier)
+                <div class="text-sm mt-2 text-gray-400">
+                    where EAD = α × (RC + PFE), α = 1.4
+                </div>
+            </div>
+        </div>
+
+        <!-- Netting Sets Overview -->
+        <div class="card p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-cyan-400">Netting Sets & Portfolios</h2>
+                <button onclick="showNettingSetModal()" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">
+                    + Add Netting Set
+                </button>
+            </div>
+            
+            <div id="nettingSetsList" class="space-y-4">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+
+        <!-- K-TCD Calculation Summary -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Summary Stats -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-emerald-400">Portfolio Summary</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Total Netting Sets:</span>
+                        <span class="font-bold" id="totalNettingSets">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Total Transactions:</span>
+                        <span class="font-bold" id="totalTransactions">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Total Notional:</span>
+                        <span class="font-bold" id="totalNotional">£0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EAD Breakdown -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-purple-400">EAD Components</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Total RC:</span>
+                        <span class="font-bold text-blue-400" id="totalRC">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Total PFE:</span>
+                        <span class="font-bold text-green-400" id="totalPFE">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Total EAD (α=1.4):</span>
+                        <span class="font-bold text-yellow-400" id="totalEAD">£0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- K-TCD Result -->
+            <div class="card p-6 bg-gradient-to-br from-purple-900/20 to-blue-900/20">
+                <h3 class="text-lg font-bold mb-4 text-white">Total K-TCD Requirement</h3>
+                <div class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600" id="totalKTCD">
+                    £0
+                </div>
+                <div class="text-sm text-gray-400 mt-2">
+                    Including CVA: <span id="cvaAmount" class="font-bold">£0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Class Distribution -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-indigo-400">Asset Class Distribution</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="assetClassChart"></canvas>
+                </div>
+            </div>
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-rose-400">Risk Weight Distribution</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="riskWeightChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supervisory Parameters Reference -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-4 text-yellow-400">Supervisory Parameters Reference</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="asset-class-ir p-3 rounded">
+                    <h4 class="font-semibold text-blue-400">Interest Rate</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Supervisory Factor: 0.5%</li>
+                        <li>• Maturity buckets: 3</li>
+                        <li>• Correlation: 50%</li>
+                    </ul>
+                </div>
+                <div class="asset-class-fx p-3 rounded">
+                    <h4 class="font-semibold text-green-400">Foreign Exchange</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Supervisory Factor: 4%</li>
+                        <li>• Single hedge set</li>
+                        <li>• No maturity adjustment</li>
+                    </ul>
+                </div>
+                <div class="asset-class-credit p-3 rounded">
+                    <h4 class="font-semibold text-yellow-400">Credit</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• IG Spread: 0.5%</li>
+                        <li>• SG/HY Spread: 5%</li>
+                        <li>• Correlation: 50%-80%</li>
+                    </ul>
+                </div>
+                <div class="asset-class-equity p-3 rounded">
+                    <h4 class="font-semibold text-pink-400">Equity</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Single Stock: 32%</li>
+                        <li>• Index: 20%</li>
+                        <li>• Correlation: 80%</li>
+                    </ul>
+                </div>
+                <div class="asset-class-commodity p-3 rounded">
+                    <h4 class="font-semibold text-purple-400">Commodity</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Energy: 40%</li>
+                        <li>• Metals: 18%</li>
+                        <li>• Agriculture: 18%</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Netting Set Modal -->
+    <div id="nettingSetModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Add Netting Set</h2>
+                    <button onclick="closeNettingSetModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="nettingSetForm" class="p-6">
+                <!-- Netting Set Details -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold mb-4">Netting Set Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Counterparty Name</label>
+                            <input type="text" id="counterpartyName" class="input-field w-full p-3" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Counterparty Type</label>
+                            <select id="counterpartyType" class="input-field w-full p-3">
+                                <option value="financial">Financial Institution</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="sovereign">Sovereign</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Risk Weight (%)</label>
+                            <input type="number" id="riskWeight" class="input-field w-full p-3" value="100" min="0" max="150">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Margin Agreement</label>
+                            <select id="marginType" class="input-field w-full p-3">
+                                <option value="none">No Margin</option>
+                                <option value="vm">Variation Margin Only</option>
+                                <option value="vmim">VM + Initial Margin</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collateral Details -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold mb-4">Collateral & Margin</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Collateral Held (£)</label>
+                            <input type="number" id="collateralHeld" class="input-field w-full p-3" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Collateral Posted (£)</label>
+                            <input type="number" id="collateralPosted" class="input-field w-full p-3" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Threshold (£)</label>
+                            <input type="number" id="threshold" class="input-field w-full p-3" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Input Tabs -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold mb-4">Add Transactions</h3>
+                    <div class="flex space-x-2 mb-4">
+                        <button type="button" class="tab-button active" onclick="switchTransactionTab('derivative')">
+                            Derivatives
+                        </button>
+                        <button type="button" class="tab-button" onclick="switchTransactionTab('sft')">
+                            SFTs
+                        </button>
+                        <button type="button" class="tab-button" onclick="switchTransactionTab('other')">
+                            Long Settlement
+                        </button>
+                    </div>
+
+                    <!-- Derivative Tab -->
+                    <div id="derivativeTab" class="tab-content active">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Asset Class</label>
+                                <select id="assetClass" class="input-field w-full p-3">
+                                    <option value="ir">Interest Rate</option>
+                                    <option value="fx">Foreign Exchange</option>
+                                    <option value="credit">Credit</option>
+                                    <option value="equity">Equity</option>
+                                    <option value="commodity">Commodity</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Product Type</label>
+                                <select id="productType" class="input-field w-full p-3">
+                                    <option value="swap">Swap</option>
+                                    <option value="option">Option</option>
+                                    <option value="forward">Forward</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Notional (£)</label>
+                                <input type="number" id="notional" class="input-field w-full p-3" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Market Value (£)</label>
+                                <input type="number" id="marketValue" class="input-field w-full p-3" value="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Maturity (Years)</label>
+                                <input type="number" id="maturity" class="input-field w-full p-3" step="0.25" min="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Position</label>
+                                <select id="position" class="input-field w-full p-3">
+                                    <option value="long">Long</option>
+                                    <option value="short">Short</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="button" onclick="addTransaction()" class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition">
+                            + Add Transaction
+                        </button>
+                    </div>
+
+                    <!-- SFT Tab -->
+                    <div id="sftTab" class="tab-content">
+                        <p class="text-gray-400">Securities Financing Transaction input (Repo, Securities Lending)</p>
+                        <!-- Add SFT specific fields -->
+                    </div>
+
+                    <!-- Long Settlement Tab -->
+                    <div id="otherTab" class="tab-content">
+                        <p class="text-gray-400">Long Settlement Transaction input</p>
+                        <!-- Add long settlement specific fields -->
+                    </div>
+                </div>
+
+                <!-- Transactions List -->
+                <div class="mb-6">
+                    <h4 class="font-bold mb-2">Transactions in this Netting Set</h4>
+                    <div id="transactionsList" class="space-y-2 max-h-40 overflow-y-auto">
+                        <!-- Dynamic transaction list -->
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeNettingSetModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 btn-primary text-white rounded-lg">
+                        Save Netting Set
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global data storage
+        let nettingSets = [];
+        let currentTransactions = [];
+        let assetClassChart = null;
+        let riskWeightChart = null;
+
+        // Supervisory factors by asset class
+        const supervisoryFactors = {
+            ir: { factor: 0.005, correlation: 0.5 },
+            fx: { factor: 0.04, correlation: 0 },
+            credit: { ig: 0.005, sg: 0.05, correlation: 0.5 },
+            equity: { single: 0.32, index: 0.20, correlation: 0.8 },
+            commodity: { energy: 0.40, metals: 0.18, agriculture: 0.18, other: 0.18, correlation: 0.4 }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            document.getElementById('nettingSetForm').addEventListener('submit', saveNettingSet);
+            updateDisplay();
+        });
+
+        function loadData() {
+            const savedData = localStorage.getItem('ktcd_data');
+            if (savedData) {
+                nettingSets = JSON.parse(savedData);
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('ktcd_data', JSON.stringify(nettingSets));
+        }
+
+        function showNettingSetModal() {
+            document.getElementById('nettingSetModal').style.display = 'block';
+            currentTransactions = [];
+            updateTransactionsList();
+        }
+
+        function closeNettingSetModal() {
+            document.getElementById('nettingSetModal').style.display = 'none';
+            document.getElementById('nettingSetForm').reset();
+            currentTransactions = [];
+        }
+
+        function switchTransactionTab(tab) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+        }
+
+        function addTransaction() {
+            const transaction = {
+                id: Date.now(),
+                assetClass: document.getElementById('assetClass').value,
+                productType: document.getElementById('productType').value,
+                notional: parseFloat(document.getElementById('notional').value) || 0,
+                marketValue: parseFloat(document.getElementById('marketValue').value) || 0,
+                maturity: parseFloat(document.getElementById('maturity').value) || 0,
+                position: document.getElementById('position').value
+            };
+            
+            currentTransactions.push(transaction);
+            updateTransactionsList();
+            
+            // Clear transaction inputs
+            ['notional', 'marketValue', 'maturity'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        }
+
+        function removeTransaction(id) {
+            currentTransactions = currentTransactions.filter(t => t.id !== id);
+            updateTransactionsList();
+        }
+
+        function updateTransactionsList() {
+            const container = document.getElementById('transactionsList');
+            if (currentTransactions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">No transactions added yet</p>';
+                return;
+            }
+            
+            container.innerHTML = currentTransactions.map(t => `
+                <div class="flex justify-between items-center p-2 bg-gray-800 rounded">
+                    <span class="text-sm">
+                        ${t.assetClass.toUpperCase()} ${t.productType} - £${t.notional.toLocaleString()} - ${t.maturity}Y
+                    </span>
+                    <button onclick="removeTransaction(${t.id})" class="text-red-400 hover:text-red-300">
+                        ×
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function saveNettingSet(e) {
+            e.preventDefault();
+            
+            const nettingSet = {
+                id: Date.now(),
+                counterparty: document.getElementById('counterpartyName').value,
+                counterpartyType: document.getElementById('counterpartyType').value,
+                riskWeight: parseFloat(document.getElementById('riskWeight').value) / 100,
+                marginType: document.getElementById('marginType').value,
+                collateralHeld: parseFloat(document.getElementById('collateralHeld').value) || 0,
+                collateralPosted: parseFloat(document.getElementById('collateralPosted').value) || 0,
+                threshold: parseFloat(document.getElementById('threshold').value) || 0,
+                transactions: [...currentTransactions]
+            };
+            
+            nettingSets.push(nettingSet);
+            saveData();
+            closeNettingSetModal();
+            updateDisplay();
+        }
+
+        function deleteNettingSet(id) {
+            nettingSets = nettingSets.filter(ns => ns.id !== id);
+            saveData();
+            updateDisplay();
+        }
+
+        function calculateRC(nettingSet) {
+            // Replacement Cost calculation
+            let V = 0; // Current value of transactions
+            nettingSet.transactions.forEach(t => {
+                V += t.marketValue * (t.position === 'long' ? 1 : -1);
+            });
+            
+            const C = nettingSet.collateralHeld - nettingSet.collateralPosted;
+            const TH = nettingSet.threshold;
+            
+            // Apply margin agreement rules
+            let RC = 0;
+            if (nettingSet.marginType === 'none') {
+                RC = Math.max(V - C, 0);
+            } else if (nettingSet.marginType === 'vm') {
+                RC = Math.max(V - C, TH - C, 0);
+            } else { // vmim
+                RC = Math.max(V - C, 0);
+            }
+            
+            return RC;
+        }
+
+        function calculatePFE(nettingSet) {
+            // Group transactions by asset class
+            const assetClasses = {};
+            nettingSet.transactions.forEach(t => {
+                if (!assetClasses[t.assetClass]) {
+                    assetClasses[t.assetClass] = [];
+                }
+                assetClasses[t.assetClass].push(t);
+            });
+            
+            let aggregateAddOn = 0;
+            
+            // Calculate add-on for each asset class
+            for (const [assetClass, transactions] of Object.entries(assetClasses)) {
+                let effectiveNotional = 0;
+                
+                transactions.forEach(t => {
+                    // Maturity factor
+                    const MF = Math.sqrt(Math.min(t.maturity, 1));
+                    
+                    // Supervisory delta (simplified)
+                    let delta = t.position === 'long' ? 1 : -1;
+                    if (t.productType === 'option') {
+                        // Simplified option delta
+                        delta *= 0.5;
+                    }
+                    
+                    // Supervisory factor
+                    let SF = supervisoryFactors[assetClass].factor || 0.05;
+                    
+                    effectiveNotional += delta * t.notional * MF * SF;
+                });
+                
+                // Apply correlation
+                const correlation = supervisoryFactors[assetClass].correlation || 0;
+                const addOn = Math.abs(effectiveNotional) * (1 + correlation);
+                aggregateAddOn += addOn;
+            }
+            
+            // Multiplier effect (simplified - should consider collateral)
+            const multiplier = 1;
+            
+            return aggregateAddOn * multiplier;
+        }
+
+        function calculateKTCD() {
+            let totalKTCD = 0;
+            let totalRC = 0;
+            let totalPFE = 0;
+            let totalEAD = 0;
+            
+            nettingSets.forEach(ns => {
+                const RC = calculateRC(ns);
+                const PFE = calculatePFE(ns);
+                const alpha = 1.4;
+                const EAD = alpha * (RC + PFE);
+                
+                // Apply risk weight
+                const RWA = EAD * ns.riskWeight;
+                
+                // CVA charge (simplified - 1.5% of RWA)
+                const CVA = RWA * 0.015;
+                
+                const KTCD = RWA + CVA;
+                
+                totalRC += RC;
+                totalPFE += PFE;
+                totalEAD += EAD;
+                totalKTCD += KTCD;
+                
+                // Store calculated values
+                ns.RC = RC;
+                ns.PFE = PFE;
+                ns.EAD = EAD;
+                ns.KTCD = KTCD;
+                ns.CVA = CVA;
+            });
+            
+            return { totalKTCD, totalRC, totalPFE, totalEAD };
+        }
+
+        function updateDisplay() {
+            const { totalKTCD, totalRC, totalPFE, totalEAD } = calculateKTCD();
+            
+            // Update summary stats
+            document.getElementById('totalNettingSets').textContent = nettingSets.length;
+            document.getElementById('totalTransactions').textContent = 
+                nettingSets.reduce((sum, ns) => sum + ns.transactions.length, 0);
+            document.getElementById('totalNotional').textContent = 
+                `£${nettingSets.reduce((sum, ns) => 
+                    sum + ns.transactions.reduce((tSum, t) => tSum + t.notional, 0), 0
+                ).toLocaleString()}`;
+            
+            // Update EAD components
+            document.getElementById('totalRC').textContent = `£${Math.round(totalRC).toLocaleString()}`;
+            document.getElementById('totalPFE').textContent = `£${Math.round(totalPFE).toLocaleString()}`;
+            document.getElementById('totalEAD').textContent = `£${Math.round(totalEAD).toLocaleString()}`;
+            
+            // Update K-TCD
+            document.getElementById('totalKTCD').textContent = `£${Math.round(totalKTCD).toLocaleString()}`;
+            document.getElementById('cvaAmount').textContent = 
+                `£${Math.round(nettingSets.reduce((sum, ns) => sum + (ns.CVA || 0), 0)).toLocaleString()}`;
+            
+            // Update netting sets list
+            renderNettingSets();
+            
+            // Update charts
+            updateCharts();
+            
+            // Update parent if integrated
+            if (window.parent && window.parent.updateKFactorValue) {
+                window.parent.updateKFactorValue('ktcd', totalKTCD);
+            }
+        }
+
+        function renderNettingSets() {
+            const container = document.getElementById('nettingSetsList');
+            
+            if (nettingSets.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No netting sets added yet</p>';
+                return;
+            }
+            
+            container.innerHTML = nettingSets.map(ns => `
+                <div class="card p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-bold text-lg">${ns.counterparty}</h4>
+                            <p class="text-sm text-gray-400">
+                                ${ns.counterpartyType} • RW: ${(ns.riskWeight * 100).toFixed(0)}% • ${ns.marginType}
+                            </p>
+                        </div>
+                        <button onclick="deleteNettingSet(${ns.id})" class="text-red-400 hover:text-red-300">
+                            Delete
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                        <div>
+                            <span class="text-gray-400">Transactions:</span>
+                            <span class="font-bold block">${ns.transactions.length}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">RC:</span>
+                            <span class="font-bold block text-blue-400">£${Math.round(ns.RC || 0).toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">PFE:</span>
+                            <span class="font-bold block text-green-400">£${Math.round(ns.PFE || 0).toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">EAD:</span>
+                            <span class="font-bold block text-yellow-400">£${Math.round(ns.EAD || 0).toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">K-TCD:</span>
+                            <span class="font-bold block text-purple-400">£${Math.round(ns.KTCD || 0).toLocaleString()}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="text-xs text-gray-400 mb-1">Asset Class Breakdown:</div>
+                        <div class="flex flex-wrap gap-2">
+                            ${getAssetClassBreakdown(ns.transactions)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getAssetClassBreakdown(transactions) {
+            const breakdown = {};
+            transactions.forEach(t => {
+                breakdown[t.assetClass] = (breakdown[t.assetClass] || 0) + 1;
+            });
+            
+            return Object.entries(breakdown).map(([ac, count]) => `
+                <span class="px-2 py-1 text-xs rounded bg-gray-700">
+                    ${ac.toUpperCase()}: ${count}
+                </span>
+            `).join('');
+        }
+
+        function updateCharts() {
+            // Asset Class Distribution
+            const assetClassData = {};
+            nettingSets.forEach(ns => {
+                ns.transactions.forEach(t => {
+                    assetClassData[t.assetClass] = (assetClassData[t.assetClass] || 0) + t.notional;
+                });
+            });
+            
+            const ctx1 = document.getElementById('assetClassChart').getContext('2d');
+            const data1 = {
+                labels: Object.keys(assetClassData).map(k => k.toUpperCase()),
+                datasets: [{
+                    data: Object.values(assetClassData),
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6']
+                }]
+            };
+            
+            if (assetClassChart) {
+                assetClassChart.data = data1;
+                assetClassChart.update();
+            } else {
+                assetClassChart = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: data1,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#e0e7ff' }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Risk Weight Distribution
+            const riskWeightData = {};
+            nettingSets.forEach(ns => {
+                const rwKey = `${(ns.riskWeight * 100).toFixed(0)}%`;
+                riskWeightData[rwKey] = (riskWeightData[rwKey] || 0) + ns.EAD;
+            });
+            
+            const ctx2 = document.getElementById('riskWeightChart').getContext('2d');
+            const data2 = {
+                labels: Object.keys(riskWeightData),
+                datasets: [{
+                    label: 'EAD by Risk Weight',
+                    data: Object.values(riskWeightData),
+                    backgroundColor: 'rgba(147, 51, 234, 0.6)',
+                    borderColor: '#9333ea',
+                    borderWidth: 2
+                }]
+            };
+            
+            if (riskWeightChart) {
+                riskWeightChart.data = data2;
+                riskWeightChart.update();
+            } else {
+                riskWeightChart = new Chart(ctx2, {
+                    type: 'bar',
+                    data: data2,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#1e293b' }
+                            },
+                            x: {
+                                ticks: { color: '#e0e7ff' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

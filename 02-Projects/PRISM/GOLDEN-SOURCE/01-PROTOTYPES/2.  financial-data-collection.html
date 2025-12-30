@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICARA - Financial Data Collection</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: transparent; /* No container background */
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 40px;
+            color: transparent;
+            background-clip: text;
+            -webkit-background-clip: text;
+            background-image: linear-gradient(to right, #ec4899, #8b5cf6);
+        }
+        h2 {
+            color: #93c5fd; /* Light blue for headers */
+            margin-top: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        h2::after {
+            content: '\25BC'; /* Down arrow */
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+        h2.collapsed::after {
+            transform: rotate(-90deg);
+        }
+        .calculator-section {
+            margin-bottom: 20px;
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        .calculator-section:hover {
+            border-color: #4f46e5;
+        }
+        .content.hidden {
+            display: none;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #9ca3af;
+        }
+        .input-group input {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .input-group input:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+        .input-group .description {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .button {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        .summary-card {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            border-left-width: 4px;
+            border-radius: 0.75rem;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .summary-card.unbalanced {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+        .summary-card h4 {
+            color: #6ee7b7;
+            margin-top: 0;
+            font-weight: 600;
+        }
+        .summary-card.unbalanced h4 {
+            color: #f87171;
+        }
+        .summary-card .value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Financial Data Collection</h1>
+
+    <div class="calculator-section">
+        <h2 onclick="toggleSection(this)">Contextual Information</h2>
+        <div class="content">
+            <div class="input-group">
+                <label for="reporting_date">Reporting Period End Date</label>
+                <input type="date" id="reporting_date">
+                <p class="description">The end date for the financial data being entered.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="calculator-section">
+        <h2 onclick="toggleSection(this)">Core Financial Statements</h2>
+        <div class="content">
+            <div class="input-group">
+                <label for="total_assets">Total Assets</label>
+                <input type="number" id="total_assets" placeholder="e.g., 50000000">
+                <p class="description">Total assets as per the firm's balance sheet.</p>
+            </div>
+            <div class="input-group">
+                <label for="total_liabilities">Total Liabilities</label>
+                <input type="number" id="total_liabilities" placeholder="e.g., 40000000">
+                <p class="description">Total liabilities as per the firm's balance sheet.</p>
+            </div>
+             <div class="input-group">
+                <label for="total_equity">Total Equity</label>
+                <input type="number" id="total_equity" placeholder="e.g., 10000000">
+                <p class="description">Total equity, derived from Assets minus Liabilities.</p>
+            </div>
+            <div class="input-group">
+                <label for="goodwill">Goodwill</label>
+                <input type="number" id="goodwill" placeholder="e.g., 500000">
+                <p class="description">The value of goodwill held on the balance sheet.</p>
+            </div>
+            <div class="input-group">
+                <label for="intangible_assets">Other Intangible Assets</label>
+                <input type="number" id="intangible_assets" placeholder="e.g., 250000">
+                <p class="description">Value of all other intangible assets (excluding goodwill).</p>
+            </div>
+            <div id="balance_sheet_summary" class="summary-card">
+                <h4>Balance Sheet Status</h4>
+                <p class="value">-</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="calculator-section">
+        <h2 onclick="toggleSection(this)">Regulatory Own Funds Resources (MIFIDPRU 3)</h2>
+        <div class="content">
+            <p class="description" style="margin-bottom: 20px;">This section captures the components of the firm's own funds, which are compared against the Overall Financial Adequacy Rule (OFAR) to determine capital adequacy.</p>
+            
+            <h4 style="color: #e0e7ff; font-weight: 600; margin-bottom: 15px;">Common Equity Tier 1 (CET1) Capital</h4>
+            <div class="input-group">
+                <label for="cet1_instruments">CET1 Instruments & Share Premium</label>
+                <input type="number" id="cet1_instruments" placeholder="e.g., 2000000">
+                <p class="description">Capital instruments and related share premium accounts (MIFIDPRU 3.3.4R).</p>
+            </div>
+            <div class="input-group">
+                <label for="retained_earnings">Retained Earnings</label>
+                <input type="number" id="retained_earnings" placeholder="e.g., 8000000">
+                <p class="description">Profits retained within the firm after dividend payouts.</p>
+            </div>
+            <div class="input-group">
+                <label for="cet1_deductions">CET1 Deductions</label>
+                <input type="number" id="cet1_deductions" placeholder="e.g., 750000">
+                <p class="description">Total deductions from CET1 capital, including goodwill and other intangibles (MIFIDPRU 3.3.23R).</p>
+            </div>
+
+            <h4 style="color: #e0e7ff; font-weight: 600; margin-top: 30px; margin-bottom: 15px;">Additional Tier 1 (AT1) Capital</h4>
+            <div class="input-group">
+                <label for="at1_instruments">AT1 Instruments</label>
+                <input type="number" id="at1_instruments" placeholder="e.g., 1000000">
+                <p class="description">Capital instruments that qualify as Additional Tier 1 capital (MIFIDPRU 3.4).</p>
+            </div>
+
+            <h4 style="color: #e0e7ff; font-weight: 600; margin-top: 30px; margin-bottom: 15px;">Tier 2 (T2) Capital</h4>
+            <div class="input-group">
+                <label for="t2_instruments">Tier 2 Instruments</label>
+                <input type="number" id="t2_instruments" placeholder="e.g., 500000">
+                <p class="description">Capital instruments that qualify as Tier 2 capital (MIFIDPRU 3.5).</p>
+            </div>
+            <div id="own_funds_summary" class="summary-card">
+                <h4>Live Own Funds Summary</h4>
+                <p class="value">£0</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="calculator-section">
+        <h2 onclick="toggleSection(this)">Liquidity Resources</h2>
+        <div class="content">
+             <p class="description" style="margin-bottom: 20px;">This section captures the firm's key liquidity data points to assess its ability to meet short-term obligations.</p>
+            <div class="input-group">
+                <label for="hql_assets">High-Quality Liquid Assets (HQLA)</label>
+                <input type="number" id="hql_assets" placeholder="e.g., 15000000">
+                <p class="description">Cash and assets that can be converted into cash easily with no loss of value.</p>
+            </div>
+            <div class="input-group">
+                <label for="net_cash_outflows">Total Net Cash Outflows (30-day stress)</label>
+                <input type="number" id="net_cash_outflows" placeholder="e.g., 12000000">
+                <p class="description">The projected total net cash outflows over a 30-calendar-day stress period.</p>
+            </div>
+            <div class="input-group">
+                <label for="lcr">Liquidity Coverage Ratio (LCR) (%)</label>
+                <input type="number" id="lcr" placeholder="e.g., 125">
+                <p class="description">The firm's calculated LCR (HQLA / Net Outflows). Often a key metric in liquidity stress testing.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button class="button">Save Financial Data</button>
+    </div>
+
+</div>
+
+<script>
+    function toggleSection(header) {
+        const content = header.nextElementSibling;
+        header.classList.toggle('collapsed');
+        content.classList.toggle('hidden');
+    }
+
+    // Collapse all sections by default except the first one
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.calculator-section h2').forEach((header, index) => {
+            if (index !== 0) { // Keep the first section open
+                 toggleSection(header);
+            }
+        });
+
+        // Add listeners for balance sheet sanity check
+        const balanceSheetInputs = ['total_assets', 'total_liabilities', 'total_equity'];
+        balanceSheetInputs.forEach(id => document.getElementById(id).addEventListener('input', checkBalanceSheet));
+        checkBalanceSheet();
+
+        // Add listeners for live own funds summary
+        const ownFundsInputs = ['cet1_instruments', 'retained_earnings', 'cet1_deductions', 'at1_instruments', 't2_instruments'];
+        ownFundsInputs.forEach(id => document.getElementById(id).addEventListener('input', calculateOwnFunds));
+        calculateOwnFunds();
+    });
+
+    function checkBalanceSheet() {
+        const assets = parseFloat(document.getElementById('total_assets').value) || 0;
+        const liabilities = parseFloat(document.getElementById('total_liabilities').value) || 0;
+        const equity = parseFloat(document.getElementById('total_equity').value) || 0;
+        const summaryCard = document.getElementById('balance_sheet_summary');
+        const statusText = summaryCard.querySelector('.value');
+
+        if (assets === 0 && liabilities === 0 && equity === 0) {
+            statusText.textContent = '-';
+            summaryCard.classList.remove('unbalanced');
+            return;
+        }
+
+        if (Math.abs(assets - (liabilities + equity)) < 0.01) { // Use a small tolerance for float issues
+            statusText.textContent = 'Balanced';
+            summaryCard.classList.remove('unbalanced');
+        } else {
+            statusText.textContent = `Unbalanced by ${(assets - (liabilities + equity)).toLocaleString()}`;
+            summaryCard.classList.add('unbalanced');
+        }
+    }
+
+    function calculateOwnFunds() {
+        const cet1_instruments = parseFloat(document.getElementById('cet1_instruments').value) || 0;
+        const retained_earnings = parseFloat(document.getElementById('retained_earnings').value) || 0;
+        const cet1_deductions = parseFloat(document.getElementById('cet1_deductions').value) || 0;
+        const at1_instruments = parseFloat(document.getElementById('at1_instruments').value) || 0;
+        const t2_instruments = parseFloat(document.getElementById('t2_instruments').value) || 0;
+
+        const totalCet1 = cet1_instruments + retained_earnings - cet1_deductions;
+        const totalOwnFunds = totalCet1 + at1_instruments + t2_instruments;
+
+        const summaryValue = document.querySelector('#own_funds_summary .value');
+        summaryValue.textContent = `£${totalOwnFunds.toLocaleString()}`;
+    }
+</script>
+
+</body>
+</html>

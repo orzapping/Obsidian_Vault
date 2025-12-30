@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-NPR Net Position Risk Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+        }
+        .input-field {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+        }
+        .input-field:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.5);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+        }
+        .risk-type-equity { border-left: 4px solid #ec4899; }
+        .risk-type-debt { border-left: 4px solid #3b82f6; }
+        .risk-type-fx { border-left: 4px solid #10b981; }
+        .risk-type-commodity { border-left: 4px solid #f59e0b; }
+        .risk-type-option { border-left: 4px solid #8b5cf6; }
+        
+        .maturity-ladder {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+        }
+        .maturity-bucket {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        .position-long { background: rgba(34, 197, 94, 0.2); }
+        .position-short { background: rgba(239, 68, 68, 0.2); }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); }
+        .modal-content { background: #111827; margin: 3% auto; padding: 0; border-radius: 20px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); border: 1px solid #334155; animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid #334155;
+            margin-bottom: 1rem;
+        }
+        .tab-nav button {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-weight: 600;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .tab-nav button.active {
+            color: #4f46e5;
+        }
+        .tab-nav button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #4f46e5;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-600">
+                K-NPR Market Risk Calculator
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">Net Position Risk - Standardised Approach for Market Risk</p>
+        </header>
+
+        <!-- Risk Type Tabs -->
+        <div class="card p-6 mb-6">
+            <div class="tab-nav">
+                <button class="active" onclick="switchRiskTab('position')">Position Risk</button>
+                <button onclick="switchRiskTab('fx')">FX Risk</button>
+                <button onclick="switchRiskTab('commodity')">Commodity Risk</button>
+                <button onclick="switchRiskTab('option')">Options Risk</button>
+            </div>
+
+            <!-- Position Risk Tab -->
+            <div id="positionTab" class="tab-panel active">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-blue-400">Equity & Debt Position Risk</h2>
+                    <button onclick="showPositionModal()" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">
+                        + Add Position
+                    </button>
+                </div>
+                
+                <div id="positionsList" class="space-y-4">
+                    <!-- Dynamic content -->
+                </div>
+
+                <!-- Debt Maturity Ladder -->
+                <div class="mt-6" id="debtMaturityLadder" style="display: none;">
+                    <h3 class="text-lg font-bold mb-4 text-purple-400">Debt Securities Maturity Ladder</h3>
+                    <div class="card p-4">
+                        <div class="maturity-ladder" id="maturityLadderDisplay">
+                            <!-- Dynamic maturity buckets -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FX Risk Tab -->
+            <div id="fxTab" class="tab-panel">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-green-400">Foreign Exchange Risk</h2>
+                    <button onclick="showFXModal()" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">
+                        + Add FX Position
+                    </button>
+                </div>
+                
+                <div id="fxPositionsList" class="space-y-4">
+                    <!-- Dynamic content -->
+                </div>
+
+                <!-- Net Open Position Summary -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-bold mb-4 text-emerald-400">Net Open Position Summary</h3>
+                    <div class="card p-4">
+                        <div id="fxSummary" class="space-y-2">
+                            <!-- Dynamic FX summary -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commodity Risk Tab -->
+            <div id="commodityTab" class="tab-panel">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-yellow-400">Commodity Risk</h2>
+                    <button onclick="showCommodityModal()" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">
+                        + Add Commodity Position
+                    </button>
+                </div>
+                
+                <div id="commodityPositionsList" class="space-y-4">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+
+            <!-- Options Risk Tab -->
+            <div id="optionTab" class="tab-panel">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-purple-400">Options Risk</h2>
+                    <button onclick="showOptionModal()" class="btn-primary text-white font-bold py-2 px-4 rounded-lg">
+                        + Add Option Position
+                    </button>
+                </div>
+                
+                <div id="optionPositionsList" class="space-y-4">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+
+        <!-- K-NPR Calculation Summary -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Risk Breakdown -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-cyan-400">Risk Type Breakdown</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Position Risk (Specific):</span>
+                        <span class="font-bold text-pink-400" id="specificRisk">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Position Risk (General):</span>
+                        <span class="font-bold text-blue-400" id="generalRisk">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>FX Risk:</span>
+                        <span class="font-bold text-green-400" id="fxRisk">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Commodity Risk:</span>
+                        <span class="font-bold text-yellow-400" id="commodityRisk">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Options Risk:</span>
+                        <span class="font-bold text-purple-400" id="optionsRisk">£0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Distribution -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-rose-400">Risk Distribution</h3>
+                <div style="position: relative; height: 250px;">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Total K-NPR -->
+            <div class="card p-6 bg-gradient-to-br from-green-900/20 to-blue-900/20">
+                <h3 class="text-lg font-bold mb-4 text-white">Total K-NPR Requirement</h3>
+                <div class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-600" id="totalKNPR">
+                    £0
+                </div>
+                <div class="mt-4 space-y-1 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Diversification Benefit:</span>
+                        <span class="font-bold text-green-400" id="diversificationBenefit">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Effective Rate:</span>
+                        <span class="font-bold" id="effectiveRate">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Charges Reference -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-4 text-indigo-400">Risk Charge Rates Reference</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="risk-type-equity p-3 rounded">
+                    <h4 class="font-semibold text-pink-400">Equity Risk</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Specific Risk: 8% (4% for diversified)</li>
+                        <li>• General Risk: 8%</li>
+                        <li>• Index positions offset allowed</li>
+                    </ul>
+                </div>
+                <div class="risk-type-debt p-3 rounded">
+                    <h4 class="font-semibold text-blue-400">Debt Risk</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Specific: 0%-8% by rating</li>
+                        <li>• General: Maturity method</li>
+                        <li>• Duration method available</li>
+                    </ul>
+                </div>
+                <div class="risk-type-fx p-3 rounded">
+                    <h4 class="font-semibold text-green-400">FX Risk</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• 8% of net open position</li>
+                        <li>• Gold treated as FX</li>
+                        <li>• Structural FX exemptions</li>
+                    </ul>
+                </div>
+                <div class="risk-type-commodity p-3 rounded">
+                    <h4 class="font-semibold text-yellow-400">Commodity Risk</h4>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Simplified: 15% gross</li>
+                        <li>• Maturity ladder: Variable</li>
+                        <li>• Precious metals: 8%</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Position Modal -->
+    <div id="positionModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Add Position</h2>
+                    <button onclick="closePositionModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="positionForm" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Instrument Type</label>
+                        <select id="instrumentType" class="input-field w-full p-3" onchange="updatePositionForm()">
+                            <option value="equity">Equity</option>
+                            <option value="debt">Debt Security</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Position Type</label>
+                        <select id="positionType" class="input-field w-full p-3">
+                            <option value="long">Long</option>
+                            <option value="short">Short</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">Instrument Name</label>
+                    <input type="text" id="instrumentName" class="input-field w-full p-3" required>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Market Value (£)</label>
+                        <input type="number" id="marketValue" class="input-field w-full p-3" required>
+                    </div>
+                    <div id="equityFields">
+                        <label class="block text-sm font-medium mb-2">Portfolio Type</label>
+                        <select id="portfolioType" class="input-field w-full p-3">
+                            <option value="liquid">Liquid & Diversified</option>
+                            <option value="other">Other</option>
+                            <option value="index">Index</option>
+                        </select>
+                    </div>
+                    <div id="debtFields" style="display: none;">
+                        <label class="block text-sm font-medium mb-2">Credit Rating</label>
+                        <select id="creditRating" class="input-field w-full p-3">
+                            <option value="aaa">AAA to AA-</option>
+                            <option value="a">A+ to BBB-</option>
+                            <option value="bb">BB+ to B-</option>
+                            <option value="below">Below B-</option>
+                            <option value="unrated">Unrated</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="debtMaturityFields" style="display: none;">
+                    <label class="block text-sm font-medium mb-2">Maturity (Years)</label>
+                    <input type="number" id="maturity" class="input-field w-full p-3" step="0.25" min="0">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closePositionModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 btn-primary text-white rounded-lg">
+                        Add Position
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FX Modal -->
+    <div id="fxModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-green-600 to-teal-600 p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Add FX Position</h2>
+                    <button onclick="closeFXModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="fxForm" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Currency Pair</label>
+                        <input type="text" id="currencyPair" class="input-field w-full p-3" placeholder="e.g., EUR/USD" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Position Type</label>
+                        <select id="fxPositionType" class="input-field w-full p-3">
+                            <option value="spot">Spot</option>
+                            <option value="forward">Forward</option>
+                            <option value="gold">Gold</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Amount (Base Currency)</label>
+                        <input type="number" id="fxAmount" class="input-field w-full p-3" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">GBP Equivalent</label>
+                        <input type="number" id="fxGBPValue" class="input-field w-full p-3" required>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeFXModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 btn-primary text-white rounded-lg">
+                        Add FX Position
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Commodity Modal -->
+    <div id="commodityModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-yellow-600 to-orange-600 p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Add Commodity Position</h2>
+                    <button onclick="closeCommodityModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="commodityForm" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Commodity Type</label>
+                        <select id="commodityType" class="input-field w-full p-3">
+                            <option value="precious">Precious Metals</option>
+                            <option value="energy">Energy</option>
+                            <option value="agriculture">Agriculture</option>
+                            <option value="industrial">Industrial Metals</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Commodity Name</label>
+                        <input type="text" id="commodityName" class="input-field w-full p-3" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Position Value (£)</label>
+                        <input type="number" id="commodityValue" class="input-field w-full p-3" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Position Type</label>
+                        <select id="commodityPositionType" class="input-field w-full p-3">
+                            <option value="long">Long</option>
+                            <option value="short">Short</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">Maturity (Months)</label>
+                    <input type="number" id="commodityMaturity" class="input-field w-full p-3" value="0" min="0">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeCommodityModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 btn-primary text-white rounded-lg">
+                        Add Commodity Position
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Options Modal -->
+    <div id="optionModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Add Option Position</h2>
+                    <button onclick="closeOptionModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="optionForm" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Underlying Type</label>
+                        <select id="underlyingType" class="input-field w-full p-3">
+                            <option value="equity">Equity</option>
+                            <option value="fx">FX</option>
+                            <option value="commodity">Commodity</option>
+                            <option value="interest">Interest Rate</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Option Type</label>
+                        <select id="optionType" class="input-field w-full p-3">
+                            <option value="call">Call</option>
+                            <option value="put">Put</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Delta</label>
+                        <input type="number" id="optionDelta" class="input-field w-full p-3" step="0.01" min="-1" max="1" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Gamma</label>
+                        <input type="number" id="optionGamma" class="input-field w-full p-3" step="0.001" min="0" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Vega</label>
+                        <input type="number" id="optionVega" class="input-field w-full p-3" step="0.1" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Market Value (£)</label>
+                        <input type="number" id="optionValue" class="input-field w-full p-3" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Underlying Value (£)</label>
+                        <input type="number" id="underlyingValue" class="input-field w-full p-3" required>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeOptionModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 btn-primary text-white rounded-lg">
+                        Add Option
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global data storage
+        let positions = [];
+        let fxPositions = [];
+        let commodityPositions = [];
+        let optionPositions = [];
+        let riskDistributionChart = null;
+
+        // Specific risk rates
+        const specificRiskRates = {
+            equity: { liquid: 0.04, other: 0.08, index: 0 },
+            debt: { aaa: 0, a: 0.0025, bb: 0.01, below: 0.08, unrated: 0.08 }
+        };
+
+        // Maturity buckets for debt general risk
+        const maturityBuckets = [
+            { max: 1/12, weight: 0.0005 },
+            { max: 3/12, weight: 0.002 },
+            { max: 6/12, weight: 0.004 },
+            { max: 1, weight: 0.007 },
+            { max: 2, weight: 0.0125 },
+            { max: 3, weight: 0.0175 },
+            { max: 4, weight: 0.0225 },
+            { max: 5, weight: 0.025 },
+            { max: 7, weight: 0.0275 },
+            { max: 10, weight: 0.03 },
+            { max: 15, weight: 0.0325 },
+            { max: 20, weight: 0.035 },
+            { max: Infinity, weight: 0.0375 }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            setupEventListeners();
+            updateDisplay();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('positionForm').addEventListener('submit', addPosition);
+            document.getElementById('fxForm').addEventListener('submit', addFXPosition);
+            document.getElementById('commodityForm').addEventListener('submit', addCommodityPosition);
+            document.getElementById('optionForm').addEventListener('submit', addOptionPosition);
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('knpr_data');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                positions = data.positions || [];
+                fxPositions = data.fxPositions || [];
+                commodityPositions = data.commodityPositions || [];
+                optionPositions = data.optionPositions || [];
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('knpr_data', JSON.stringify({
+                positions, fxPositions, commodityPositions, optionPositions
+            }));
+        }
+
+        function switchRiskTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-nav button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab panels
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(`${tab}Tab`).classList.add('active');
+        }
+
+        // Position Risk Functions
+        function showPositionModal() {
+            document.getElementById('positionModal').style.display = 'block';
+            document.getElementById('positionForm').reset();
+        }
+
+        function closePositionModal() {
+            document.getElementById('positionModal').style.display = 'none';
+        }
+
+        function updatePositionForm() {
+            const instrumentType = document.getElementById('instrumentType').value;
+            document.getElementById('equityFields').style.display = instrumentType === 'equity' ? 'block' : 'none';
+            document.getElementById('debtFields').style.display = instrumentType === 'debt' ? 'block' : 'none';
+            document.getElementById('debtMaturityFields').style.display = instrumentType === 'debt' ? 'block' : 'none';
+        }
+
+        function addPosition(e) {
+            e.preventDefault();
+            
+            const position = {
+                id: Date.now(),
+                instrumentType: document.getElementById('instrumentType').value,
+                positionType: document.getElementById('positionType').value,
+                instrumentName: document.getElementById('instrumentName').value,
+                marketValue: parseFloat(document.getElementById('marketValue').value),
+                portfolioType: document.getElementById('portfolioType').value,
+                creditRating: document.getElementById('creditRating').value,
+                maturity: parseFloat(document.getElementById('maturity').value) || 0
+            };
+            
+            positions.push(position);
+            closePositionModal();
+            saveData();
+            updateDisplay();
+        }
+
+        // FX Risk Functions
+        function showFXModal() {
+            document.getElementById('fxModal').style.display = 'block';
+            document.getElementById('fxForm').reset();
+        }
+
+        function closeFXModal() {
+            document.getElementById('fxModal').style.display = 'none';
+        }
+
+        function addFXPosition(e) {
+            e.preventDefault();
+            
+            const fxPosition = {
+                id: Date.now(),
+                currencyPair: document.getElementById('currencyPair').value,
+                positionType: document.getElementById('fxPositionType').value,
+                amount: parseFloat(document.getElementById('fxAmount').value),
+                gbpValue: parseFloat(document.getElementById('fxGBPValue').value)
+            };
+            
+            fxPositions.push(fxPosition);
+            closeFXModal();
+            saveData();
+            updateDisplay();
+        }
+
+        // Commodity Risk Functions
+        function showCommodityModal() {
+            document.getElementById('commodityModal').style.display = 'block';
+            document.getElementById('commodityForm').reset();
+        }
+
+        function closeCommodityModal() {
+            document.getElementById('commodityModal').style.display = 'none';
+        }
+
+        function addCommodityPosition(e) {
+            e.preventDefault();
+            
+            const commodityPosition = {
+                id: Date.now(),
+                commodityType: document.getElementById('commodityType').value,
+                commodityName: document.getElementById('commodityName').value,
+                value: parseFloat(document.getElementById('commodityValue').value),
+                positionType: document.getElementById('commodityPositionType').value,
+                maturity: parseInt(document.getElementById('commodityMaturity').value) || 0
+            };
+            
+            commodityPositions.push(commodityPosition);
+            closeCommodityModal();
+            saveData();
+            updateDisplay();
+        }
+
+        // Options Risk Functions
+        function showOptionModal() {
+            document.getElementById('optionModal').style.display = 'block';
+            document.getElementById('optionForm').reset();
+        }
+
+        function closeOptionModal() {
+            document.getElementById('optionModal').style.display = 'none';
+        }
+
+        function addOptionPosition(e) {
+            e.preventDefault();
+            
+            const optionPosition = {
+                id: Date.now(),
+                underlyingType: document.getElementById('underlyingType').value,
+                optionType: document.getElementById('optionType').value,
+                delta: parseFloat(document.getElementById('optionDelta').value),
+                gamma: parseFloat(document.getElementById('optionGamma').value),
+                vega: parseFloat(document.getElementById('optionVega').value),
+                marketValue: parseFloat(document.getElementById('optionValue').value),
+                underlyingValue: parseFloat(document.getElementById('underlyingValue').value)
+            };
+            
+            optionPositions.push(optionPosition);
+            closeOptionModal();
+            saveData();
+            updateDisplay();
+        }
+
+        // Risk Calculation Functions
+        function calculatePositionRisk() {
+            let specificRisk = 0;
+            let generalRisk = 0;
+            const equityPositions = positions.filter(p => p.instrumentType === 'equity');
+            const debtPositions = positions.filter(p => p.instrumentType === 'debt');
+            
+            // Equity specific risk
+            equityPositions.forEach(pos => {
+                const rate = specificRiskRates.equity[pos.portfolioType] || 0.08;
+                specificRisk += Math.abs(pos.marketValue) * rate;
+            });
+            
+            // Equity general risk (with netting)
+            const equityLong = equityPositions.filter(p => p.positionType === 'long').reduce((sum, p) => sum + p.marketValue, 0);
+            const equityShort = equityPositions.filter(p => p.positionType === 'short').reduce((sum, p) => sum + p.marketValue, 0);
+            generalRisk += Math.abs(equityLong + equityShort) * 0.08;
+            
+            // Debt specific risk
+            debtPositions.forEach(pos => {
+                const rate = specificRiskRates.debt[pos.creditRating] || 0.08;
+                specificRisk += Math.abs(pos.marketValue) * rate;
+            });
+            
+            // Debt general risk (maturity ladder)
+            const debtGeneralRisk = calculateDebtGeneralRisk(debtPositions);
+            generalRisk += debtGeneralRisk;
+            
+            return { specificRisk, generalRisk };
+        }
+
+        function calculateDebtGeneralRisk(debtPositions) {
+            // Simplified maturity ladder calculation
+            let risk = 0;
+            
+            debtPositions.forEach(pos => {
+                const bucket = maturityBuckets.find(b => pos.maturity <= b.max);
+                if (bucket) {
+                    risk += Math.abs(pos.marketValue) * bucket.weight;
+                }
+            });
+            
+            return risk;
+        }
+
+        function calculateFXRisk() {
+            // Calculate net open position
+            const netPositions = {};
+            
+            fxPositions.forEach(pos => {
+                const [base, quote] = pos.currencyPair.split('/');
+                if (!netPositions[base]) netPositions[base] = 0;
+                if (!netPositions[quote]) netPositions[quote] = 0;
+                
+                netPositions[base] += pos.gbpValue;
+                netPositions[quote] -= pos.gbpValue;
+            });
+            
+            // Sum of absolute values of net positions
+            const totalNetOpen = Object.values(netPositions).reduce((sum, val) => sum + Math.abs(val), 0);
+            
+            // 8% of net open position
+            return totalNetOpen * 0.08;
+        }
+
+        function calculateCommodityRisk() {
+            let risk = 0;
+            
+            commodityPositions.forEach(pos => {
+                if (pos.commodityType === 'precious') {
+                    // Precious metals: 8%
+                    risk += Math.abs(pos.value) * 0.08;
+                } else {
+                    // Simplified approach: 15% of gross positions
+                    risk += Math.abs(pos.value) * 0.15;
+                }
+            });
+            
+            return risk;
+        }
+
+        function calculateOptionsRisk() {
+            // Delta-plus method
+            let risk = 0;
+            
+            optionPositions.forEach(opt => {
+                // Delta risk
+                const deltaRisk = Math.abs(opt.delta * opt.underlyingValue) * 0.08;
+                
+                // Gamma risk (simplified)
+                const gammaRisk = 0.5 * opt.gamma * Math.pow(opt.underlyingValue * 0.08, 2);
+                
+                // Vega risk (simplified)
+                const vegaRisk = Math.abs(opt.vega * 0.25);
+                
+                risk += deltaRisk + gammaRisk + vegaRisk;
+            });
+            
+            return risk;
+        }
+
+        function deletePosition(id, type) {
+            switch(type) {
+                case 'position':
+                    positions = positions.filter(p => p.id !== id);
+                    break;
+                case 'fx':
+                    fxPositions = fxPositions.filter(p => p.id !== id);
+                    break;
+                case 'commodity':
+                    commodityPositions = commodityPositions.filter(p => p.id !== id);
+                    break;
+                case 'option':
+                    optionPositions = optionPositions.filter(p => p.id !== id);
+                    break;
+            }
+            saveData();
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            // Calculate all risks
+            const { specificRisk, generalRisk } = calculatePositionRisk();
+            const fxRisk = calculateFXRisk();
+            const commodityRisk = calculateCommodityRisk();
+            const optionsRisk = calculateOptionsRisk();
+            
+            // Total K-NPR
+            const totalKNPR = specificRisk + generalRisk + fxRisk + commodityRisk + optionsRisk;
+            
+            // Update display values
+            document.getElementById('specificRisk').textContent = `£${Math.round(specificRisk).toLocaleString()}`;
+            document.getElementById('generalRisk').textContent = `£${Math.round(generalRisk).toLocaleString()}`;
+            document.getElementById('fxRisk').textContent = `£${Math.round(fxRisk).toLocaleString()}`;
+            document.getElementById('commodityRisk').textContent = `£${Math.round(commodityRisk).toLocaleString()}`;
+            document.getElementById('optionsRisk').textContent = `£${Math.round(optionsRisk).toLocaleString()}`;
+            document.getElementById('totalKNPR').textContent = `£${Math.round(totalKNPR).toLocaleString()}`;
+            
+            // Calculate diversification benefit (simplified)
+            const sumOfRisks = specificRisk + generalRisk + fxRisk + commodityRisk + optionsRisk;
+            const diversificationBenefit = 0; // Could implement correlation-based benefit
+            document.getElementById('diversificationBenefit').textContent = `£${Math.round(diversificationBenefit).toLocaleString()}`;
+            
+            // Effective rate
+            const totalPositionValue = positions.reduce((sum, p) => sum + Math.abs(p.marketValue), 0) +
+                                      fxPositions.reduce((sum, p) => sum + Math.abs(p.gbpValue), 0) +
+                                      commodityPositions.reduce((sum, p) => sum + Math.abs(p.value), 0) +
+                                      optionPositions.reduce((sum, p) => sum + Math.abs(p.marketValue), 0);
+            
+            const effectiveRate = totalPositionValue > 0 ? (totalKNPR / totalPositionValue) * 100 : 0;
+            document.getElementById('effectiveRate').textContent = `${effectiveRate.toFixed(2)}%`;
+            
+            // Update lists
+            renderPositions();
+            renderFXPositions();
+            renderCommodityPositions();
+            renderOptionPositions();
+            
+            // Update chart
+            updateRiskChart();
+            
+            // Update parent if integrated
+            if (window.parent && window.parent.updateKFactorValue) {
+                window.parent.updateKFactorValue('knpr', totalKNPR);
+            }
+        }
+
+        function renderPositions() {
+            const container = document.getElementById('positionsList');
+            
+            if (positions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No positions added yet</p>';
+                document.getElementById('debtMaturityLadder').style.display = 'none';
+                return;
+            }
+            
+            container.innerHTML = positions.map(pos => `
+                <div class="card p-4 ${pos.instrumentType === 'equity' ? 'risk-type-equity' : 'risk-type-debt'}">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-lg">${pos.instrumentName}</h4>
+                            <p class="text-sm text-gray-400">
+                                ${pos.instrumentType === 'equity' ? pos.portfolioType : pos.creditRating.toUpperCase()} • 
+                                ${pos.positionType} • 
+                                ${pos.instrumentType === 'debt' ? `${pos.maturity}Y` : ''}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-bold ${pos.positionType === 'long' ? 'text-green-400' : 'text-red-400'}">
+                                £${pos.marketValue.toLocaleString()}
+                            </div>
+                            <button onclick="deletePosition(${pos.id}, 'position')" class="mt-2 text-red-400 hover:text-red-300 text-sm">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Update maturity ladder if debt positions exist
+            const debtPositions = positions.filter(p => p.instrumentType === 'debt');
+            if (debtPositions.length > 0) {
+                document.getElementById('debtMaturityLadder').style.display = 'block';
+                renderMaturityLadder(debtPositions);
+            } else {
+                document.getElementById('debtMaturityLadder').style.display = 'none';
+            }
+        }
+
+        function renderMaturityLadder(debtPositions) {
+            const ladder = document.getElementById('maturityLadderDisplay');
+            const bucketTotals = {};
+            
+            // Group positions by maturity bucket
+            debtPositions.forEach(pos => {
+                const bucket = maturityBuckets.findIndex(b => pos.maturity <= b.max);
+                if (!bucketTotals[bucket]) bucketTotals[bucket] = { long: 0, short: 0 };
+                
+                if (pos.positionType === 'long') {
+                    bucketTotals[bucket].long += pos.marketValue;
+                } else {
+                    bucketTotals[bucket].short += pos.marketValue;
+                }
+            });
+            
+            // Render buckets
+            ladder.innerHTML = Object.entries(bucketTotals).map(([idx, totals]) => {
+                const bucket = maturityBuckets[idx];
+                const netPosition = totals.long + totals.short;
+                
+                return `
+                    <div class="maturity-bucket">
+                        <div class="text-xs font-bold mb-1">
+                            ${idx == 0 ? '≤1M' : idx == 12 ? '>20Y' : `≤${bucket.max}Y`}
+                        </div>
+                        <div class="text-xs ${netPosition > 0 ? 'text-green-400' : 'text-red-400'}">
+                            £${Math.abs(netPosition).toLocaleString()}
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            ${(bucket.weight * 100).toFixed(2)}%
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderFXPositions() {
+            const container = document.getElementById('fxPositionsList');
+            
+            if (fxPositions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No FX positions added yet</p>';
+                document.getElementById('fxSummary').innerHTML = '<p class="text-gray-500">No positions</p>';
+                return;
+            }
+            
+            container.innerHTML = fxPositions.map(pos => `
+                <div class="card p-4 risk-type-fx">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-lg">${pos.currencyPair}</h4>
+                            <p class="text-sm text-gray-400">${pos.positionType}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-bold text-green-400">
+                                £${pos.gbpValue.toLocaleString()}
+                            </div>
+                            <button onclick="deletePosition(${pos.id}, 'fx')" class="mt-2 text-red-400 hover:text-red-300 text-sm">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Update FX summary
+            const netOpen = fxPositions.reduce((sum, pos) => sum + Math.abs(pos.gbpValue), 0);
+            document.getElementById('fxSummary').innerHTML = `
+                <div class="flex justify-between">
+                    <span>Total Net Open Position:</span>
+                    <span class="font-bold">£${netOpen.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>FX Risk Charge (8%):</span>
+                    <span class="font-bold text-green-400">£${Math.round(netOpen * 0.08).toLocaleString()}</span>
+                </div>
+            `;
+        }
+
+        function renderCommodityPositions() {
+            const container = document.getElementById('commodityPositionsList');
+            
+            if (commodityPositions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No commodity positions added yet</p>';
+                return;
+            }
+            
+            container.innerHTML = commodityPositions.map(pos => `
+                <div class="card p-4 risk-type-commodity">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-lg">${pos.commodityName}</h4>
+                            <p class="text-sm text-gray-400">
+                                ${pos.commodityType} • ${pos.positionType} • ${pos.maturity}M
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-bold ${pos.positionType === 'long' ? 'text-green-400' : 'text-red-400'}">
+                                £${pos.value.toLocaleString()}
+                            </div>
+                            <button onclick="deletePosition(${pos.id}, 'commodity')" class="mt-2 text-red-400 hover:text-red-300 text-sm">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderOptionPositions() {
+            const container = document.getElementById('optionPositionsList');
+            
+            if (optionPositions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No option positions added yet</p>';
+                return;
+            }
+            
+            container.innerHTML = optionPositions.map(opt => `
+                <div class="card p-4 risk-type-option">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-lg">${opt.underlyingType} ${opt.optionType}</h4>
+                            <p class="text-sm text-gray-400">
+                                Δ: ${opt.delta} • Γ: ${opt.gamma} • ν: ${opt.vega}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-bold text-purple-400">
+                                £${opt.marketValue.toLocaleString()}
+                            </div>
+                            <button onclick="deletePosition(${opt.id}, 'option')" class="mt-2 text-red-400 hover:text-red-300 text-sm">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateRiskChart() {
+            const ctx = document.getElementById('riskDistributionChart').getContext('2d');
+            const { specificRisk, generalRisk } = calculatePositionRisk();
+            const fxRisk = calculateFXRisk();
+            const commodityRisk = calculateCommodityRisk();
+            const optionsRisk = calculateOptionsRisk();
+            
+            const data = {
+                labels: ['Specific Risk', 'General Risk', 'FX Risk', 'Commodity Risk', 'Options Risk'],
+                datasets: [{
+                    data: [specificRisk, generalRisk, fxRisk, commodityRisk, optionsRisk],
+                    backgroundColor: ['#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
+                }]
+            };
+            
+            if (riskDistributionChart) {
+                riskDistributionChart.data = data;
+                riskDistributionChart.update();
+            } else {
+                riskDistributionChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#e0e7ff' }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                        return `${context.label}: £${Math.round(context.parsed).toLocaleString()} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

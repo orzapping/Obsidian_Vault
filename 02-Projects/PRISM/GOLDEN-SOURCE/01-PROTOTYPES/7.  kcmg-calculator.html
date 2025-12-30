@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-CMG Clearing Margin Given Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+        }
+        .input-field {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+        }
+        .input-field:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.5);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+        }
+        .ccp-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .ccp-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #4f46e5, #7c3aed);
+        }
+        .margin-bar {
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .margin-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            transition: width 0.3s ease;
+        }
+        .trend-up { color: #ef4444; }
+        .trend-down { color: #10b981; }
+        .trend-neutral { color: #94a3b8; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); }
+        .modal-content { background: #111827; margin: 3% auto; padding: 0; border-radius: 20px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); border: 1px solid #334155; animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .metric-card {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stress-scenario {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-600">
+                K-CMG Clearing Margin Calculator
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">MiFIDPRU 4.13 - Clearing Member Guarantee</p>
+        </header>
+
+        <!-- Main Formula Display -->
+        <div class="card p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-purple-400">K-CMG Formula</h2>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-white mb-2">
+                    K-CMG = Total Margin Required × 1.3
+                </div>
+                <p class="text-gray-400">Capital requirement for firms providing clearing member services</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <button onclick="showCCPModal()" class="card p-4 text-center hover:border-purple-500 transition-all">
+                <div class="text-2xl mb-2">🏦</div>
+                <div class="font-bold">Add CCP</div>
+                <div class="text-sm text-gray-400">Register new clearing house</div>
+            </button>
+            <button onclick="showMarginUpdateModal()" class="card p-4 text-center hover:border-purple-500 transition-all">
+                <div class="text-2xl mb-2">📊</div>
+                <div class="font-bold">Update Margins</div>
+                <div class="text-sm text-gray-400">Record margin changes</div>
+            </button>
+            <button onclick="runStressTest()" class="card p-4 text-center hover:border-purple-500 transition-all">
+                <div class="text-2xl mb-2">⚡</div>
+                <div class="font-bold">Stress Test</div>
+                <div class="text-sm text-gray-400">Simulate margin increases</div>
+            </button>
+        </div>
+
+        <!-- CCP Portfolio -->
+        <div class="card p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-cyan-400">CCP Portfolio</h2>
+            <div id="ccpList" class="space-y-4">
+                <!-- Dynamic CCP cards -->
+            </div>
+        </div>
+
+        <!-- Summary Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Total Margins -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-emerald-400">Margin Summary</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Initial Margin:</span>
+                        <span class="font-bold text-blue-400" id="totalIM">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Variation Margin:</span>
+                        <span class="font-bold text-green-400" id="totalVM">£0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Default Fund:</span>
+                        <span class="font-bold text-yellow-400" id="totalDF">£0</span>
+                    </div>
+                    <div class="pt-3 border-t border-gray-600">
+                        <div class="flex justify-between">
+                            <span>Total Margin:</span>
+                            <span class="font-bold text-white text-lg" id="totalMargin">£0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- K-CMG Calculation -->
+            <div class="card p-6 bg-gradient-to-br from-purple-900/20 to-indigo-900/20">
+                <h3 class="text-lg font-bold mb-4 text-white">K-CMG Requirement</h3>
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-600" id="kcmgTotal">
+                        £0
+                    </div>
+                    <div class="mt-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Multiplier:</span>
+                            <span class="font-bold">1.3x</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Buffer Amount:</span>
+                            <span class="font-bold text-purple-400" id="bufferAmount">£0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Efficiency Metrics -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-rose-400">Efficiency Metrics</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="metric-card">
+                        <div class="text-2xl font-bold text-purple-400" id="avgUtilization">0%</div>
+                        <div class="text-xs text-gray-400">Avg Utilization</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="text-2xl font-bold text-blue-400" id="marginEfficiency">0%</div>
+                        <div class="text-xs text-gray-400">Margin Efficiency</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="text-2xl font-bold text-green-400" id="diversification">0</div>
+                        <div class="text-xs text-gray-400">Diversification</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="text-2xl font-bold text-yellow-400" id="concentration">0%</div>
+                        <div class="text-xs text-gray-400">Top CCP %</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Margin Trend Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-indigo-400">Margin Trend (30 Days)</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="marginTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- CCP Distribution Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-purple-400">CCP Distribution</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="ccpDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stress Test Results -->
+        <div class="card p-6" id="stressTestSection" style="display: none;">
+            <h3 class="text-lg font-bold mb-4 text-red-400">Stress Test Results</h3>
+            <div id="stressTestResults" class="space-y-3">
+                <!-- Dynamic stress test scenarios -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add CCP Modal -->
+    <div id="ccpModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Add Central Counterparty (CCP)</h2>
+                    <button onclick="closeCCPModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="ccpForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">CCP Name</label>
+                    <input type="text" id="ccpName" class="input-field w-full p-3" required>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Region</label>
+                        <select id="ccpRegion" class="input-field w-full p-3">
+                            <option value="EU">Europe</option>
+                            <option value="US">United States</option>
+                            <option value="UK">United Kingdom</option>
+                            <option value="APAC">Asia-Pacific</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Asset Classes</label>
+                        <input type="text" id="ccpAssetClasses" class="input-field w-full p-3" placeholder="e.g., Rates, FX, Equities">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Initial Margin (£)</label>
+                        <input type="number" id="ccpIM" class="input-field w-full p-3" value="0" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Variation Margin (£)</label>
+                        <input type="number" id="ccpVM" class="input-field w-full p-3" value="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Default Fund (£)</label>
+                        <input type="number" id="ccpDF" class="input-field w-full p-3" value="0" min="0">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeCCPModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 btn-primary text-white rounded-lg">
+                        Add CCP
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update Margins Modal -->
+    <div id="marginUpdateModal" class="modal">
+        <div class="modal-content">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Update Margin Requirements</h2>
+                    <button onclick="closeMarginUpdateModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Select CCP</label>
+                    <select id="updateCCPSelect" class="input-field w-full p-3">
+                        <!-- Dynamic options -->
+                    </select>
+                </div>
+
+                <form id="marginUpdateForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">New Initial Margin (£)</label>
+                            <input type="number" id="updateIM" class="input-field w-full p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">New Variation Margin (£)</label>
+                            <input type="number" id="updateVM" class="input-field w-full p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">New Default Fund (£)</label>
+                            <input type="number" id="updateDF" class="input-field w-full p-3">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Reason for Change</label>
+                        <select id="updateReason" class="input-field w-full p-3">
+                            <option value="regular">Regular Review</option>
+                            <option value="volatility">Market Volatility</option>
+                            <option value="position">Position Changes</option>
+                            <option value="methodology">Methodology Update</option>
+                            <option value="regulatory">Regulatory Change</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeMarginUpdateModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 btn-primary text-white rounded-lg">
+                            Update Margins
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global data storage
+        let ccpData = [];
+        let marginHistory = [];
+        let marginTrendChart = null;
+        let ccpDistributionChart = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            initializeSampleData();
+            setupEventListeners();
+            updateDisplay();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('ccpForm').addEventListener('submit', addCCP);
+            document.getElementById('marginUpdateForm').addEventListener('submit', updateMargins);
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('kcmg_data');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                ccpData = data.ccpData || [];
+                marginHistory = data.marginHistory || [];
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('kcmg_data', JSON.stringify({
+                ccpData,
+                marginHistory
+            }));
+        }
+
+        function initializeSampleData() {
+            if (ccpData.length === 0) {
+                // Add sample CCPs
+                ccpData = [
+                    {
+                        id: 1,
+                        name: 'LCH Ltd',
+                        region: 'UK',
+                        assetClasses: 'Rates, FX, Repos',
+                        im: 2500000,
+                        vm: 500000,
+                        df: 750000
+                    },
+                    {
+                        id: 2,
+                        name: 'Eurex Clearing',
+                        region: 'EU',
+                        assetClasses: 'Rates, Equities',
+                        im: 1800000,
+                        vm: 300000,
+                        df: 500000
+                    }
+                ];
+                
+                // Generate sample history
+                const today = new Date();
+                for (let i = 29; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    
+                    marginHistory.push({
+                        date: date.toISOString().split('T')[0],
+                        total: 6350000 + (Math.random() - 0.5) * 1000000
+                    });
+                }
+                
+                saveData();
+            }
+        }
+
+        function showCCPModal() {
+            document.getElementById('ccpModal').style.display = 'block';
+            document.getElementById('ccpForm').reset();
+        }
+
+        function closeCCPModal() {
+            document.getElementById('ccpModal').style.display = 'none';
+        }
+
+        function showMarginUpdateModal() {
+            document.getElementById('marginUpdateModal').style.display = 'block';
+            
+            // Populate CCP dropdown
+            const select = document.getElementById('updateCCPSelect');
+            select.innerHTML = ccpData.map(ccp => 
+                `<option value="${ccp.id}">${ccp.name}</option>`
+            ).join('');
+            
+            // Load current values for selected CCP
+            if (ccpData.length > 0) {
+                loadCCPValues(ccpData[0].id);
+            }
+        }
+
+        function closeMarginUpdateModal() {
+            document.getElementById('marginUpdateModal').style.display = 'none';
+        }
+
+        function loadCCPValues(ccpId) {
+            const ccp = ccpData.find(c => c.id == ccpId);
+            if (ccp) {
+                document.getElementById('updateIM').value = ccp.im;
+                document.getElementById('updateVM').value = ccp.vm;
+                document.getElementById('updateDF').value = ccp.df;
+            }
+        }
+
+        document.getElementById('updateCCPSelect')?.addEventListener('change', (e) => {
+            loadCCPValues(e.target.value);
+        });
+
+        function addCCP(e) {
+            e.preventDefault();
+            
+            const newCCP = {
+                id: Date.now(),
+                name: document.getElementById('ccpName').value,
+                region: document.getElementById('ccpRegion').value,
+                assetClasses: document.getElementById('ccpAssetClasses').value,
+                im: parseFloat(document.getElementById('ccpIM').value) || 0,
+                vm: parseFloat(document.getElementById('ccpVM').value) || 0,
+                df: parseFloat(document.getElementById('ccpDF').value) || 0
+            };
+            
+            ccpData.push(newCCP);
+            closeCCPModal();
+            saveData();
+            updateDisplay();
+        }
+
+        function updateMargins(e) {
+            e.preventDefault();
+            
+            const ccpId = document.getElementById('updateCCPSelect').value;
+            const ccp = ccpData.find(c => c.id == ccpId);
+            
+            if (ccp) {
+                ccp.im = parseFloat(document.getElementById('updateIM').value) || ccp.im;
+                ccp.vm = parseFloat(document.getElementById('updateVM').value) || ccp.vm;
+                ccp.df = parseFloat(document.getElementById('updateDF').value) || ccp.df;
+                
+                // Add to history
+                const totalMargin = ccpData.reduce((sum, c) => sum + c.im + c.vm + c.df, 0);
+                marginHistory.push({
+                    date: new Date().toISOString().split('T')[0],
+                    total: totalMargin,
+                    reason: document.getElementById('updateReason').value
+                });
+                
+                // Keep only last 30 days
+                if (marginHistory.length > 30) {
+                    marginHistory = marginHistory.slice(-30);
+                }
+            }
+            
+            closeMarginUpdateModal();
+            saveData();
+            updateDisplay();
+        }
+
+        function deleteCCP(id) {
+            if (confirm('Are you sure you want to remove this CCP?')) {
+                ccpData = ccpData.filter(ccp => ccp.id !== id);
+                saveData();
+                updateDisplay();
+            }
+        }
+
+        function runStressTest() {
+            const scenarios = [
+                { name: 'Market Volatility (+25%)', multiplier: 1.25 },
+                { name: 'Extreme Stress (+50%)', multiplier: 1.50 },
+                { name: 'Crisis Scenario (+100%)', multiplier: 2.00 },
+                { name: 'Brexit-style Event (+40%)', multiplier: 1.40 }
+            ];
+            
+            const currentTotal = ccpData.reduce((sum, ccp) => sum + ccp.im + ccp.vm + ccp.df, 0);
+            
+            const resultsHTML = scenarios.map(scenario => {
+                const stressedMargin = currentTotal * scenario.multiplier;
+                const stressedKCMG = stressedMargin * 1.3;
+                const increase = stressedKCMG - (currentTotal * 1.3);
+                
+                return `
+                    <div class="stress-scenario">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold">${scenario.name}</div>
+                                <div class="text-sm text-gray-400">
+                                    Margin: £${stressedMargin.toLocaleString()} → 
+                                    K-CMG: £${Math.round(stressedKCMG).toLocaleString()}
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-bold text-red-400">
+                                    +£${Math.round(increase).toLocaleString()}
+                                </div>
+                                <div class="text-xs text-gray-400">
+                                    +${((increase / (currentTotal * 1.3)) * 100).toFixed(1)}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('stressTestResults').innerHTML = resultsHTML;
+            document.getElementById('stressTestSection').style.display = 'block';
+        }
+
+        function calculateMetrics() {
+            const totalMargin = ccpData.reduce((sum, ccp) => sum + ccp.im + ccp.vm + ccp.df, 0);
+            const totalIM = ccpData.reduce((sum, ccp) => sum + ccp.im, 0);
+            const totalVM = ccpData.reduce((sum, ccp) => sum + ccp.vm, 0);
+            const totalDF = ccpData.reduce((sum, ccp) => sum + ccp.df, 0);
+            
+            // Efficiency metrics
+            const avgUtilization = totalIM > 0 ? (totalVM / totalIM) * 100 : 0;
+            const marginEfficiency = totalMargin > 0 ? (totalIM / totalMargin) * 100 : 0;
+            const diversification = ccpData.length;
+            
+            // Concentration
+            const largestCCP = Math.max(...ccpData.map(ccp => ccp.im + ccp.vm + ccp.df));
+            const concentration = totalMargin > 0 ? (largestCCP / totalMargin) * 100 : 0;
+            
+            return {
+                totalMargin,
+                totalIM,
+                totalVM,
+                totalDF,
+                kcmg: totalMargin * 1.3,
+                buffer: totalMargin * 0.3,
+                avgUtilization,
+                marginEfficiency,
+                diversification,
+                concentration
+            };
+        }
+
+        function updateDisplay() {
+            const metrics = calculateMetrics();
+            
+            // Update summary values
+            document.getElementById('totalIM').textContent = `£${metrics.totalIM.toLocaleString()}`;
+            document.getElementById('totalVM').textContent = `£${metrics.totalVM.toLocaleString()}`;
+            document.getElementById('totalDF').textContent = `£${metrics.totalDF.toLocaleString()}`;
+            document.getElementById('totalMargin').textContent = `£${metrics.totalMargin.toLocaleString()}`;
+            document.getElementById('kcmgTotal').textContent = `£${Math.round(metrics.kcmg).toLocaleString()}`;
+            document.getElementById('bufferAmount').textContent = `£${Math.round(metrics.buffer).toLocaleString()}`;
+            
+            // Update efficiency metrics
+            document.getElementById('avgUtilization').textContent = `${metrics.avgUtilization.toFixed(1)}%`;
+            document.getElementById('marginEfficiency').textContent = `${metrics.marginEfficiency.toFixed(1)}%`;
+            document.getElementById('diversification').textContent = metrics.diversification;
+            document.getElementById('concentration').textContent = `${metrics.concentration.toFixed(1)}%`;
+            
+            // Update CCP list
+            renderCCPList();
+            
+            // Update charts
+            updateCharts();
+            
+            // Update parent if integrated
+            if (window.parent && window.parent.updateKFactorValue) {
+                window.parent.updateKFactorValue('kcmg', metrics.kcmg);
+            }
+        }
+
+        function renderCCPList() {
+            const container = document.getElementById('ccpList');
+            
+            if (ccpData.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No CCPs registered yet</p>';
+                return;
+            }
+            
+            container.innerHTML = ccpData.map(ccp => {
+                const total = ccp.im + ccp.vm + ccp.df;
+                const totalMargin = ccpData.reduce((sum, c) => sum + c.im + c.vm + c.df, 0);
+                const percentage = totalMargin > 0 ? (total / totalMargin) * 100 : 0;
+                
+                // Calculate trend (simplified)
+                const trend = Math.random() > 0.5 ? 'up' : Math.random() > 0.5 ? 'down' : 'neutral';
+                const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+                const trendClass = `trend-${trend}`;
+                
+                return `
+                    <div class="ccp-card card p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="font-bold text-lg">${ccp.name}</h4>
+                                <p class="text-sm text-gray-400">${ccp.region} • ${ccp.assetClasses}</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xl font-bold">£${total.toLocaleString()}</div>
+                                <div class="text-sm ${trendClass}">
+                                    ${trendIcon} ${percentage.toFixed(1)}% of total
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-2 text-sm mb-3">
+                            <div>
+                                <span class="text-gray-400">IM:</span>
+                                <span class="font-bold text-blue-400 block">£${ccp.im.toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">VM:</span>
+                                <span class="font-bold text-green-400 block">£${ccp.vm.toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">DF:</span>
+                                <span class="font-bold text-yellow-400 block">£${ccp.df.toLocaleString()}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="margin-bar">
+                            <div class="margin-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        
+                        <div class="flex justify-end mt-3">
+                            <button onclick="deleteCCP(${ccp.id})" class="text-red-400 hover:text-red-300 text-sm">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCharts() {
+            // Margin Trend Chart
+            const ctx1 = document.getElementById('marginTrendChart').getContext('2d');
+            const trendData = {
+                labels: marginHistory.slice(-30).map(h => {
+                    const date = new Date(h.date);
+                    return `${date.getDate()}/${date.getMonth() + 1}`;
+                }),
+                datasets: [{
+                    label: 'Total Margin',
+                    data: marginHistory.slice(-30).map(h => h.total),
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'K-CMG Requirement',
+                    data: marginHistory.slice(-30).map(h => h.total * 1.3),
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+            
+            if (marginTrendChart) {
+                marginTrendChart.data = trendData;
+                marginTrendChart.update();
+            } else {
+                marginTrendChart = new Chart(ctx1, {
+                    type: 'line',
+                    data: trendData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#e0e7ff' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: { 
+                                    color: '#94a3b8',
+                                    callback: function(value) {
+                                        return '£' + (value / 1000000).toFixed(1) + 'M';
+                                    }
+                                },
+                                grid: { color: '#1e293b' }
+                            },
+                            x: {
+                                ticks: { color: '#e0e7ff' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // CCP Distribution Chart
+            const ctx2 = document.getElementById('ccpDistributionChart').getContext('2d');
+            const ccpDistData = {
+                labels: ccpData.map(ccp => ccp.name),
+                datasets: [{
+                    label: 'Initial Margin',
+                    data: ccpData.map(ccp => ccp.im),
+                    backgroundColor: '#3b82f6'
+                }, {
+                    label: 'Variation Margin',
+                    data: ccpData.map(ccp => ccp.vm),
+                    backgroundColor: '#10b981'
+                }, {
+                    label: 'Default Fund',
+                    data: ccpData.map(ccp => ccp.df),
+                    backgroundColor: '#f59e0b'
+                }]
+            };
+            
+            if (ccpDistributionChart) {
+                ccpDistributionChart.data = ccpDistData;
+                ccpDistributionChart.update();
+            } else {
+                ccpDistributionChart = new Chart(ctx2, {
+                    type: 'bar',
+                    data: ccpDistData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: { color: '#e0e7ff' },
+                                grid: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                ticks: { 
+                                    color: '#94a3b8',
+                                    callback: function(value) {
+                                        return '£' + (value / 1000000).toFixed(1) + 'M';
+                                    }
+                                },
+                                grid: { color: '#1e293b' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#e0e7ff' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

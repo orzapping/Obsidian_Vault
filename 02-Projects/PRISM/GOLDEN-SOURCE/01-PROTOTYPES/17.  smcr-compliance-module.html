@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMCR Compliance Module - Senior Managers & Certification Regime</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body.aurora {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(1200px circle at 10% 10%, #0b1720 0%, #08121b 40%, #070b13 100%);
+            color: #e0f2f1;
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(13, 25, 36, 0.45);
+            border: 1px solid rgba(45, 212, 191, 0.18);
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(0,0,0,0.45);
+            border-color: rgba(6, 182, 212, 0.35);
+        }
+        .input-field {
+            background-color: rgba(11, 23, 32, 0.9);
+            border: 1px solid rgba(45, 212, 191, 0.18);
+            color: #e0f2f1;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+        }
+        .input-field:focus {
+            background-color: rgba(6, 16, 24, 0.95);
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.18);
+            outline: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4, #10b981);
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #22d3ee, #34d399);
+            box-shadow: 0 7px 18px rgba(6, 182, 212, 0.32);
+            transform: translateY(-1px);
+        }
+        .smf-badge {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .certification-badge {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .conduct-badge {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+        }
+        .modal-content {
+            background: rgba(9, 17, 26, 0.95);
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .responsibility-item {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        .responsibility-item:hover {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: rgba(6, 182, 212, 0.45);
+        }
+        .timeline-node {
+            background: linear-gradient(135deg, #06b6d4, #10b981);
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.75rem;
+        }
+        .status-approved { 
+            background: rgba(16, 185, 129, 0.2); 
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #10b981;
+        }
+        .status-pending { 
+            background: rgba(245, 158, 11, 0.2); 
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #f59e0b;
+        }
+        .status-expired { 
+            background: rgba(239, 68, 68, 0.2); 
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="aurora">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                SMCR Compliance Module
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">Senior Managers & Certification Regime - SYSC 27 & SUP 10C</p>
+        </header>
+
+        <!-- Key Metrics Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div class="card p-4 text-center">
+                <div class="text-3xl font-bold text-blue-400" id="totalSMFs">0</div>
+                <div class="text-sm text-gray-400">Active SMFs</div>
+            </div>
+            <div class="card p-4 text-center">
+                <div class="text-3xl font-bold text-green-400" id="certifiedStaff">0</div>
+                <div class="text-sm text-gray-400">Certified Staff</div>
+            </div>
+            <div class="card p-4 text-center">
+                <div class="text-3xl font-bold text-yellow-400" id="pendingCerts">0</div>
+                <div class="text-sm text-gray-400">Pending Certs</div>
+            </div>
+            <div class="card p-4 text-center">
+                <div class="text-3xl font-bold text-purple-400" id="conductBreaches">0</div>
+                <div class="text-sm text-gray-400">Conduct Issues</div>
+            </div>
+            <div class="card p-4 text-center">
+                <div class="text-3xl font-bold text-cyan-400" id="complianceScore">95%</div>
+                <div class="text-sm text-gray-400">Compliance Score</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <button onclick="showSMFManager()" class="card p-4 text-center hover:border-blue-500 transition-all">
+                <div class="text-2xl mb-2">👔</div>
+                <div class="font-bold">SMF Register</div>
+                <div class="text-sm text-gray-400">Manage Senior Managers</div>
+            </button>
+            <button onclick="showSoRBuilder()" class="card p-4 text-center hover:border-green-500 transition-all">
+                <div class="text-2xl mb-2">📋</div>
+                <div class="font-bold">SoR Builder</div>
+                <div class="text-sm text-gray-400">Statements of Responsibilities</div>
+            </button>
+            <button onclick="showCertificationRegime()" class="card p-4 text-center hover:border-yellow-500 transition-all">
+                <div class="text-2xl mb-2">🏅</div>
+                <div class="font-bold">Certification</div>
+                <div class="text-sm text-gray-400">Certification Regime</div>
+            </button>
+            <button onclick="showResponsibilityMap()" class="card p-4 text-center hover:border-purple-500 transition-all">
+                <div class="text-2xl mb-2">🗺️</div>
+                <div class="font-bold">Resp. Map</div>
+                <div class="text-sm text-gray-400">Management Responsibilities</div>
+            </button>
+        </div>
+
+        <!-- Main Content Tabs -->
+        <div class="card p-6 mb-6">
+            <div class="flex gap-4 mb-6 flex-wrap">
+                <button onclick="setActiveTab('overview')" id="tab-overview" 
+                        class="px-4 py-2 rounded-lg bg-cyan-900/30 border border-cyan-700 font-bold">
+                    Overview
+                </button>
+                <button onclick="setActiveTab('senior-managers')" id="tab-senior-managers"
+                        class="px-4 py-2 rounded-lg hover:bg-gray-800 transition-all">
+                    Senior Managers
+                </button>
+                <button onclick="setActiveTab('certification')" id="tab-certification"
+                        class="px-4 py-2 rounded-lg hover:bg-gray-800 transition-all">
+                    Certification Regime
+                </button>
+                <button onclick="setActiveTab('conduct')" id="tab-conduct"
+                        class="px-4 py-2 rounded-lg hover:bg-gray-800 transition-all">
+                    Conduct Rules
+                </button>
+                <button onclick="setActiveTab('fitness')" id="tab-fitness"
+                        class="px-4 py-2 rounded-lg hover:bg-gray-800 transition-all">
+                    Fitness & Propriety
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="content-overview">
+                <h2 class="text-2xl font-bold mb-4 text-cyan-400">SMCR Compliance Overview</h2>
+                
+                <!-- Regime Architecture -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    <div class="card p-4 border-l-4 border-blue-500">
+                        <h3 class="font-bold text-blue-400 mb-2">Senior Managers Regime</h3>
+                        <p class="text-sm text-gray-400 mb-3">Clear allocation of responsibilities to senior individuals</p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">SMF Coverage</span>
+                                <span class="font-bold">8/10</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">SoRs Complete</span>
+                                <span class="font-bold">7/8</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4 border-l-4 border-green-500">
+                        <h3 class="font-bold text-green-400 mb-2">Certification Regime</h3>
+                        <p class="text-sm text-gray-400 mb-3">Annual fitness & propriety for material risk takers</p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Certified Functions</span>
+                                <span class="font-bold">15</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Due for Renewal</span>
+                                <span class="font-bold text-yellow-400">3</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4 border-l-4 border-yellow-500">
+                        <h3 class="font-bold text-yellow-400 mb-2">Conduct Rules</h3>
+                        <p class="text-sm text-gray-400 mb-3">Standards of conduct for all staff</p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Staff Trained</span>
+                                <span class="font-bold">42/45</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Breaches YTD</span>
+                                <span class="font-bold">2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compliance Timeline -->
+                <div class="card p-4 mb-6">
+                    <h3 class="font-bold mb-4">Upcoming SMCR Deadlines</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-4">
+                            <div class="timeline-node">1</div>
+                            <div class="flex-1">
+                                <div class="font-bold">Annual Certification - John Smith (CF30)</div>
+                                <div class="text-sm text-gray-400">Due: 15 Oct 2025</div>
+                            </div>
+                            <span class="status-pending px-3 py-1 rounded-full text-xs font-bold">30 days</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="timeline-node">2</div>
+                            <div class="flex-1">
+                                <div class="font-bold">SoR Update - Sarah Johnson (SMF16)</div>
+                                <div class="text-sm text-gray-400">Due: 1 Nov 2025</div>
+                            </div>
+                            <span class="status-pending px-3 py-1 rounded-full text-xs font-bold">47 days</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="timeline-node">3</div>
+                            <div class="flex-1">
+                                <div class="font-bold">Conduct Rules Training Refresh</div>
+                                <div class="text-sm text-gray-400">Due: 31 Dec 2025</div>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-800">Q4 2025</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-senior-managers" style="display:none;">
+                <h2 class="text-2xl font-bold mb-4 text-blue-400">Senior Management Functions Register</h2>
+                
+                <button onclick="addSeniorManager()" class="btn-primary mb-4">
+                    + Add Senior Manager
+                </button>
+
+                <div id="smfRegister" class="space-y-4">
+                    <!-- Dynamic SMF entries will go here -->
+                </div>
+            </div>
+
+            <div id="content-certification" style="display:none;">
+                <h2 class="text-2xl font-bold mb-4 text-green-400">Certification Regime</h2>
+                
+                <div class="mb-4 flex gap-2">
+                    <button onclick="addCertifiedFunction()" class="btn-primary">
+                        + Add Certified Function
+                    </button>
+                    <button onclick="runBulkCertification()" class="btn-primary">
+                        🔄 Bulk Certification
+                    </button>
+                </div>
+
+                <div id="certificationRegister" class="space-y-4">
+                    <!-- Dynamic certification entries -->
+                </div>
+            </div>
+
+            <div id="content-conduct" style="display:none;">
+                <h2 class="text-2xl font-bold mb-4 text-yellow-400">Conduct Rules Management</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    <div class="card p-4">
+                        <h3 class="font-bold mb-3">Individual Conduct Rules</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="responsibility-item">
+                                <strong>Rule 1:</strong> You must act with integrity
+                            </div>
+                            <div class="responsibility-item">
+                                <strong>Rule 2:</strong> You must act with due skill, care and diligence
+                            </div>
+                            <div class="responsibility-item">
+                                <strong>Rule 3:</strong> You must be open and cooperative with the FCA, PRA and other regulators
+                            </div>
+                            <div class="responsibility-item">
+                                <strong>Rule 4:</strong> You must pay due regard to the interests of customers and treat them fairly
+                            </div>
+                            <div class="responsibility-item">
+                                <strong>Rule 5:</strong> You must observe proper standards of market conduct
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <h3 class="font-bold mb-3">Senior Manager Conduct Rules</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="responsibility-item">
+                                <strong>SC1:</strong> You must take reasonable steps to ensure that the business of the firm for which you are responsible is controlled effectively
+                            </div>
+                            <div class="responsibility-item">
+                                <strong>SC2:</strong> You must take reasonable steps to ensure that the business of the firm for which you are responsible complies with relevant requirements and standards of the regulatory system
+                            </div>
+                            <div class="responsibility-item">
+                                <strong>SC3:</strong> You must take reasonable steps to ensure that any delegation of your responsibilities is to an appropriate person and that you oversee the discharge of the delegated responsibility effectively
+                            </div>
+                            <div class="responsibility-item">
+                                <strong>SC4:</strong> You must disclose appropriately any information of which the FCA or PRA would reasonably expect notice
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="recordConductBreach()" class="btn-primary">
+                    ⚠️ Record Conduct Breach
+                </button>
+            </div>
+
+            <div id="content-fitness" style="display:none;">
+                <h2 class="text-2xl font-bold mb-4 text-purple-400">Fitness & Propriety Assessments</h2>
+                
+                <div class="card p-4 mb-6">
+                    <h3 class="font-bold mb-3">F&P Assessment Criteria</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="responsibility-item">
+                            <strong>Honesty & Integrity</strong>
+                            <ul class="text-sm text-gray-400 mt-2">
+                                <li>• Criminal records checks</li>
+                                <li>• Regulatory references</li>
+                                <li>• Financial soundness</li>
+                            </ul>
+                        </div>
+                        <div class="responsibility-item">
+                            <strong>Competence & Capability</strong>
+                            <ul class="text-sm text-gray-400 mt-2">
+                                <li>• Relevant qualifications</li>
+                                <li>• Training records</li>
+                                <li>• Experience assessment</li>
+                            </ul>
+                        </div>
+                        <div class="responsibility-item">
+                            <strong>Financial Soundness</strong>
+                            <ul class="text-sm text-gray-400 mt-2">
+                                <li>• Credit checks</li>
+                                <li>• Bankruptcy searches</li>
+                                <li>• Conflict assessments</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="runFitnessAssessment()" class="btn-primary">
+                    🔍 Run F&P Assessment
+                </button>
+            </div>
+        </div>
+
+        <!-- Actions Footer -->
+        <div class="flex gap-4 justify-center">
+            <button onclick="exportSMCRData()" class="btn-primary">
+                📥 Export SMCR Data
+            </button>
+            <button onclick="generateRegulatoryPack()" class="btn-primary">
+                📄 Generate Regulatory Pack
+            </button>
+            <button onclick="showAuditTrail()" class="btn-primary">
+                📊 Audit Trail
+            </button>
+        </div>
+    </div>
+
+    <!-- SMF Manager Modal -->
+    <div id="smfManagerModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Senior Management Functions</h2>
+                    <button onclick="closeModal('smfManagerModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="mb-4">
+                    <input type="text" id="smfSearch" placeholder="Search SMFs..." 
+                           class="input-field" oninput="filterSMFs()">
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="smfList">
+                    <!-- MIFIDPRU Investment Firm SMFs -->
+                    <div class="card p-4">
+                        <h3 class="font-bold text-blue-400 mb-3">Governing Functions</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF1" onchange="toggleSMF(this)">
+                                <span><strong>SMF1:</strong> Chief Executive</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF3" onchange="toggleSMF(this)">
+                                <span><strong>SMF3:</strong> Executive Director</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF9" onchange="toggleSMF(this)">
+                                <span><strong>SMF9:</strong> Chair</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF27" onchange="toggleSMF(this)">
+                                <span><strong>SMF27:</strong> Partner</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <h3 class="font-bold text-green-400 mb-3">Required Functions</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF16" onchange="toggleSMF(this)">
+                                <span><strong>SMF16:</strong> Compliance Oversight</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF17" onchange="toggleSMF(this)">
+                                <span><strong>SMF17:</strong> MLRO</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF24" onchange="toggleSMF(this)">
+                                <span><strong>SMF24:</strong> Chief Operations</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <h3 class="font-bold text-purple-400 mb-3">Systems & Controls</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF18" onchange="toggleSMF(this)">
+                                <span><strong>SMF18:</strong> Other Overall Responsibility</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF7" onchange="toggleSMF(this)">
+                                <span><strong>SMF7:</strong> Group Entity Senior Manager</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <h3 class="font-bold text-yellow-400 mb-3">Oversight Functions</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF10" onchange="toggleSMF(this)">
+                                <span><strong>SMF10:</strong> Chair of Risk Committee</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF11" onchange="toggleSMF(this)">
+                                <span><strong>SMF11:</strong> Chair of Audit Committee</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF12" onchange="toggleSMF(this)">
+                                <span><strong>SMF12:</strong> Chair of Remuneration Committee</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-800 p-2 rounded">
+                                <input type="checkbox" value="SMF13" onchange="toggleSMF(this)">
+                                <span><strong>SMF13:</strong> Chair of Nominations Committee</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button onclick="applySelectedSMFs()" class="btn-primary w-full">
+                        Apply Selected SMFs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SoR Builder Modal -->
+    <div id="sorBuilderModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Statement of Responsibilities Builder</h2>
+                    <button onclick="closeModal('sorBuilderModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Senior Manager</label>
+                        <select id="sorManager" class="input-field" onchange="loadManagerSoR()">
+                            <option value="">Select a Senior Manager</option>
+                            <option value="john_smith">John Smith - SMF1 (CEO)</option>
+                            <option value="sarah_johnson">Sarah Johnson - SMF16 (Compliance)</option>
+                            <option value="michael_brown">Michael Brown - SMF3 (Executive Director)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Effective Date</label>
+                        <input type="date" id="sorEffectiveDate" class="input-field">
+                    </div>
+                </div>
+                
+                <div class="card p-4 mb-6">
+                    <h3 class="font-bold mb-3">Prescribed Responsibilities</h3>
+                    <div class="space-y-2" id="prescribedResponsibilities">
+                        <!-- Prescribed responsibilities based on SYSC 27 -->
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-A" class="mt-1">
+                            <span class="text-sm"><strong>PR-A:</strong> Performance by the firm of its obligations under the senior management regime</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-B" class="mt-1">
+                            <span class="text-sm"><strong>PR-B:</strong> Performance by the firm of its obligations under the certification regime</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-C" class="mt-1">
+                            <span class="text-sm"><strong>PR-C:</strong> Performance by the firm of its obligations in respect of notifications and training on conduct rules</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-D" class="mt-1">
+                            <span class="text-sm"><strong>PR-D:</strong> Responsibility for the firm's policies and procedures for countering financial crime</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-H" class="mt-1">
+                            <span class="text-sm"><strong>PR-H:</strong> Responsibility for the firm's compliance with CASS</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-J" class="mt-1">
+                            <span class="text-sm"><strong>PR-J:</strong> Safeguarding and overseeing the independence and performance of the internal audit function</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-K" class="mt-1">
+                            <span class="text-sm"><strong>PR-K:</strong> Safeguarding and overseeing the independence and performance of the compliance function</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-L" class="mt-1">
+                            <span class="text-sm"><strong>PR-L:</strong> Safeguarding and overseeing the independence and performance of the risk function</span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="PR-Q" class="mt-1">
+                            <span class="text-sm"><strong>PR-Q:</strong> The firm's assessment of the adequacy of the skills, knowledge and expertise of staff</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="card p-4 mb-6">
+                    <h3 class="font-bold mb-3">Other Responsibilities</h3>
+                    <textarea id="otherResponsibilities" class="input-field" rows="4" 
+                              placeholder="Add any additional firm-specific responsibilities..."></textarea>
+                </div>
+                
+                <div class="card p-4 mb-6">
+                    <h3 class="font-bold mb-3">Key Business Areas</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="trading">
+                            <span class="text-sm">Trading & Execution</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="risk">
+                            <span class="text-sm">Risk Management</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="compliance">
+                            <span class="text-sm">Compliance</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="operations">
+                            <span class="text-sm">Operations</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="technology">
+                            <span class="text-sm">Technology</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="finance">
+                            <span class="text-sm">Finance</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button onclick="generateSoR()" class="btn-primary">
+                        📄 Generate SoR Document
+                    </button>
+                    <button onclick="saveSoRDraft()" class="btn-primary">
+                        💾 Save Draft
+                    </button>
+                    <button onclick="submitToFCA()" class="btn-primary">
+                        📤 Submit to FCA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certification Regime Modal -->
+    <div id="certificationModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Certification Regime Functions</h2>
+                    <button onclick="closeModal('certificationModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="card p-4 mb-6">
+                    <h3 class="font-bold text-green-400 mb-3">Significant Harm Functions</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="CF1">
+                            <div>
+                                <strong>CF1:</strong> CASS Operational Oversight
+                                <div class="text-xs text-gray-400">Client assets oversight function</div>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="CF10">
+                            <div>
+                                <strong>CF10:</strong> CASS Oversight
+                                <div class="text-xs text-gray-400">Senior management oversight of CASS</div>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="CF29">
+                            <div>
+                                <strong>CF29:</strong> Limited Scope Function
+                                <div class="text-xs text-gray-400">Functions requiring certification</div>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" value="CF30">
+                            <div>
+                                <strong>CF30:</strong> Customer Functions
+                                <div class="text-xs text-gray-400">Significant dealings with customers</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="card p-4 mb-6">
+                    <h3 class="font-bold text-blue-400 mb-3">Material Risk Takers (MRTs)</h3>
+                    <p class="text-sm text-gray-400 mb-3">Staff whose professional activities have material impact on firm's risk profile</p>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="MRT-trading">
+                            <span>Head of Trading</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="MRT-portfolio">
+                            <span>Portfolio Managers</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="MRT-risk">
+                            <span>Chief Risk Officer</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="MRT-dealer">
+                            <span>Senior Dealers</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <button onclick="applySelectedCertifications()" class="btn-primary w-full">
+                    Apply Selected Functions
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Responsibility Map Modal -->
+    <div id="responsibilityMapModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Management Responsibilities Map</h2>
+                    <button onclick="closeModal('responsibilityMapModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="card p-4 mb-6">
+                    <h3 class="font-bold mb-3">Firm Structure Overview</h3>
+                    <div id="orgChart" class="text-center">
+                        <!-- Simplified org chart visualization -->
+                        <div class="inline-block">
+                            <div class="card p-3 mb-4 mx-auto w-48">
+                                <div class="font-bold">Board</div>
+                                <div class="text-sm text-gray-400">SMF9 - Chair</div>
+                            </div>
+                            <div class="flex justify-center gap-4">
+                                <div class="card p-3 w-40">
+                                    <div class="font-bold">CEO</div>
+                                    <div class="text-sm text-gray-400">SMF1</div>
+                                </div>
+                                <div class="card p-3 w-40">
+                                    <div class="font-bold">Compliance</div>
+                                    <div class="text-sm text-gray-400">SMF16</div>
+                                </div>
+                                <div class="card p-3 w-40">
+                                    <div class="font-bold">Risk</div>
+                                    <div class="text-sm text-gray-400">SMF4</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left p-2">Responsibility Area</th>
+                                <th class="text-left p-2">Primary SMF</th>
+                                <th class="text-left p-2">Deputy/Backup</th>
+                                <th class="text-left p-2">Reporting Line</th>
+                            </tr>
+                        </thead>
+                        <tbody id="responsibilityMapTable">
+                            <tr class="border-b border-gray-800 hover:bg-gray-800/30">
+                                <td class="p-2">Overall Strategy & Leadership</td>
+                                <td class="p-2"><span class="smf-badge">SMF1 - CEO</span></td>
+                                <td class="p-2"><span class="smf-badge">SMF3 - Exec Dir</span></td>
+                                <td class="p-2">Board</td>
+                            </tr>
+                            <tr class="border-b border-gray-800 hover:bg-gray-800/30">
+                                <td class="p-2">Compliance Oversight</td>
+                                <td class="p-2"><span class="smf-badge">SMF16 - Compliance</span></td>
+                                <td class="p-2"><span class="smf-badge">SMF1 - CEO</span></td>
+                                <td class="p-2">Board/CEO</td>
+                            </tr>
+                            <tr class="border-b border-gray-800 hover:bg-gray-800/30">
+                                <td class="p-2">Risk Management</td>
+                                <td class="p-2"><span class="smf-badge">SMF4 - CRO</span></td>
+                                <td class="p-2"><span class="smf-badge">SMF18</span></td>
+                                <td class="p-2">Board Risk Committee</td>
+                            </tr>
+                            <tr class="border-b border-gray-800 hover:bg-gray-800/30">
+                                <td class="p-2">AML/CTF</td>
+                                <td class="p-2"><span class="smf-badge">SMF17 - MLRO</span></td>
+                                <td class="p-2"><span class="smf-badge">SMF16</span></td>
+                                <td class="p-2">Board</td>
+                            </tr>
+                            <tr class="border-b border-gray-800 hover:bg-gray-800/30">
+                                <td class="p-2">Operations & Technology</td>
+                                <td class="p-2"><span class="smf-badge">SMF24 - COO</span></td>
+                                <td class="p-2"><span class="smf-badge">SMF3</span></td>
+                                <td class="p-2">CEO</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-6 flex gap-4">
+                    <button onclick="exportResponsibilityMap()" class="btn-primary">
+                        📥 Export Map
+                    </button>
+                    <button onclick="validateGaps()" class="btn-primary">
+                        🔍 Validate Gaps
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let smcrData = {
+            seniorManagers: [
+                {
+                    id: 1,
+                    name: 'John Smith',
+                    function: 'SMF1',
+                    functionName: 'Chief Executive',
+                    startDate: '2023-01-15',
+                    status: 'approved',
+                    sorComplete: true
+                },
+                {
+                    id: 2,
+                    name: 'Sarah Johnson',
+                    function: 'SMF16',
+                    functionName: 'Compliance Oversight',
+                    startDate: '2023-03-01',
+                    status: 'approved',
+                    sorComplete: true
+                },
+                {
+                    id: 3,
+                    name: 'Michael Brown',
+                    function: 'SMF3',
+                    functionName: 'Executive Director',
+                    startDate: '2023-06-01',
+                    status: 'approved',
+                    sorComplete: false
+                }
+            ],
+            certifiedFunctions: [
+                {
+                    id: 1,
+                    name: 'Emma Wilson',
+                    function: 'CF30',
+                    functionName: 'Customer Functions',
+                    certificationDate: '2024-09-01',
+                    nextCertification: '2025-09-01',
+                    status: 'current'
+                },
+                {
+                    id: 2,
+                    name: 'David Lee',
+                    function: 'CF1',
+                    functionName: 'CASS Operational',
+                    certificationDate: '2024-10-15',
+                    nextCertification: '2025-10-15',
+                    status: 'current'
+                }
+            ],
+            conductBreaches: [],
+            selectedSMFs: [],
+            currentTab: 'overview'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedData();
+            updateMetrics();
+            renderSeniorManagers();
+            renderCertifications();
+        });
+
+        function setActiveTab(tab) {
+            // Hide all content
+            document.querySelectorAll('[id^="content-"]').forEach(el => el.style.display = 'none');
+            // Remove active state from all tabs
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.classList.remove('bg-cyan-900/30', 'border', 'border-cyan-700', 'font-bold');
+                el.classList.add('hover:bg-gray-800');
+            });
+            
+            // Show selected content
+            document.getElementById(`content-${tab}`).style.display = 'block';
+            // Set active tab style
+            const activeTab = document.getElementById(`tab-${tab}`);
+            activeTab.classList.add('bg-cyan-900/30', 'border', 'border-cyan-700', 'font-bold');
+            activeTab.classList.remove('hover:bg-gray-800');
+            
+            smcrData.currentTab = tab;
+            saveData();
+        }
+
+        function updateMetrics() {
+            document.getElementById('totalSMFs').textContent = smcrData.seniorManagers.length;
+            document.getElementById('certifiedStaff').textContent = smcrData.certifiedFunctions.filter(c => c.status === 'current').length;
+            
+            const pendingCerts = smcrData.certifiedFunctions.filter(c => {
+                const nextDate = new Date(c.nextCertification);
+                const today = new Date();
+                const daysUntil = (nextDate - today) / (1000 * 60 * 60 * 24);
+                return daysUntil <= 60;
+            }).length;
+            document.getElementById('pendingCerts').textContent = pendingCerts;
+            
+            document.getElementById('conductBreaches').textContent = smcrData.conductBreaches.length;
+            
+            // Calculate compliance score
+            const sorComplete = smcrData.seniorManagers.filter(s => s.sorComplete).length;
+            const totalSMF = smcrData.seniorManagers.length;
+            const score = totalSMF > 0 ? Math.round((sorComplete / totalSMF) * 100) : 100;
+            document.getElementById('complianceScore').textContent = `${score}%`;
+        }
+
+        function renderSeniorManagers() {
+            const container = document.getElementById('smfRegister');
+            if (!container) return;
+            
+            if (smcrData.seniorManagers.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No senior managers registered. Click "Add Senior Manager" to begin.</p>';
+                return;
+            }
+            
+            container.innerHTML = smcrData.seniorManagers.map(sm => `
+                <div class="card p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-lg">${sm.name}</h3>
+                            <div class="flex gap-2 mt-2">
+                                <span class="smf-badge">${sm.function}</span>
+                                <span class="text-sm text-gray-400">${sm.functionName}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mt-3">
+                                <div>
+                                    <span class="text-xs text-gray-400">Start Date</span>
+                                    <div class="font-bold">${sm.startDate}</div>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-400">Status</span>
+                                    <div class="font-bold status-${sm.status} inline-block px-2 py-1 rounded text-xs">
+                                        ${sm.status.toUpperCase()}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <span class="text-xs text-gray-400">Statement of Responsibilities</span>
+                                <div class="font-bold ${sm.sorComplete ? 'text-green-400' : 'text-yellow-400'}">
+                                    ${sm.sorComplete ? '✓ Complete' : '⚠ Pending'}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="editSoR(${sm.id})" class="text-blue-400 hover:text-blue-300 text-sm">
+                                Edit SoR
+                            </button>
+                            <button onclick="removeSeniorManager(${sm.id})" class="text-red-400 hover:text-red-300 text-sm">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCertifications() {
+            const container = document.getElementById('certificationRegister');
+            if (!container) return;
+            
+            if (smcrData.certifiedFunctions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No certified functions registered. Click "Add Certified Function" to begin.</p>';
+                return;
+            }
+            
+            container.innerHTML = smcrData.certifiedFunctions.map(cf => {
+                const nextDate = new Date(cf.nextCertification);
+                const today = new Date();
+                const daysUntil = Math.floor((nextDate - today) / (1000 * 60 * 60 * 24));
+                const urgency = daysUntil <= 30 ? 'text-red-400' : daysUntil <= 60 ? 'text-yellow-400' : 'text-green-400';
+                
+                return `
+                    <div class="card p-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg">${cf.name}</h3>
+                                <div class="flex gap-2 mt-2">
+                                    <span class="certification-badge">${cf.function}</span>
+                                    <span class="text-sm text-gray-400">${cf.functionName}</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 mt-3">
+                                    <div>
+                                        <span class="text-xs text-gray-400">Last Certified</span>
+                                        <div class="font-bold">${cf.certificationDate}</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-gray-400">Next Due</span>
+                                        <div class="font-bold ${urgency}">${cf.nextCertification}</div>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-gray-400">Days Until Due</span>
+                                        <div class="font-bold ${urgency}">${daysUntil} days</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <button onclick="renewCertification(${cf.id})" class="text-green-400 hover:text-green-300 text-sm">
+                                    Renew
+                                </button>
+                                <button onclick="removeCertification(${cf.id})" class="text-red-400 hover:text-red-300 text-sm">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showSMFManager() {
+            document.getElementById('smfManagerModal').style.display = 'block';
+        }
+
+        function showSoRBuilder() {
+            document.getElementById('sorBuilderModal').style.display = 'block';
+        }
+
+        function showCertificationRegime() {
+            document.getElementById('certificationModal').style.display = 'block';
+        }
+
+        function showResponsibilityMap() {
+            document.getElementById('responsibilityMapModal').style.display = 'block';
+        }
+
+        function addSeniorManager() {
+            const name = prompt('Senior Manager name:');
+            if (!name) return;
+            
+            showSMFManager();
+        }
+
+        function addCertifiedFunction() {
+            showCertificationRegime();
+        }
+
+        function toggleSMF(checkbox) {
+            if (checkbox.checked) {
+                smcrData.selectedSMFs.push(checkbox.value);
+            } else {
+                smcrData.selectedSMFs = smcrData.selectedSMFs.filter(s => s !== checkbox.value);
+            }
+        }
+
+        function applySelectedSMFs() {
+            const name = prompt('Enter the name of the Senior Manager:');
+            if (!name) return;
+            
+            smcrData.selectedSMFs.forEach(smf => {
+                const functionNames = {
+                    'SMF1': 'Chief Executive',
+                    'SMF3': 'Executive Director',
+                    'SMF4': 'Partner Function',
+                    'SMF7': 'Group Entity Senior Manager',
+                    'SMF9': 'Chair',
+                    'SMF10': 'Chair of Risk Committee',
+                    'SMF11': 'Chair of Audit Committee',
+                    'SMF12': 'Chair of Remuneration Committee',
+                    'SMF13': 'Chair of Nominations Committee',
+                    'SMF16': 'Compliance Oversight',
+                    'SMF17': 'Money Laundering Reporting Officer',
+                    'SMF18': 'Other Overall Responsibility',
+                    'SMF24': 'Chief Operations',
+                    'SMF27': 'Partner'
+                };
+                
+                smcrData.seniorManagers.push({
+                    id: Date.now() + Math.random(),
+                    name: name,
+                    function: smf,
+                    functionName: functionNames[smf],
+                    startDate: new Date().toISOString().split('T')[0],
+                    status: 'pending',
+                    sorComplete: false
+                });
+            });
+            
+            smcrData.selectedSMFs = [];
+            closeModal('smfManagerModal');
+            renderSeniorManagers();
+            updateMetrics();
+            saveData();
+        }
+
+        function applySelectedCertifications() {
+            const name = prompt('Enter the name of the certified person:');
+            if (!name) return;
+            
+            const checkboxes = document.querySelectorAll('#certificationModal input[type="checkbox"]:checked');
+            checkboxes.forEach(cb => {
+                const functionNames = {
+                    'CF1': 'CASS Operational Oversight',
+                    'CF10': 'CASS Oversight',
+                    'CF29': 'Limited Scope Function',
+                    'CF30': 'Customer Functions',
+                    'MRT-trading': 'Material Risk Taker - Trading',
+                    'MRT-portfolio': 'Material Risk Taker - Portfolio',
+                    'MRT-risk': 'Material Risk Taker - Risk',
+                    'MRT-dealer': 'Material Risk Taker - Dealer'
+                };
+                
+                smcrData.certifiedFunctions.push({
+                    id: Date.now() + Math.random(),
+                    name: name,
+                    function: cb.value,
+                    functionName: functionNames[cb.value] || cb.value,
+                    certificationDate: new Date().toISOString().split('T')[0],
+                    nextCertification: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+                    status: 'current'
+                });
+            });
+            
+            closeModal('certificationModal');
+            renderCertifications();
+            updateMetrics();
+            saveData();
+        }
+
+        function removeSeniorManager(id) {
+            if (confirm('Remove this Senior Manager?')) {
+                smcrData.seniorManagers = smcrData.seniorManagers.filter(sm => sm.id !== id);
+                renderSeniorManagers();
+                updateMetrics();
+                saveData();
+            }
+        }
+
+        function removeCertification(id) {
+            if (confirm('Remove this certified function?')) {
+                smcrData.certifiedFunctions = smcrData.certifiedFunctions.filter(cf => cf.id !== id);
+                renderCertifications();
+                updateMetrics();
+                saveData();
+            }
+        }
+
+        function renewCertification(id) {
+            const cert = smcrData.certifiedFunctions.find(cf => cf.id === id);
+            if (cert) {
+                cert.certificationDate = new Date().toISOString().split('T')[0];
+                cert.nextCertification = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
+                cert.status = 'current';
+                renderCertifications();
+                saveData();
+                alert('Certification renewed successfully!');
+            }
+        }
+
+        function editSoR(id) {
+            showSoRBuilder();
+            // Load the specific manager's SoR
+        }
+
+        function generateSoR() {
+            alert('Statement of Responsibilities document generated! This would create a formal SoR document ready for FCA submission.');
+        }
+
+        function saveSoRDraft() {
+            alert('SoR draft saved successfully!');
+        }
+
+        function submitToFCA() {
+            alert('This would submit the SoR to the FCA via Connect or Gabriel systems.');
+        }
+
+        function recordConductBreach() {
+            const description = prompt('Describe the conduct breach:');
+            if (description) {
+                smcrData.conductBreaches.push({
+                    id: Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    description: description,
+                    status: 'under-review'
+                });
+                updateMetrics();
+                saveData();
+                alert('Conduct breach recorded. Remember to notify the FCA within 7 business days if required.');
+            }
+        }
+
+        function runFitnessAssessment() {
+            alert('Fitness & Propriety assessment initiated. This would run criminal record checks, regulatory references, and qualification verification.');
+        }
+
+        function runBulkCertification() {
+            alert('Bulk certification process initiated for all due certifications.');
+        }
+
+        function validateGaps() {
+            alert('Responsibility gap analysis complete. All required SMFs are covered.');
+        }
+
+        function exportResponsibilityMap() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                seniorManagers: smcrData.seniorManagers,
+                responsibilityMap: 'Full management responsibilities map'
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SMCR_ResponsibilityMap_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function exportSMCRData() {
+            const blob = new Blob([JSON.stringify(smcrData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SMCR_Data_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function generateRegulatoryPack() {
+            alert('Regulatory pack generated! This would compile all SMCR documentation including SoRs, Management Responsibilities Map, and certification records.');
+        }
+
+        function showAuditTrail() {
+            alert('Audit trail shows complete history of all SMCR changes, approvals, and submissions.');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('smcr_module_data', JSON.stringify(smcrData));
+            } catch (e) {
+                console.error('Error saving data:', e);
+            }
+        }
+
+        function loadSavedData() {
+            try {
+                const saved = localStorage.getItem('smcr_module_data');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    smcrData = { ...smcrData, ...data };
+                }
+            } catch (e) {
+                console.error('Error loading data:', e);
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-ASA Calculator - MIFIDPRU Compliant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#06b6d4;--accent-hi:#22d3ee;--muted:#9ca3af;--subtle:#6b7280;--asa:#0891b2;--asa-light:#67e8f9}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1200px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#06b6d4,#0284c7);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    .card:hover{border-color:var(--accent);transition:border-color 0.3s}
+    h2{margin:0 0 16px;color:#67e8f9;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+    .stat{background:#0f172a;border:1px solid #1e293b;border-radius:.75rem;padding:16px}
+    .stat h3{margin:0 0 8px;font-size:.9rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+    .stat p{margin:0;font-size:1.5rem;font-weight:700}
+    .stat.primary{border-color:var(--accent);background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.1))}
+    .stat.asa{border-color:var(--asa)}
+    .badge{display:inline-block;padding:4px 8px;border-radius:.375rem;font-size:.8rem;font-weight:600;margin-left:8px}
+    .ok{background:#15803d;color:#bbf7d0}
+    .warn{background:#ca8a04;color:#fef08a}
+    .err{background:#b91c1c;color:#fecaca}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    canvas{background:#0f172a;border-radius:.75rem;border:1px solid #1e293b}
+    .mt{margin-top:20px}
+    .mb{margin-bottom:20px}
+    .debug{background:#1e293b;padding:16px;border-radius:.5rem;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--border)}
+    .info-box{background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.1));border:1px solid var(--accent);border-radius:.75rem;padding:16px;margin-bottom:20px}
+    .info-box strong{color:#22d3ee}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .formula{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.9rem;overflow-x:auto}
+    .formula-title{color:var(--accent);font-weight:600;margin-bottom:8px}
+    .timeline{display:flex;align-items:center;justify-content:space-between;margin:20px 0;padding:20px;background:#0f172a;border-radius:.75rem;border:1px solid var(--border)}
+    .timeline-item{text-align:center;flex:1;position:relative}
+    .timeline-item::after{content:'→';position:absolute;right:-20px;top:50%;transform:translateY(-50%);color:var(--muted)}
+    .timeline-item:last-child::after{display:none}
+    .timeline-period{color:var(--accent);font-weight:600;font-size:.9rem}
+    .timeline-desc{color:var(--muted);font-size:.8rem;margin-top:4px}
+    .excluded{opacity:0.5;text-decoration:line-through}
+    .spinner{border:3px solid rgba(255,255,255,0.1);border-radius:50%;border-top-color:var(--accent);width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .sensitivity{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin-top:16px}
+    .sensitivity h4{margin:0 0 12px;color:var(--accent);font-size:1rem}
+    .sensitivity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+    .sensitivity-item{text-align:center;padding:8px;background:#1e293b;border-radius:.375rem;border:1px solid var(--border)}
+    .sensitivity-item.current{border-color:var(--accent);background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(2,132,199,0.1))}
+    .sensitivity-label{color:var(--muted);font-size:.75rem;display:block;margin-bottom:4px}
+    .sensitivity-value{color:#e0e7ff;font-weight:600;font-size:.9rem}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>K-ASA Calculator</h1>
+    <p class="subtitle">MIFIDPRU Compliant • Assets Safeguarded & Administered</p>
+
+    <div class="card">
+      <h2>Instructions & Requirements</h2>
+      <div class="content">
+        <div class="info-box">
+          <strong>CSV Format Required:</strong> Two columns - Date, ASA_Value<br>
+          <strong>Date formats accepted:</strong> dd.mm.yyyy, dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd<br>
+          <strong>ASA Values:</strong> Daily total market value of assets safeguarded and administered<br>
+          <strong>Important:</strong> Values should be gross amounts (no netting) at end-of-business day
+        </div>
+        
+        <label class="label" for="csv">Upload ASA Data (CSV)</label>
+        <input id="csv" class="input" type="file" accept=".csv,text/csv" />
+        <div id="fileInfo" class="note"></div>
+        
+        <div class="row mt">
+          <div>
+            <label class="label" for="currency">Reporting Currency</label>
+            <select id="currency" class="select">
+              <option value="GBP">GBP (£)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="own">Own Funds</label>
+            <input id="own" class="input" type="number" placeholder="50000000" value="50000000" />
+          </div>
+        </div>
+        
+        <div class="mt mb">
+          <button class="btn" id="calculate">Calculate K-ASA</button>
+        </div>
+        
+        <div id="debugPanel" class="debug" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card" id="methodCard" style="display:none">
+      <h2>Calculation Methodology</h2>
+      <div class="content">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-period">Month 6</div>
+            <div class="timeline-desc">6 months ago</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-period">Month 5</div>
+            <div class="timeline-desc">5 months ago</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-period">Month 4</div>
+            <div class="timeline-desc">4 months ago</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 3</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 2</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 1</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+        </div>
+        
+        <div class="formula">
+          <div class="formula-title">MIFIDPRU 4.10 Formula:</div>
+          1. Take daily ASA values for past 6 months<br>
+          2. Exclude most recent 3 months<br>
+          3. Average remaining 3 months (months 4-6)<br>
+          4. K-ASA = Average ASA × 0.04%<br>
+          <br>
+          Coefficient: 0.04% (0.0004) per MIFIDPRU 4.10.7
+        </div>
+        
+        <div id="calcDetails" class="note mt"></div>
+      </div>
+    </div>
+
+    <div class="card" id="resultsCard" style="display:none">
+      <h2>K-ASA Requirements</h2>
+      <div class="content">
+        <div class="grid mb">
+          <div class="stat primary">
+            <h3>K-ASA Requirement</h3>
+            <p id="kasaTotal">£0</p>
+            <div class="note">0.04% of average ASA</div>
+          </div>
+          <div class="stat asa">
+            <h3>Average ASA</h3>
+            <p id="avgASA">£0</p>
+            <div class="note">3-month rolling average</div>
+          </div>
+          <div class="stat">
+            <h3>Headroom</h3>
+            <p id="headroom">£0</p>
+            <div class="note">Own Funds - K-ASA</div>
+          </div>
+        </div>
+        
+        <div class="grid">
+          <div class="stat">
+            <h3>Headroom Ratio</h3>
+            <p id="headroomRatio">0%</p>
+          </div>
+          <div class="stat">
+            <h3>Implied Max ASA</h3>
+            <p id="impliedASA">£0</p>
+            <div class="note">At current Own Funds</div>
+          </div>
+          <div class="stat">
+            <h3>ASA Utilisation</h3>
+            <p id="utilisation">0%</p>
+            <div class="note">Current vs Max ASA</div>
+          </div>
+        </div>
+        
+        <div id="dataInfo" class="note mt"></div>
+        
+        <div class="sensitivity">
+          <h4>Sensitivity Analysis - K-ASA at Different ASA Levels</h4>
+          <div class="sensitivity-grid" id="sensitivityGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="chartsCard" style="display:none">
+      <h2>ASA Trends & Analysis</h2>
+      <div class="content">
+        <canvas id="trendChart" height="120"></canvas>
+        <div class="row mt">
+          <div>
+            <canvas id="distributionChart" height="200"></canvas>
+          </div>
+          <div>
+            <canvas id="kasaChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Currency symbols
+const CURRENCY_SYMBOLS = {
+  'GBP': '£',
+  'USD': '$',
+  'EUR': '€',
+  'OTHER': ''
+};
+
+// Parse European date formats
+function parseDate(dateStr) {
+  const s = dateStr.trim();
+  if (!s) return null;
+  
+  // Try different date formats
+  if (/^\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}$/.test(s)) {
+    const parts = s.split(/[.\/-]/);
+    const [d, m, y] = parts;
+    return new Date(y, m-1, d);
+  }
+  
+  if (/^\d{8}$/.test(s)) {
+    return new Date(s.slice(4,8), s.slice(2,4)-1, s.slice(0,2));
+  }
+  
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return new Date(s);
+  }
+  
+  return null;
+}
+
+// Format date as yyyy-mm-dd
+function formatDate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+// Format currency
+function formatCurrency(value, currency) {
+  const symbol = CURRENCY_SYMBOLS[currency];
+  const absValue = Math.abs(value);
+  
+  // Format based on magnitude
+  if (absValue >= 1e12) {
+    return symbol + (value/1e12).toFixed(2) + 'T';
+  } else if (absValue >= 1e9) {
+    return symbol + (value/1e9).toFixed(2) + 'B';
+  } else if (absValue >= 1e6) {
+    return symbol + (value/1e6).toFixed(2) + 'M';
+  } else if (absValue >= 1e3) {
+    return symbol + (value/1e3).toFixed(2) + 'K';
+  }
+  
+  return symbol + value.toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+// Parse CSV
+function parseCSV(text) {
+  const debug = document.getElementById('debugPanel');
+  debug.style.display = 'block';
+  debug.textContent = '=== CSV Processing ===\n';
+  
+  // Remove BOM if present
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  
+  // Split into lines
+  const lines = text.trim().split(/\r?\n/);
+  debug.textContent += `Total lines: ${lines.length}\n`;
+  
+  // Parse header
+  const headers = lines[0].toLowerCase().split(/[,;\t]/).map(h => h.trim());
+  debug.textContent += `Headers: [${headers.join(', ')}]\n`;
+  
+  // Find columns
+  const dateIdx = headers.findIndex(h => h.includes('date'));
+  const asaIdx = headers.findIndex(h => h.includes('asa') || h.includes('value') || h.includes('amount'));
+  
+  if (dateIdx === -1) throw new Error('Date column not found');
+  if (asaIdx === -1) throw new Error('ASA_Value column not found. Looking for columns containing "asa", "value", or "amount"');
+  
+  debug.textContent += `Column indices - Date: ${dateIdx}, ASA: ${asaIdx}\n\n`;
+  
+  // Parse data
+  const data = new Map();
+  let errors = 0;
+  
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(/[,;\t]/);
+    if (parts.length <= dateIdx) continue;
+    
+    const date = parseDate(parts[dateIdx]);
+    if (!date) {
+      errors++;
+      if (errors <= 3) debug.textContent += `Line ${i+1}: Invalid date "${parts[dateIdx]}"\n`;
+      continue;
+    }
+    
+    const dateStr = formatDate(date);
+    const asaValue = parseFloat(parts[asaIdx]?.replace(/[,\s]/g, '') || '0');
+    
+    if (!data.has(dateStr)) {
+      data.set(dateStr, 0);
+    }
+    
+    // Aggregate if multiple entries for same date
+    data.set(dateStr, data.get(dateStr) + (isNaN(asaValue) ? 0 : asaValue));
+  }
+  
+  debug.textContent += `\nParsing complete:\n`;
+  debug.textContent += `- Valid dates: ${data.size}\n`;
+  debug.textContent += `- Parse errors: ${errors}\n`;
+  
+  if (data.size > 0) {
+    const dates = Array.from(data.keys()).sort();
+    debug.textContent += `- Date range: ${dates[0]} to ${dates[dates.length-1]}\n`;
+    
+    // Calculate total ASA for info
+    const totalASA = Array.from(data.values()).reduce((a, b) => a + b, 0);
+    const avgDaily = totalASA / data.size;
+    debug.textContent += `- Average daily ASA: ${avgDaily.toLocaleString('en-GB')}\n`;
+  }
+  
+  return data;
+}
+
+// Calculate K-ASA using MIFIDPRU methodology
+function calculateKASA(data) {
+  const debug = document.getElementById('debugPanel');
+  debug.textContent += '\n=== K-ASA Calculation (MIFIDPRU 4.10) ===\n';
+  
+  // Get all dates sorted
+  const allDates = Array.from(data.keys()).sort();
+  if (allDates.length === 0) throw new Error('No data to calculate');
+  
+  const endDate = new Date(allDates[allDates.length - 1]);
+  const sixMonthsAgo = new Date(endDate);
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  
+  debug.textContent += `Calculation date: ${formatDate(endDate)}\n`;
+  debug.textContent += `6 months ago: ${formatDate(sixMonthsAgo)}\n`;
+  
+  // Get dates in 6-month window
+  const sixMonthDates = allDates.filter(d => new Date(d) > sixMonthsAgo && new Date(d) <= endDate);
+  debug.textContent += `Dates in 6-month window: ${sixMonthDates.length}\n`;
+  
+  // Calculate which 3 months to exclude
+  const threeMonthsAgo = new Date(endDate);
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  
+  debug.textContent += `3 months ago (cutoff): ${formatDate(threeMonthsAgo)}\n`;
+  
+  // Get dates to average (months 4-6)
+  const datesToAverage = sixMonthDates.filter(d => new Date(d) <= threeMonthsAgo);
+  debug.textContent += `Dates to average (months 4-6): ${datesToAverage.length}\n`;
+  
+  if (datesToAverage.length === 0) {
+    debug.textContent += '\nWARNING: No data in months 4-6, using all available data\n';
+    datesToAverage.push(...sixMonthDates);
+  }
+  
+  // Calculate average ASA
+  let totalASA = 0;
+  datesToAverage.forEach(date => {
+    totalASA += data.get(date);
+  });
+  
+  const avgASA = datesToAverage.length > 0 ? totalASA / datesToAverage.length : 0;
+  
+  // Apply coefficient (0.04% per MIFIDPRU 4.10.7)
+  const kasa = avgASA * 0.0004;
+  
+  debug.textContent += `\nCalculation results:\n`;
+  debug.textContent += `- Total ASA for averaging period: ${totalASA.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Average ASA: ${avgASA.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Coefficient applied: 0.04% (0.0004)\n`;
+  debug.textContent += `- K-ASA Requirement: ${kasa.toLocaleString('en-GB')}\n`;
+  
+  // Calculate min/max for period
+  const periodValues = datesToAverage.map(d => data.get(d));
+  const minASA = Math.min(...periodValues);
+  const maxASA = Math.max(...periodValues);
+  const stdDev = calculateStdDev(periodValues);
+  
+  debug.textContent += `\nPeriod statistics:\n`;
+  debug.textContent += `- Min ASA: ${minASA.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Max ASA: ${maxASA.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Std Dev: ${stdDev.toLocaleString('en-GB')}\n`;
+  
+  return {
+    avgASA,
+    kasa,
+    allDates,
+    sixMonthDates,
+    datesToAverage,
+    endDate,
+    sixMonthsAgo,
+    threeMonthsAgo,
+    minASA,
+    maxASA,
+    stdDev
+  };
+}
+
+// Calculate standard deviation
+function calculateStdDev(values) {
+  const n = values.length;
+  if (n === 0) return 0;
+  
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const squareDiffs = values.map(v => Math.pow(v - mean, 2));
+  const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / n;
+  return Math.sqrt(avgSquareDiff);
+}
+
+// Draw charts
+let trendChart = null, distributionChart = null, kasaChart = null;
+
+function drawCharts(data, results, currency, ownFunds) {
+  // Trend chart
+  if (trendChart) trendChart.destroy();
+  
+  const ctx1 = document.getElementById('trendChart').getContext('2d');
+  const dates = results.sixMonthDates.slice(-90); // Last 90 days
+  const asaValues = dates.map(d => data.get(d));
+  
+  // Add markers for excluded period
+  const excludedStartIdx = dates.findIndex(d => new Date(d) > results.threeMonthsAgo);
+  
+  trendChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'ASA Daily Values',
+        data: asaValues,
+        borderColor: '#06b6d4',
+        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#e0e7ff' }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const dateIdx = context.dataIndex;
+              const isExcluded = excludedStartIdx >= 0 && dateIdx >= excludedStartIdx;
+              const label = context.dataset.label + ': ' + formatCurrency(context.raw, currency);
+              return isExcluded ? label + ' (Excluded)' : label;
+            }
+          }
+        },
+        annotation: excludedStartIdx >= 0 ? {
+          annotations: {
+            line1: {
+              type: 'line',
+              xMin: excludedStartIdx,
+              xMax: excludedStartIdx,
+              borderColor: 'rgba(239, 68, 68, 0.5)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              label: {
+                enabled: true,
+                content: 'Exclusion Period',
+                position: 'start'
+              }
+            }
+          }
+        } : {}
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 15
+          }
+        },
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            callback: function(value) {
+              return formatCurrency(value, currency);
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Distribution chart
+  if (distributionChart) distributionChart.destroy();
+  
+  const ctx2 = document.getElementById('distributionChart').getContext('2d');
+  
+  // Create histogram bins
+  const avgValues = results.datesToAverage.map(d => data.get(d));
+  const bins = createHistogramBins(avgValues, 10);
+  
+  distributionChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: bins.labels,
+      datasets: [{
+        label: 'ASA Distribution (Averaging Period)',
+        data: bins.counts,
+        backgroundColor: 'rgba(6, 182, 212, 0.6)',
+        borderColor: '#06b6d4',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#e0e7ff' }
+        },
+        title: {
+          display: true,
+          text: 'ASA Value Distribution',
+          color: '#e0e7ff'
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            maxRotation: 45,
+            minRotation: 45
+          }
+        },
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { color: '#9ca3af' },
+          title: {
+            display: true,
+            text: 'Days',
+            color: '#9ca3af'
+          }
+        }
+      }
+    }
+  });
+  
+  // K-ASA progression chart
+  if (kasaChart) kasaChart.destroy();
+  
+  const ctx3 = document.getElementById('kasaChart').getContext('2d');
+  
+  // Calculate K-ASA vs Own Funds
+  const kasaData = [
+    { label: 'K-ASA', value: results.kasa, color: '#06b6d4' },
+    { label: 'Headroom', value: ownFunds - results.kasa, color: '#10b981' }
+  ];
+  
+  kasaChart = new Chart(ctx3, {
+    type: 'doughnut',
+    data: {
+      labels: kasaData.map(d => d.label),
+      datasets: [{
+        data: kasaData.map(d => d.value),
+        backgroundColor: kasaData.map(d => d.color),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#e0e7ff' }
+        },
+        title: {
+          display: true,
+          text: 'K-ASA vs Own Funds',
+          color: '#e0e7ff'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const value = context.raw;
+              const total = ownFunds;
+              const percentage = ((value / total) * 100).toFixed(2);
+              return context.label + ': ' + formatCurrency(value, currency) + ' (' + percentage + '%)';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// Create histogram bins
+function createHistogramBins(values, numBins) {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const binWidth = (max - min) / numBins;
+  
+  const bins = [];
+  const labels = [];
+  
+  for (let i = 0; i < numBins; i++) {
+    bins.push(0);
+    const binStart = min + (i * binWidth);
+    const binEnd = binStart + binWidth;
+    labels.push(formatCurrency(binStart, 'GBP').replace('£', '') + '-' + formatCurrency(binEnd, 'GBP').replace('£', ''));
+  }
+  
+  values.forEach(value => {
+    const binIndex = Math.min(Math.floor((value - min) / binWidth), numBins - 1);
+    bins[binIndex]++;
+  });
+  
+  return { counts: bins, labels };
+}
+
+// Generate sensitivity analysis
+function generateSensitivity(currentASA, currency) {
+  const grid = document.getElementById('sensitivityGrid');
+  grid.innerHTML = '';
+  
+  const scenarios = [
+    { label: '-50%', multiplier: 0.5 },
+    { label: '-25%', multiplier: 0.75 },
+    { label: 'Current', multiplier: 1, current: true },
+    { label: '+25%', multiplier: 1.25 },
+    { label: '+50%', multiplier: 1.5 },
+    { label: '+100%', multiplier: 2 }
+  ];
+  
+  scenarios.forEach(scenario => {
+    const asaValue = currentASA * scenario.multiplier;
+    const kasaValue = asaValue * 0.0004;
+    
+    const item = document.createElement('div');
+    item.className = 'sensitivity-item' + (scenario.current ? ' current' : '');
+    item.innerHTML = `
+      <span class="sensitivity-label">${scenario.label}</span>
+      <span class="sensitivity-value">${formatCurrency(kasaValue, currency)}</span>
+    `;
+    grid.appendChild(item);
+  });
+}
+
+// Main calculation
+function runCalculation() {
+  try {
+    const fileInput = document.getElementById('csv');
+    if (!fileInput.files.length) {
+      alert('Please select a CSV file');
+      return;
+    }
+    
+    const currency = document.getElementById('currency').value;
+    const ownFunds = parseFloat(document.getElementById('own').value) || 50000000;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        // Parse CSV
+        const data = parseCSV(e.target.result);
+        
+        if (data.size === 0) {
+          alert('No valid data found in CSV');
+          return;
+        }
+        
+        // Calculate K-ASA
+        const results = calculateKASA(data);
+        
+        // Display results
+        document.getElementById('kasaTotal').textContent = formatCurrency(results.kasa, currency);
+        document.getElementById('avgASA').textContent = formatCurrency(results.avgASA, currency);
+        
+        const headroom = ownFunds - results.kasa;
+        document.getElementById('headroom').textContent = formatCurrency(headroom, currency);
+        
+        const headroomRatio = ((headroom / ownFunds) * 100).toFixed(2);
+        document.getElementById('headroomRatio').textContent = headroomRatio + '%';
+        
+        // Calculate implied max ASA at current own funds
+        const impliedMaxASA = ownFunds / 0.0004;
+        document.getElementById('impliedASA').textContent = formatCurrency(impliedMaxASA, currency);
+        
+        // Calculate utilisation
+        const utilisation = ((results.avgASA / impliedMaxASA) * 100).toFixed(2);
+        document.getElementById('utilisation').textContent = utilisation + '%';
+        
+        // Data info
+        const info = document.getElementById('dataInfo');
+        info.innerHTML = `Data period: ${results.allDates[0]} to ${results.allDates[results.allDates.length-1]} (${results.allDates.length} days)<br>`;
+        info.innerHTML += `Calculation window: ${formatDate(results.sixMonthsAgo)} to ${formatDate(results.endDate)}<br>`;
+        info.innerHTML += `Averaged period: ${formatDate(results.sixMonthsAgo)} to ${formatDate(results.threeMonthsAgo)} (${results.datesToAverage.length} days)`;
+        
+        // Calculation details
+        const calcDetails = document.getElementById('calcDetails');
+        calcDetails.innerHTML = `Using ${results.datesToAverage.length} days from months 4-6 for averaging<br>`;
+        calcDetails.innerHTML += `Excluded ${results.sixMonthDates.length - results.datesToAverage.length} days from most recent 3 months<br>`;
+        calcDetails.innerHTML += `Min ASA in period: ${formatCurrency(results.minASA, currency)}, Max: ${formatCurrency(results.maxASA, currency)}`;
+        
+        // Generate sensitivity analysis
+        generateSensitivity(results.avgASA, currency);
+        
+        // Draw charts
+        drawCharts(data, results, currency, ownFunds);
+        
+        // Show all cards
+        document.getElementById('methodCard').style.display = 'block';
+        document.getElementById('resultsCard').style.display = 'block';
+        document.getElementById('chartsCard').style.display = 'block';
+        
+      } catch (error) {
+        alert('Error: ' + error.message);
+        console.error(error);
+      }
+    };
+    
+    reader.readAsText(fileInput.files[0]);
+    
+  } catch (error) {
+    alert('Error: ' + error.message);
+    console.error(error);
+  }
+}
+
+// Event handlers
+document.getElementById('csv').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('fileInfo').textContent = 
+      `Selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    document.getElementById('debugPanel').style.display = 'none';
+  }
+});
+
+document.getElementById('calculate').addEventListener('click', runCalculation);
+
+// Set Chart.js defaults
+Chart.defaults.color = '#e0e7ff';
+Chart.defaults.borderColor = '#334155';
+</script>
+</body>
+</html>

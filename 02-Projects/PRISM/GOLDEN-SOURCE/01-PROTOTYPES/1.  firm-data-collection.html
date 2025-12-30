@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICARA - Firm & SMCR Data</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: transparent;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 40px;
+            color: transparent;
+            background-clip: text;
+            -webkit-background-clip: text;
+            background-image: linear-gradient(to right, #ec4899, #8b5cf6);
+        }
+        h2 {
+            color: #93c5fd;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        h2::after {
+            content: '\25BC';
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+        h2.collapsed::after {
+            transform: rotate(-90deg);
+        }
+        .card-section {
+            margin-bottom: 20px;
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        .card-section:hover {
+            border-color: #4f46e5;
+        }
+        .content.hidden {
+            display: none;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #9ca3af;
+        }
+        .input-group input[type="text"], .input-group input[type="email"], .input-group input[type="tel"], .input-group input[type="date"], .input-group textarea, .input-group select {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1em;
+            box-sizing: border-box;
+            -webkit-appearance: none; /* Removes default browser styling */
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239ca3af%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22/%3E%3C/svg%3E');
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 0.65em auto;
+        }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+        .input-group .description {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .button {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        .add-button {
+            background: none;
+            border: 1px dashed #4f46e5;
+            color: #a7a7ff;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .permission-matrix table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .permission-matrix th, .permission-matrix td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        .permission-matrix th {
+            color: #9ca3af;
+        }
+        .permission-matrix .group-header td {
+            background-color: rgba(79, 70, 229, 0.1);
+            color: #c7d2fe;
+            font-weight: 600;
+        }
+        .permission-matrix input[type="checkbox"] {
+            width: 1.2em;
+            height: 1.2em;
+        }
+        .smf-card {
+            background-color: #1e293b;
+            border-radius: 0.75rem;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #8b5cf6;
+        }
+        .k-factor-relevance-card {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
+            border-radius: 1rem;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .k-factor-relevance-card h4 {
+            color: #6ee7b7;
+            margin-top: 0;
+            font-weight: 600;
+        }
+        .k-factor-relevance-card ul {
+            list-style-type: none;
+            padding-left: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .k-factor-relevance-card li {
+            background-color: #1e293b;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            border: 1px solid #10b981;
+            transition: all 0.3s ease;
+        }
+        .k-factor-relevance-card li.inactive {
+            opacity: 0.4;
+            border-color: #334155;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Firm & SMCR Data</h1>
+
+    <div class="card-section">
+        <h2 onclick="toggleSection(this)">Corporate Identity</h2>
+        <div class="content">
+            <div class="input-group">
+                <label for="company_name">Legal Company Name</label>
+                <input type="text" id="company_name" placeholder="e.g., Acme Investments Ltd">
+            </div>
+            <div class="input-group">
+                <label for="company_number">Companies House Registration Number</label>
+                <input type="text" id="company_number" placeholder="e.g., 01234567">
+            </div>
+            <div class="input-group">
+                <label for="registered_address">Registered Address</label>
+                <textarea id="registered_address" rows="3" placeholder="e.g., 123 Compliance Street, London, EC2N 2XX"></textarea>
+            </div>
+            <div class="input-group">
+                <label>Physical Office Address(es)</label>
+                <div id="office_addresses_container">
+                    <!-- Dynamic address fields will be added here -->
+                </div>
+                <button class="add-button" onclick="addAddressField()">+ Add Address</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-section">
+        <h2 onclick="toggleSection(this)">Regulatory Profile (FCA)</h2>
+        <div class="content">
+            <div class="input-group">
+                <label for="frn">Firm Reference Number (FRN)</label>
+                <input type="text" id="frn" placeholder="e.g., 987654">
+            </div>
+            <div class="input-group">
+                <label for="auth_date">Date of Authorisation</label>
+                <input type="date" id="auth_date">
+            </div>
+            <div class="input-group">
+                <label for="sni_status">Current SNI / Non-SNI Status</label>
+                <select id="sni_status">
+                    <option value="non_sni">Non-SNI Firm</option>
+                    <option value="sni">SNI Firm</option>
+                </select>
+                <p class="description">A firm that is not a small and non-interconnected (SNI) firm is a non-SNI firm.</p>
+            </div>
+            <div class="input-group">
+                <label>Trading Name(s)</label>
+                <div id="trading_names_container">
+                    <!-- Dynamic trading name fields will be added here -->
+                </div>
+                <button class="add-button" onclick="addTradingNameField()">+ Add Trading Name</button>
+            </div>
+            <div class="input-group permission-matrix">
+                <label>Scope of Permissions</label>
+                <p class="description">Select all permissions the firm holds and add any relevant limitations.</p>
+                <table>
+                    <thead>
+                        <tr><th>Permission</th><th>Limitations / Notes</th><th style="text-align: center;">Held</th></tr>
+                    </thead>
+                    <tbody class="permission-group">
+                        <tr class="group-header"><td colspan="3">Dealing & Managing</td></tr>
+                        <tr>
+                            <td>Dealing in investments as principal</td>
+                            <td><input type="text" placeholder="e.g., Matched principal only"></td>
+                            <td style="text-align: center;"><input type="checkbox" data-permission="dealing_principal"></td>
+                        </tr>
+                        <tr>
+                            <td>Dealing in investments as agent</td>
+                            <td><input type="text"></td>
+                            <td style="text-align: center;"><input type="checkbox" data-permission="dealing_agent"></td>
+                        </tr>
+                        <tr>
+                            <td>Managing investments</td>
+                            <td><input type="text"></td>
+                            <td style="text-align: center;"><input type="checkbox" data-permission="managing"></td>
+                        </tr>
+                    </tbody>
+                    <tbody class="permission-group">
+                        <tr class="group-header"><td colspan="3">Arranging & Advising</td></tr>
+                        <tr>
+                            <td>Arranging (bringing about) deals in investments</td>
+                            <td><input type="text"></td>
+                            <td style="text-align: center;"><input type="checkbox" data-permission="arranging"></td>
+                        </tr>
+                        <tr>
+                            <td>Advising on investments</td>
+                            <td><input type="text" placeholder="e.g., Retail clients only"></td>
+                            <td style="text-align: center;"><input type="checkbox" data-permission="advising"></td>
+                        </tr>
+                    </tbody>
+                     <tbody class="permission-group">
+                        <tr class="group-header"><td colspan="3">Safeguarding & Administering</td></tr>
+                        <tr>
+                            <td>Safeguarding and administration of assets (client money & custody)</td>
+                            <td><input type="text"></td>
+                            <td style="text-align: center;"><input type="checkbox" data-permission="safeguarding"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="k-factor-relevance-card">
+                    <h4>Applicable K-Factors</h4>
+                    <p class="description">Based on your selected permissions profile, the following K-Factor calculations may apply, subject to threshold limitations on applicability:</p>
+                    <ul id="k_factor_list">
+                        <li id="k_npr_item" class="inactive">K-NPR (Net Position Risk)</li>
+                        <li id="k_con_item" class="inactive">K-CON (Concentration Risk)</li>
+                        <li id="k_dtf_item" class="inactive">K-DTF (Dealing on Own Account - Derivatives/Futures)</li>
+                        <li id="k_aum_item" class="inactive">K-AUM (Assets Under Management)</li>
+                        <li id="k_cmh_item" class="inactive">K-CMH (Client Money Held)</li>
+                        <li id="k_asa_item" class="inactive">K-ASA (Assets Safeguarded and Administered)</li>
+                        <li id="k_coh_item" class="inactive">K-COH (Client Orders Handled)</li>
+                        <li id="k_tcd_item" class="inactive">K-TCD (Trading Counterparty Default)</li>
+                        <li id="k_cmg_item" class="inactive">K-CMG (Clearing Member Guarantee)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-section">
+        <h2 onclick="toggleSection(this)">Key Contact Information</h2>
+        <div class="content">
+            <div class="input-group">
+                <label for="office_phone">General Office Phone</label>
+                <input type="tel" id="office_phone" placeholder="+44 20 7123 4567">
+            </div>
+            <div class="input-group">
+                <label for="office_email">General Office Email</label>
+                <input type="email" id="office_email" placeholder="contact@acmeinvest.co.uk">
+            </div>
+            <div class="input-group">
+                <label for="compliance_email">Compliance / Complaints Email</label>
+                <input type="email" id="compliance_email" placeholder="compliance@acmeinvest.co.uk">
+            </div>
+            <div class="input-group">
+                <label for="cfo_email">CFO / Head of Finance Email</label>
+                <input type="email" id="cfo_email" placeholder="cfo@acmeinvest.co.uk">
+            </div>
+        </div>
+    </div>
+
+    <div class="card-section">
+        <h2 onclick="toggleSection(this)">Senior Management (SMCR) & Key Personnel</h2>
+        <div class="content" id="smf_container">
+            <div class="smf-card">
+                <label class="input-group"><strong>SMF1 - Chief Executive</strong></label>
+                <div class="input-group"><input type="text" placeholder="Full Name"></div>
+                <div class="input-group"><input type="text" placeholder="FCA Individual Reference Number (IRN)"></div>
+            </div>
+            <div class="smf-card">
+                <label class="input-group"><strong>SMF2 - Chief Finance Function (CFO)</strong></label>
+                <div class="input-group"><input type="text" placeholder="Full Name"></div>
+                <div class="input-group"><input type="text" placeholder="FCA Individual Reference Number (IRN)"></div>
+            </div>
+            <div class="smf-card">
+                <label class="input-group"><strong>SMF4 - Chief Risk Function</strong></label>
+                <div class="input-group"><input type="text" placeholder="Full Name"></div>
+                <div class="input-group"><input type="text" placeholder="FCA Individual Reference Number (IRN)"></div>
+            </div>
+            <div class="smf-card">
+                <label class="input-group"><strong>SMF16 - Compliance Oversight</strong></label>
+                <div class="input-group"><input type="text" placeholder="Full Name"></div>
+                <div class="input-group"><input type="text" placeholder="FCA Individual Reference Number (IRN)"></div>
+            </div>
+            <div class="smf-card">
+                <label class="input-group"><strong>SMF17 - Money Laundering Reporting Officer</strong></label>
+                <div class="input-group"><input type="text" placeholder="Full Name"></div>
+                <div class="input-group"><input type="text" placeholder="FCA Individual Reference Number (IRN)"></div>
+            </div>
+            <!-- Dynamic MRT cards will be added here -->
+        </div>
+        <button class="add-button" onclick="addMrtCard()">+ Add Other Material Risk Taker</button>
+    </div>
+
+    <div class="button-container">
+        <button class="button">Save Firm Data</button>
+    </div>
+
+</div>
+
+<script>
+    function toggleSection(header) {
+        const content = header.nextElementSibling;
+        header.classList.toggle('collapsed');
+        content.classList.toggle('hidden');
+    }
+
+    function addAddressField() {
+        const container = document.getElementById('office_addresses_container');
+        const newField = document.createElement('div');
+        newField.innerHTML = '<textarea rows="3" placeholder="Enter another office address"></textarea>';
+        container.appendChild(newField);
+    }
+
+    function addTradingNameField() {
+        const container = document.getElementById('trading_names_container');
+        const newField = document.createElement('div');
+        newField.innerHTML = '<input type="text" placeholder="Enter another trading name">';
+        container.appendChild(newField);
+    }
+
+    function addMrtCard() {
+        const container = document.getElementById('smf_container');
+        const newCard = document.createElement('div');
+        newCard.className = 'smf-card';
+        newCard.innerHTML = `
+            <label class="input-group"><strong>Other Material Risk Taker</strong></label>
+            <div class="input-group"><input type="text" placeholder="Full Name"></div>
+            <div class="input-group"><input type="text" placeholder="Role / Title (e.g., Head of Trading)"></div>
+            <div class="input-group"><input type="text" placeholder="FCA Individual Reference Number (if applicable)"></div>
+        `;
+        container.appendChild(newCard);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Add initial dynamic fields
+        addAddressField();
+        addTradingNameField();
+        // Collapse all sections by default except the first one
+        document.querySelectorAll('.card-section h2').forEach((header, index) => {
+            if (index !== 0) {
+                 toggleSection(header);
+            }
+        });
+        // Add event listeners for permission checkboxes
+        document.querySelectorAll('.permission-matrix input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', updateKFactorRelevance);
+        });
+        updateKFactorRelevance(); // Initial check
+    });
+
+    function updateKFactorRelevance() {
+        const permissions = {
+            dealing_principal: document.querySelector('input[data-permission="dealing_principal"]').checked,
+            dealing_agent: document.querySelector('input[data-permission="dealing_agent"]').checked,
+            managing: document.querySelector('input[data-permission="managing"]').checked,
+            safeguarding: document.querySelector('input[data-permission="safeguarding"]').checked,
+            arranging: document.querySelector('input[data-permission="arranging"]').checked,
+            advising: document.querySelector('input[data-permission="advising"]').checked
+        };
+
+        // K-NPR: Dealing in investments as principal
+        document.getElementById('k_npr_item').classList.toggle('inactive', !permissions.dealing_principal);
+
+        // K-CON: Dealing in investments as principal
+        document.getElementById('k_con_item').classList.toggle('inactive', !permissions.dealing_principal);
+
+        // K-DTF: Dealing in investments as principal (specifically for derivatives/futures)
+        document.getElementById('k_dtf_item').classList.toggle('inactive', !permissions.dealing_principal);
+
+        // K-AUM: Managing investments
+        document.getElementById('k_aum_item').classList.toggle('inactive', !permissions.managing);
+
+        // K-CMH: Safeguarding and administration of assets (client money)
+        document.getElementById('k_cmh_item').classList.toggle('inactive', !permissions.safeguarding);
+
+        // K-ASA: Safeguarding and administration of assets (client assets)
+        document.getElementById('k_asa_item').classList.toggle('inactive', !permissions.safeguarding);
+
+        // K-COH: Dealing in investments as agent OR Arranging deals
+        document.getElementById('k_coh_item').classList.toggle('inactive', !(permissions.dealing_agent || permissions.arranging));
+
+        // K-TCD: Dealing in investments as principal (counterparty risk)
+        document.getElementById('k_tcd_item').classList.toggle('inactive', !permissions.dealing_principal);
+
+        // K-CMG: Clearing Member Guarantee (typically requires specific clearing permission, inactive by default)
+        // This K-factor is generally applicable to firms that are clearing members of a CCP.
+        // For this POC, it remains inactive unless a specific permission for clearing is added.
+        document.getElementById('k_cmg_item').classList.toggle('inactive', true); 
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OFAR Test Data Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#a855f7;--accent-hi:#c084fc;--muted:#9ca3af;--subtle:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1000px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#a855f7,#6366f1);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    h2{margin:0 0 16px;color:#c084fc;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s;margin-right:10px}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .btn-secondary{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    .range-container{margin:16px 0}
+    .range-label{display:flex;justify-content:space-between;margin-bottom:8px}
+    .range-value{color:var(--accent);font-weight:600}
+    .preview{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.85rem;overflow-x:auto;white-space:pre-wrap}
+    .stat-box{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:12px;text-align:center}
+    .stat-box h4{margin:0 0 4px;color:var(--muted);font-size:.85rem;font-weight:500}
+    .stat-box p{margin:0;font-size:1.2rem;font-weight:700;color:var(--accent)}
+    .scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:16px 0}
+    .scenario-card{background:#0f172a;border:2px solid var(--border);border-radius:.5rem;padding:16px;cursor:pointer;transition:all 0.3s}
+    .scenario-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .scenario-card.selected{border-color:var(--accent);background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(99,102,241,0.1))}
+    .scenario-card h3{margin:0 0 8px;color:var(--accent);font-size:1rem}
+    .scenario-card p{margin:0;font-size:.85rem;color:var(--muted)}
+    .binding-badge{display:inline-block;padding:2px 6px;border-radius:.25rem;font-size:.75rem;font-weight:600;margin-left:4px;background:#10b981;color:#fff}
+    .pattern-desc{background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(99,102,241,0.1));border:1px solid var(--accent);border-radius:.5rem;padding:12px;margin:12px 0;font-size:.9rem}
+    .download-info{background:#0f172a;border:1px solid #10b981;border-radius:.5rem;padding:16px;margin-top:20px;text-align:center}
+    .download-info h3{margin:0 0 8px;color:#10b981}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>OFAR Test Data Generator</h1>
+    <p class="subtitle">Generate test scenarios for OFAR calculations • Illustrative purposes</p>
+
+    <div class="card">
+      <h2>Quick Scenarios</h2>
+      <div class="scenario-grid">
+        <div class="scenario-card" onclick="loadScenario('kfrBound')">
+          <h3>KFR Bound <span class="binding-badge">K-Factors</span></h3>
+          <p>High volume business where K-factors dominate. Typical for active trading firms.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('forBound')">
+          <h3>FOR Bound <span class="binding-badge">Overheads</span></h3>
+          <p>High fixed cost operation. Common for firms with large infrastructure.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('winddownBound')">
+          <h3>Wind-down Bound <span class="binding-badge">OFTR</span></h3>
+          <p>Complex operations requiring lengthy exit. Typical for systemically important firms.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('stressBound')">
+          <h3>Stress Bound <span class="binding-badge">Risk Buffer</span></h3>
+          <p>High risk profile requiring significant buffers. Market makers, prop traders.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Base Configuration</h2>
+      <div class="row">
+        <div>
+          <label class="label" for="firmType">Firm Type</label>
+          <select id="firmType" class="select">
+            <option value="75000">Non-dealing (€75k PMR)</option>
+            <option value="150000" selected>Dealing/Underwriting (€150k PMR)</option>
+            <option value="750000">MTF/OTF Operator (€750k PMR)</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="firmSize">Firm Size</label>
+          <select id="firmSize" class="select">
+            <option value="small">Small (< £10M revenue)</option>
+            <option value="medium" selected>Medium (£10-50M)</option>
+            <option value="large">Large (£50-200M)</option>
+            <option value="xlarge">Extra Large (> £200M)</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Base Own Funds</span>
+          <span class="range-value" id="ownFundsValue">£5,000,000</span>
+        </div>
+        <input type="range" id="ownFunds" class="input" min="100000" max="50000000" step="100000" value="5000000" 
+               oninput="updateValue('ownFunds', 'ownFundsValue')" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Component Relationships</h2>
+      <div class="pattern-desc">
+        Configure how components relate to own funds (as percentages)
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>FOR as % of Own Funds</span>
+          <span class="range-value" id="forRatioValue">25%</span>
+        </div>
+        <input type="range" id="forRatio" class="input" min="10" max="50" step="5" value="25" 
+               oninput="updateValue('forRatio', 'forRatioValue', '%')" />
+        <div class="note">Fixed overheads relative to capital base</div>
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>KFR as % of Own Funds</span>
+          <span class="range-value" id="kfrRatioValue">20%</span>
+        </div>
+        <input type="range" id="kfrRatio" class="input" min="5" max="100" step="5" value="20" 
+               oninput="updateValue('kfrRatio', 'kfrRatioValue', '%')" />
+        <div class="note">Total K-factors relative to capital</div>
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Wind-down as % of Own Funds</span>
+          <span class="range-value" id="winddownRatioValue">35%</span>
+        </div>
+        <input type="range" id="winddownRatio" class="input" min="15" max="60" step="5" value="35" 
+               oninput="updateValue('winddownRatio', 'winddownRatioValue', '%')" />
+        <div class="note">Wind-down costs relative to capital</div>
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Total Stress as % of Own Funds</span>
+          <span class="range-value" id="stressRatioValue">15%</span>
+        </div>
+        <input type="range" id="stressRatio" class="input" min="0" max="40" step="5" value="15" 
+               oninput="updateValue('stressRatio', 'stressRatioValue', '%')" />
+        <div class="note">Combined stress testing impact</div>
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Additional Risks as % of Own Funds</span>
+          <span class="range-value" id="additionalRatioValue">10%</span>
+        </div>
+        <input type="range" id="additionalRatio" class="input" min="0" max="30" step="5" value="10" 
+               oninput="updateValue('additionalRatio', 'additionalRatioValue', '%')" />
+        <div class="note">Other identified risks</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>K-Factor Distribution</h2>
+      <div class="pattern-desc">
+        Split the total KFR across individual K-factors
+      </div>
+      
+      <div class="row">
+        <div>
+          <label class="label" for="kaumSplit">K-AUM %</label>
+          <input id="kaumSplit" class="input" type="number" value="20" min="0" max="100" />
+        </div>
+        <div>
+          <label class="label" for="kcmhSplit">K-CMH %</label>
+          <input id="kcmhSplit" class="input" type="number" value="10" min="0" max="100" />
+        </div>
+        <div>
+          <label class="label" for="kasaSplit">K-ASA %</label>
+          <input id="kasaSplit" class="input" type="number" value="15" min="0" max="100" />
+        </div>
+        <div>
+          <label class="label" for="kcohSplit">K-COH %</label>
+          <input id="kcohSplit" class="input" type="number" value="25" min="0" max="100" />
+        </div>
+        <div>
+          <label class="label" for="kdtfSplit">K-DTF %</label>
+          <input id="kdtfSplit" class="input" type="number" value="30" min="0" max="100" />
+        </div>
+        <div>
+          <label class="label">Total</label>
+          <input id="totalSplit" class="input" type="text" readonly value="100%" style="background:#1e293b" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Generate Test Data</h2>
+      <div style="margin-bottom:16px">
+        <button class="btn" onclick="generateData()">Generate OFAR Data</button>
+        <button class="btn btn-secondary" onclick="previewData()">Preview Calculation</button>
+      </div>
+      
+      <div id="preview" class="preview" style="display:none"></div>
+      
+      <div id="downloadSection" class="download-info" style="display:none">
+        <h3>✓ Data Generated Successfully!</h3>
+        <p id="downloadInfo"></p>
+        <button class="btn" id="downloadBtn" style="margin-top:12px">Download JSON</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Update display values
+function updateValue(inputId, displayId, suffix = '') {
+  const value = parseFloat(document.getElementById(inputId).value);
+  const display = document.getElementById(displayId);
+  
+  if (suffix === '%') {
+    display.textContent = value + suffix;
+  } else {
+    display.textContent = '£' + value.toLocaleString('en-GB');
+  }
+}
+
+// Update K-factor split total
+function updateSplitTotal() {
+  const kaum = parseFloat(document.getElementById('kaumSplit').value) || 0;
+  const kcmh = parseFloat(document.getElementById('kcmhSplit').value) || 0;
+  const kasa = parseFloat(document.getElementById('kasaSplit').value) || 0;
+  const kcoh = parseFloat(document.getElementById('kcohSplit').value) || 0;
+  const kdtf = parseFloat(document.getElementById('kdtfSplit').value) || 0;
+  
+  const total = kaum + kcmh + kasa + kcoh + kdtf;
+  document.getElementById('totalSplit').value = total + '%';
+  document.getElementById('totalSplit').style.color = total === 100 ? '#10b981' : '#ef4444';
+}
+
+// Add event listeners for K-factor splits
+document.querySelectorAll('#kaumSplit, #kcmhSplit, #kasaSplit, #kcohSplit, #kdtfSplit').forEach(input => {
+  input.addEventListener('input', updateSplitTotal);
+});
+
+// Load scenarios
+function loadScenario(scenario) {
+  // Remove selected class from all cards
+  document.querySelectorAll('.scenario-card').forEach(card => card.classList.remove('selected'));
+  
+  // Add selected class to clicked card
+  event.currentTarget.classList.add('selected');
+  
+  switch(scenario) {
+    case 'kfrBound':
+      // High K-factors, moderate everything else
+      document.getElementById('forRatio').value = 20;
+      document.getElementById('kfrRatio').value = 60;
+      document.getElementById('winddownRatio').value = 25;
+      document.getElementById('stressRatio').value = 10;
+      document.getElementById('additionalRatio').value = 5;
+      
+      // Heavy on trading K-factors
+      document.getElementById('kaumSplit').value = 10;
+      document.getElementById('kcmhSplit').value = 5;
+      document.getElementById('kasaSplit').value = 10;
+      document.getElementById('kcohSplit').value = 35;
+      document.getElementById('kdtfSplit').value = 40;
+      break;
+      
+    case 'forBound':
+      // High fixed costs
+      document.getElementById('forRatio').value = 45;
+      document.getElementById('kfrRatio').value = 15;
+      document.getElementById('winddownRatio').value = 30;
+      document.getElementById('stressRatio').value = 5;
+      document.getElementById('additionalRatio').value = 5;
+      
+      // Lower K-factors
+      document.getElementById('kaumSplit').value = 30;
+      document.getElementById('kcmhSplit').value = 20;
+      document.getElementById('kasaSplit').value = 20;
+      document.getElementById('kcohSplit').value = 20;
+      document.getElementById('kdtfSplit').value = 10;
+      break;
+      
+    case 'winddownBound':
+      // Complex wind-down
+      document.getElementById('forRatio').value = 25;
+      document.getElementById('kfrRatio').value = 20;
+      document.getElementById('winddownRatio').value = 50;
+      document.getElementById('stressRatio').value = 10;
+      document.getElementById('additionalRatio').value = 10;
+      
+      // Mixed K-factors
+      document.getElementById('kaumSplit').value = 25;
+      document.getElementById('kcmhSplit').value = 15;
+      document.getElementById('kasaSplit').value = 30;
+      document.getElementById('kcohSplit').value = 20;
+      document.getElementById('kdtfSplit').value = 10;
+      break;
+      
+    case 'stressBound':
+      // High risk profile
+      document.getElementById('forRatio').value = 20;
+      document.getElementById('kfrRatio').value = 25;
+      document.getElementById('winddownRatio').value = 25;
+      document.getElementById('stressRatio').value = 30;
+      document.getElementById('additionalRatio').value = 15;
+      
+      // Risk-heavy K-factors
+      document.getElementById('kaumSplit').value = 5;
+      document.getElementById('kcmhSplit').value = 5;
+      document.getElementById('kasaSplit').value = 5;
+      document.getElementById('kcohSplit').value = 25;
+      document.getElementById('kdtfSplit').value = 60;
+      break;
+  }
+  
+  // Update displays
+  updateValue('forRatio', 'forRatioValue', '%');
+  updateValue('kfrRatio', 'kfrRatioValue', '%');
+  updateValue('winddownRatio', 'winddownRatioValue', '%');
+  updateValue('stressRatio', 'stressRatioValue', '%');
+  updateValue('additionalRatio', 'additionalRatioValue', '%');
+  updateSplitTotal();
+}
+
+// Generate data
+function generateData() {
+  // Get base values
+  const firmType = parseInt(document.getElementById('firmType').value);
+  const ownFunds = parseFloat(document.getElementById('ownFunds').value);
+  
+  // Get ratios
+  const forRatio = parseFloat(document.getElementById('forRatio').value) / 100;
+  const kfrRatio = parseFloat(document.getElementById('kfrRatio').value) / 100;
+  const winddownRatio = parseFloat(document.getElementById('winddownRatio').value) / 100;
+  const stressRatio = parseFloat(document.getElementById('stressRatio').value) / 100;
+  const additionalRatio = parseFloat(document.getElementById('additionalRatio').value) / 100;
+  
+  // Get K-factor splits
+  const kaumSplit = parseFloat(document.getElementById('kaumSplit').value) / 100;
+  const kcmhSplit = parseFloat(document.getElementById('kcmhSplit').value) / 100;
+  const kasaSplit = parseFloat(document.getElementById('kasaSplit').value) / 100;
+  const kcohSplit = parseFloat(document.getElementById('kcohSplit').value) / 100;
+  const kdtfSplit = parseFloat(document.getElementById('kdtfSplit').value) / 100;
+  
+  // Calculate components
+  const pmr = firmType * 0.87; // Convert EUR to GBP roughly
+  const forValue = ownFunds * forRatio;
+  const kfrTotal = ownFunds * kfrRatio;
+  
+  // Split KFR into components
+  const kaum = kfrTotal * kaumSplit;
+  const kcmh = kfrTotal * kcmhSplit;
+  const kasa = kfrTotal * kasaSplit;
+  const kcoh = kfrTotal * kcohSplit;
+  const kdtf = kfrTotal * kdtfSplit;
+  
+  // OFTR components
+  const winddown = ownFunds * winddownRatio;
+  const stressTotal = ownFunds * stressRatio;
+  const additionalTotal = ownFunds * additionalRatio;
+  
+  // Split stress testing
+  const stressMarket = stressTotal * 0.4;
+  const stressOperational = stressTotal * 0.3;
+  const stressCredit = stressTotal * 0.2;
+  const stressOther = stressTotal * 0.1;
+  
+  // Split additional risks
+  const riskConcentration = additionalTotal * 0.4;
+  const riskReputational = additionalTotal * 0.2;
+  const riskStrategic = additionalTotal * 0.3;
+  const riskOther = additionalTotal * 0.1;
+  
+  // Calculate binding constraints
+  const ofr = Math.max(pmr, forValue, kfrTotal);
+  const oftr = Math.max(winddown, winddown + stressTotal + additionalTotal);
+  const ofar = Math.max(ofr, oftr);
+  
+  let ofrBinding = 'PMR';
+  if (forValue === ofr) ofrBinding = 'FOR';
+  if (kfrTotal === ofr) ofrBinding = 'KFR';
+  
+  const ofarBinding = ofr >= oftr ? `OFR (${ofrBinding})` : 'OFTR';
+  
+  // Create data object
+  const data = {
+    firmType: firmType === 75000 ? 'Non-dealing' : firmType === 150000 ? 'Dealing' : 'MTF/OTF',
+    ownFunds: Math.round(ownFunds),
+    
+    // OFR components
+    pmr: Math.round(pmr),
+    for: Math.round(forValue),
+    
+    // K-factors
+    kfr: {
+      kaum: Math.round(kaum),
+      kcmh: Math.round(kcmh),
+      kasa: Math.round(kasa),
+      kcoh: Math.round(kcoh),
+      kdtf: Math.round(kdtf),
+      total: Math.round(kfrTotal)
+    },
+    
+    // OFTR components
+    winddown: Math.round(winddown),
+    
+    stressTesting: {
+      market: Math.round(stressMarket),
+      operational: Math.round(stressOperational),
+      credit: Math.round(stressCredit),
+      other: Math.round(stressOther),
+      total: Math.round(stressTotal)
+    },
+    
+    additionalRisks: {
+      concentration: Math.round(riskConcentration),
+      reputational: Math.round(riskReputational),
+      strategic: Math.round(riskStrategic),
+      other: Math.round(riskOther),
+      total: Math.round(additionalTotal)
+    },
+    
+    // Results
+    calculations: {
+      ofr: Math.round(ofr),
+      ofrBinding: ofrBinding,
+      oftr: Math.round(oftr),
+      ofar: Math.round(ofar),
+      ofarBinding: ofarBinding,
+      surplus: Math.round(ownFunds - ofar),
+      coverage: ((ownFunds / ofar) * 100).toFixed(1) + '%'
+    }
+  };
+  
+  // Store for download
+  window.generatedData = data;
+  
+  // Show preview
+  previewData();
+  
+  // Show download section
+  document.getElementById('downloadSection').style.display = 'block';
+  document.getElementById('downloadInfo').textContent = 
+    `OFAR: £${ofar.toLocaleString()} | Binding: ${ofarBinding} | Coverage: ${data.calculations.coverage}`;
+}
+
+function previewData() {
+  if (!window.generatedData) {
+    generateData();
+    return;
+  }
+  
+  const data = window.generatedData;
+  const preview = document.getElementById('preview');
+  preview.style.display = 'block';
+  
+  preview.textContent = JSON.stringify(data, null, 2);
+}
+
+// Download handler
+document.getElementById('downloadBtn').addEventListener('click', function() {
+  const blob = new Blob([JSON.stringify(window.generatedData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ofar_test_data_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// Initialize
+updateSplitTotal();
+</script>
+</body>
+</html>

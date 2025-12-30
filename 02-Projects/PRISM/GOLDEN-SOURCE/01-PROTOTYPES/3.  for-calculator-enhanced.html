@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Overhead Requirement (FOR) Calculator - Enhanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+        }
+        .input-field {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+        }
+        .input-field:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        .formula-box {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+        .calculation-step {
+            background: rgba(30, 41, 59, 0.3);
+            border-left: 3px solid #6366f1;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        .modal-content {
+            background: #111827;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+        .tab-button:hover {
+            background: rgba(79, 70, 229, 0.1);
+        }
+        .tab-button.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .metric-card {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        .adjustment-item {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .trend-positive { color: #10b981; }
+        .trend-negative { color: #ef4444; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+                Fixed Overhead Requirement (FOR) Calculator
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">MiFIDPRU 4.5 - One Quarter of Annual Fixed Expenditure</p>
+        </header>
+
+        <!-- Main Formula Display -->
+        <div class="card p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-blue-400">FOR Formula</h2>
+            <div class="formula-box text-center text-lg">
+                FOR = Annual Fixed Expenditure ÷ 4
+                <div class="text-sm mt-2 text-gray-400">
+                    Ensuring 3 months of operational runway
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <button onclick="showApproachModal()" class="card p-4 text-center hover:border-blue-500 transition-all">
+                <div class="text-2xl mb-2">🎯</div>
+                <div class="font-bold">Calculation Approach</div>
+                <div class="text-sm text-gray-400">Granular vs Consolidated</div>
+            </button>
+            <button onclick="showAdjustmentsModal()" class="card p-4 text-center hover:border-blue-500 transition-all">
+                <div class="text-2xl mb-2">📊</div>
+                <div class="font-bold">FOR Adjustments</div>
+                <div class="text-sm text-gray-400">Exclude one-off items</div>
+            </button>
+            <button onclick="showScenarioModal()" class="card p-4 text-center hover:border-blue-500 transition-all">
+                <div class="text-2xl mb-2">🔮</div>
+                <div class="font-bold">Scenario Planning</div>
+                <div class="text-sm text-gray-400">Model future changes</div>
+            </button>
+        </div>
+
+        <!-- Calculation Approach Selector -->
+        <div class="card p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-cyan-400">Calculation Method</h2>
+                <div class="flex gap-2">
+                    <button id="consolidatedBtn" onclick="setApproach('consolidated')" class="tab-button active">
+                        Consolidated
+                    </button>
+                    <button id="granularBtn" onclick="setApproach('granular')" class="tab-button">
+                        Granular
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Consolidated Approach -->
+            <div id="consolidatedTab" class="tab-content active">
+                <p class="text-gray-400 mb-4">Enter your total annual fixed expenditure from audited accounts</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Total Annual Fixed Expenditure (£)</label>
+                        <input type="number" id="totalExpenditure" class="input-field" 
+                               placeholder="0" oninput="calculateConsolidated()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Financial Year</label>
+                        <input type="number" id="financialYear" class="input-field" 
+                               value="2024" min="2020" max="2030">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Granular Approach -->
+            <div id="granularTab" class="tab-content">
+                <p class="text-gray-400 mb-4">Break down your fixed costs by category for detailed analysis. Enter totals or expand for subcategory detail.</p>
+                <div id="granularInputs" class="space-y-4">
+                    <!-- Dynamic granular inputs will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- FOR Calculation Result -->
+        <div class="card p-6 mb-6 bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-500">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-2">Fixed Overhead Requirement (FOR)</h3>
+                <div class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+                    £<span id="forResult">0</span>
+                </div>
+                <div class="mt-4 text-gray-400">
+                    <span id="quarterlyBreakdown"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Cost Breakdown Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-purple-400">Cost Category Breakdown</h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="breakdownChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Year-over-Year Comparison -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-green-400">Historical FOR Trend</h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="monthlyRunRate">£0</div>
+                <div class="text-sm text-gray-400">Monthly Run Rate</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="dailyBurn">£0</div>
+                <div class="text-sm text-gray-400">Daily Burn Rate</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="adjustmentTotal">£0</div>
+                <div class="text-sm text-gray-400">Total Adjustments</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="coverageDays">0</div>
+                <div class="text-sm text-gray-400">Days Coverage</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-4 justify-center">
+            <button onclick="exportData()" class="btn-primary">
+                📥 Export Calculation
+            </button>
+            <button onclick="saveSnapshot()" class="btn-primary">
+                📸 Save Snapshot
+            </button>
+            <button onclick="showHistoryModal()" class="btn-primary">
+                📊 View History
+            </button>
+        </div>
+    </div>
+
+    <!-- Adjustments Modal -->
+    <div id="adjustmentsModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">FOR Adjustments</h2>
+                    <button onclick="closeModal('adjustmentsModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <p class="text-gray-400 mb-6">
+                    Exclude one-off or non-recurring items as per MiFIDPRU 4.5.3R
+                </p>
+
+                <div class="space-y-4 mb-6" id="adjustmentsList">
+                    <!-- Dynamic adjustments list -->
+                </div>
+
+                <button onclick="addAdjustment()" class="btn-primary w-full">
+                    + Add Adjustment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Planning Modal -->
+    <div id="scenarioModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Scenario Planning</h2>
+                    <button onclick="closeModal('scenarioModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-bold mb-3 text-cyan-400">Growth Scenario</h3>
+                        <label class="block text-sm mb-2">Staff Cost Increase (%)</label>
+                        <input type="number" id="staffGrowth" class="input-field mb-3" value="10">
+                        
+                        <label class="block text-sm mb-2">Infrastructure Scaling (%)</label>
+                        <input type="number" id="infraGrowth" class="input-field mb-3" value="5">
+                        
+                        <label class="block text-sm mb-2">New Office Space (£/year)</label>
+                        <input type="number" id="newOffice" class="input-field" value="0">
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold mb-3 text-orange-400">Efficiency Scenario</h3>
+                        <label class="block text-sm mb-2">Process Automation Savings (%)</label>
+                        <input type="number" id="automationSaving" class="input-field mb-3" value="15">
+                        
+                        <label class="block text-sm mb-2">Vendor Consolidation (%)</label>
+                        <input type="number" id="vendorSaving" class="input-field mb-3" value="10">
+                        
+                        <label class="block text-sm mb-2">Remote Work Reduction (£/year)</label>
+                        <input type="number" id="remoteReduction" class="input-field" value="0">
+                    </div>
+                </div>
+
+                <button onclick="runScenarios()" class="btn-primary w-full mt-6">
+                    Calculate Scenarios
+                </button>
+
+                <div id="scenarioResults" class="mt-6 hidden">
+                    <!-- Scenario results will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let calculationApproach = 'consolidated';
+        let costCategories = {
+            staff: { 
+                name: 'Staff Costs', 
+                value: 0, 
+                icon: '👥',
+                subcategories: {
+                    salaries: { name: 'Salaries & Wages', value: 0 },
+                    bonuses: { name: 'Bonuses & Incentives', value: 0 },
+                    benefits: { name: 'Benefits & Pensions', value: 0 },
+                    training: { name: 'Training & Development', value: 0 }
+                }
+            },
+            professional: { 
+                name: 'Professional Fees', 
+                value: 0, 
+                icon: '⚖️',
+                subcategories: {
+                    legal: { name: 'Legal Fees', value: 0 },
+                    audit: { name: 'Audit & Accounting', value: 0 },
+                    consultancy: { name: 'Consultancy Fees', value: 0 },
+                    tax: { name: 'Tax & Advisory', value: 0 }
+                }
+            },
+            technology: { 
+                name: 'Technology/IT Costs', 
+                value: 0, 
+                icon: '💻',
+                subcategories: {
+                    software: { name: 'Software Licences', value: 0 },
+                    hardware: { name: 'Hardware & Equipment', value: 0 },
+                    maintenance: { name: 'IT Maintenance', value: 0 },
+                    telecom: { name: 'Telecommunications', value: 0 }
+                }
+            },
+            occupancy: { 
+                name: 'Occupancy & Facilities', 
+                value: 0, 
+                icon: '🏢',
+                subcategories: {
+                    rent: { name: 'Rent & Rates', value: 0 },
+                    utilities: { name: 'Utilities', value: 0 },
+                    insurance: { name: 'Property Insurance', value: 0 },
+                    facilities: { name: 'Facilities Maintenance', value: 0 }
+                }
+            },
+            regulatory: { 
+                name: 'Regulatory & Compliance', 
+                value: 0, 
+                icon: '📋',
+                subcategories: {
+                    fca: { name: 'FCA Fees', value: 0 },
+                    compliance: { name: 'Compliance Costs', value: 0 },
+                    reporting: { name: 'Regulatory Reporting', value: 0 },
+                    licensing: { name: 'Professional Licensing', value: 0 }
+                }
+            },
+            other: { 
+                name: 'Other Operating Costs', 
+                value: 0, 
+                icon: '📊',
+                subcategories: {
+                    marketing: { name: 'Marketing & Business Development', value: 0 },
+                    travel: { name: 'Travel & Entertainment', value: 0 },
+                    office: { name: 'Office Supplies & Equipment', value: 0 },
+                    misc: { name: 'Miscellaneous Expenses', value: 0 }
+                }
+            }
+        };
+        let adjustments = [];
+        let historicalData = [];
+        let breakdownChart = null;
+        let trendChart = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing FOR Calculator...');
+            loadData();
+            console.log('Cost Categories:', costCategories);
+            setupGranularInputs();
+            updateCharts();
+            calculateFOR();
+            
+            // Set initial approach UI
+            setApproach(calculationApproach);
+        });
+
+        function setApproach(approach) {
+            calculationApproach = approach;
+            
+            // Update UI
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            
+            if (approach === 'consolidated') {
+                document.getElementById('consolidatedBtn').classList.add('active');
+                document.getElementById('consolidatedTab').classList.add('active');
+                calculateConsolidated();
+            } else {
+                document.getElementById('granularBtn').classList.add('active');
+                document.getElementById('granularTab').classList.add('active');
+                // Ensure granular inputs are set up
+                if (document.getElementById('granularInputs').innerHTML === '') {
+                    setupGranularInputs();
+                }
+                calculateGranular();
+            }
+            
+            saveData();
+        }
+
+        function setupGranularInputs() {
+            const container = document.getElementById('granularInputs');
+            if (!container) return;
+            
+            container.innerHTML = Object.entries(costCategories).map(([key, category]) => {
+                // Ensure subcategories exist
+                if (!category.subcategories) {
+                    console.error(`Missing subcategories for ${key}`);
+                    return '';
+                }
+                
+                return `
+                <div class="card p-4 mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">${category.icon}</span>
+                            <h3 class="font-bold text-lg">${category.name}</h3>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="${key}Total" class="input-field w-40" 
+                                   placeholder="0" value="${category.value || 0}"
+                                   oninput="updateCategoryTotal('${key}', this.value)">
+                            <button onclick="toggleSubcategories('${key}')" 
+                                    class="text-sm text-blue-400 hover:text-blue-300">
+                                <span id="${key}Toggle">▼ Detail</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="${key}Subcategories" class="hidden pl-10 space-y-2">
+                        ${Object.entries(category.subcategories).map(([subKey, subcat]) => `
+                            <div class="grid grid-cols-12 gap-3 items-center">
+                                <div class="col-span-7 text-sm text-gray-400">
+                                    ${subcat.name}
+                                </div>
+                                <div class="col-span-5">
+                                    <input type="number" id="${key}_${subKey}" 
+                                           class="input-field text-sm" 
+                                           placeholder="0" value="${subcat.value || 0}"
+                                           oninput="updateSubcategory('${key}', '${subKey}', this.value)">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function toggleSubcategories(category) {
+            const subcatDiv = document.getElementById(`${category}Subcategories`);
+            const toggleSpan = document.getElementById(`${category}Toggle`);
+            
+            if (!subcatDiv || !toggleSpan) return;
+            
+            if (subcatDiv.classList.contains('hidden')) {
+                subcatDiv.classList.remove('hidden');
+                toggleSpan.textContent = '▲ Hide';
+            } else {
+                subcatDiv.classList.add('hidden');
+                toggleSpan.textContent = '▼ Detail';
+            }
+        }
+
+        function updateCategoryTotal(category, value) {
+            if (!costCategories[category]) return;
+            
+            costCategories[category].value = parseFloat(value) || 0;
+            // Clear subcategories when total is manually entered
+            if (costCategories[category].subcategories) {
+                Object.keys(costCategories[category].subcategories).forEach(subKey => {
+                    costCategories[category].subcategories[subKey].value = 0;
+                    const input = document.getElementById(`${category}_${subKey}`);
+                    if (input) input.value = 0;
+                });
+            }
+            calculateGranular();
+        }
+
+        function updateSubcategory(category, subcategory, value) {
+            if (!costCategories[category] || !costCategories[category].subcategories) return;
+            
+            costCategories[category].subcategories[subcategory].value = parseFloat(value) || 0;
+            // Update category total based on subcategories
+            const total = Object.values(costCategories[category].subcategories)
+                .reduce((sum, sub) => sum + sub.value, 0);
+            costCategories[category].value = total;
+            const totalInput = document.getElementById(`${category}Total`);
+            if (totalInput) totalInput.value = total;
+            calculateGranular();
+        }
+
+        function calculateConsolidated() {
+            const totalExpenditure = parseFloat(document.getElementById('totalExpenditure').value) || 0;
+            const adjustedExpenditure = totalExpenditure - getTotalAdjustments();
+            const forValue = adjustedExpenditure / 4;
+            
+            updateResults(forValue, adjustedExpenditure);
+            saveData();
+        }
+
+        function calculateGranular() {
+            const totalExpenditure = Object.values(costCategories).reduce((sum, cat) => sum + cat.value, 0);
+            const adjustedExpenditure = totalExpenditure - getTotalAdjustments();
+            const forValue = adjustedExpenditure / 4;
+            
+            updateResults(forValue, adjustedExpenditure);
+            updateCharts();
+            saveData();
+        }
+
+        function calculateFOR() {
+            if (calculationApproach === 'consolidated') {
+                calculateConsolidated();
+            } else {
+                calculateGranular();
+            }
+        }
+
+        function getTotalAdjustments() {
+            return adjustments.reduce((sum, adj) => sum + adj.amount, 0);
+        }
+
+        function updateResults(forValue, totalExpenditure) {
+            // Update main result
+            document.getElementById('forResult').textContent = Math.round(forValue).toLocaleString();
+            
+            // Update quarterly breakdown
+            document.getElementById('quarterlyBreakdown').textContent = 
+                `Based on annual expenditure of £${Math.round(totalExpenditure).toLocaleString()}`;
+            
+            // Update metrics
+            document.getElementById('monthlyRunRate').textContent = 
+                `£${Math.round(totalExpenditure / 12).toLocaleString()}`;
+            document.getElementById('dailyBurn').textContent = 
+                `£${Math.round(totalExpenditure / 365).toLocaleString()}`;
+            document.getElementById('adjustmentTotal').textContent = 
+                `£${Math.round(getTotalAdjustments()).toLocaleString()}`;
+            document.getElementById('coverageDays').textContent = 
+                Math.round(forValue / (totalExpenditure / 365));
+        }
+
+        function updateCharts() {
+            updateBreakdownChart();
+            updateTrendChart();
+        }
+
+        function updateBreakdownChart() {
+            const ctx = document.getElementById('breakdownChart');
+            if (!ctx) return;
+            
+            const data = Object.entries(costCategories)
+                .filter(([_, cat]) => cat.value > 0)
+                .map(([key, cat]) => ({
+                    label: cat.name,
+                    value: cat.value
+                }));
+            
+            if (data.length === 0) {
+                if (breakdownChart) {
+                    breakdownChart.destroy();
+                    breakdownChart = null;
+                }
+                return;
+            }
+            
+            const chartData = {
+                labels: data.map(d => d.label),
+                datasets: [{
+                    data: data.map(d => d.value),
+                    backgroundColor: [
+                        '#3b82f6', '#ec4899', '#10b981', '#f59e0b', 
+                        '#8b5cf6', '#06b6d4'
+                    ]
+                }]
+            };
+            
+            if (breakdownChart) {
+                breakdownChart.data = chartData;
+                breakdownChart.update();
+            } else {
+                breakdownChart = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#e0e7ff' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateTrendChart() {
+            const ctx = document.getElementById('trendChart');
+            if (!ctx) return;
+            
+            // Generate sample historical data if none exists
+            if (historicalData.length === 0) {
+                const currentYear = new Date().getFullYear();
+                for (let i = 3; i >= 0; i--) {
+                    historicalData.push({
+                        year: currentYear - i,
+                        for: Math.round(150000 + Math.random() * 50000)
+                    });
+                }
+            }
+            
+            const chartData = {
+                labels: historicalData.map(d => d.year),
+                datasets: [{
+                    label: 'FOR Requirement',
+                    data: historicalData.map(d => d.for),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4
+                }]
+            };
+            
+            if (trendChart) {
+                trendChart.data = chartData;
+                trendChart.update();
+            } else {
+                trendChart = new Chart(ctx.getContext('2d'), {
+                    type: 'line',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#1e293b' }
+                            },
+                            x: {
+                                ticks: { color: '#e0e7ff' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function showApproachModal() {
+            alert('Choose between Consolidated (total annual expenditure) or Granular (detailed breakdown) approach using the tabs above.');
+        }
+
+        function showHistoryModal() {
+            alert('Historical snapshots: ' + historicalData.length + ' records saved. View them in the trend chart.');
+        }
+
+        function showAdjustmentsModal() {
+            updateAdjustmentsList();
+            document.getElementById('adjustmentsModal').style.display = 'block';
+        }
+
+        function showScenarioModal() {
+            document.getElementById('scenarioModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function addAdjustment() {
+            const description = prompt('Adjustment description:');
+            if (!description) return;
+            
+            const amount = parseFloat(prompt('Adjustment amount (£):'));
+            if (isNaN(amount)) return;
+            
+            adjustments.push({
+                id: Date.now(),
+                description,
+                amount,
+                date: new Date().toISOString()
+            });
+            
+            updateAdjustmentsList();
+            calculateFOR();
+            saveData();
+        }
+
+        function updateAdjustmentsList() {
+            const container = document.getElementById('adjustmentsList');
+            
+            if (adjustments.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No adjustments added</p>';
+                return;
+            }
+            
+            container.innerHTML = adjustments.map(adj => `
+                <div class="adjustment-item flex justify-between items-center">
+                    <div>
+                        <div class="font-semibold">${adj.description}</div>
+                        <div class="text-sm text-gray-400">£${adj.amount.toLocaleString()}</div>
+                    </div>
+                    <button onclick="removeAdjustment(${adj.id})" 
+                            class="text-red-400 hover:text-red-300">
+                        Remove
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeAdjustment(id) {
+            adjustments = adjustments.filter(adj => adj.id !== id);
+            updateAdjustmentsList();
+            calculateFOR();
+            saveData();
+        }
+
+        function runScenarios() {
+            const currentTotal = calculationApproach === 'consolidated' 
+                ? parseFloat(document.getElementById('totalExpenditure').value) || 0
+                : Object.values(costCategories).reduce((sum, cat) => sum + cat.value, 0);
+            
+            if (currentTotal === 0) {
+                alert('Please enter current expenditure first');
+                return;
+            }
+            
+            // Growth scenario
+            const staffGrowth = parseFloat(document.getElementById('staffGrowth').value) || 0;
+            const infraGrowth = parseFloat(document.getElementById('infraGrowth').value) || 0;
+            const newOffice = parseFloat(document.getElementById('newOffice').value) || 0;
+            
+            const growthTotal = currentTotal * (1 + staffGrowth/100) * (1 + infraGrowth/100) + newOffice;
+            const growthFOR = growthTotal / 4;
+            
+            // Efficiency scenario
+            const automationSaving = parseFloat(document.getElementById('automationSaving').value) || 0;
+            const vendorSaving = parseFloat(document.getElementById('vendorSaving').value) || 0;
+            const remoteReduction = parseFloat(document.getElementById('remoteReduction').value) || 0;
+            
+            const efficiencyTotal = currentTotal * (1 - automationSaving/100) * (1 - vendorSaving/100) - remoteReduction;
+            const efficiencyFOR = efficiencyTotal / 4;
+            
+            // Display results
+            const resultsDiv = document.getElementById('scenarioResults');
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="card p-4 border-green-500">
+                        <h4 class="font-bold text-green-400 mb-2">Growth Scenario</h4>
+                        <p class="text-2xl font-bold">£${Math.round(growthFOR).toLocaleString()}</p>
+                        <p class="text-sm text-gray-400 mt-1">
+                            ${((growthFOR - currentTotal/4) / (currentTotal/4) * 100).toFixed(1)}% increase
+                        </p>
+                    </div>
+                    <div class="card p-4 border-orange-500">
+                        <h4 class="font-bold text-orange-400 mb-2">Efficiency Scenario</h4>
+                        <p class="text-2xl font-bold">£${Math.round(efficiencyFOR).toLocaleString()}</p>
+                        <p class="text-sm text-gray-400 mt-1">
+                            ${((efficiencyFOR - currentTotal/4) / (currentTotal/4) * 100).toFixed(1)}% decrease
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-4 text-center text-gray-400">
+                    Current FOR: £${Math.round(currentTotal/4).toLocaleString()}
+                </div>
+            `;
+        }
+
+        function exportData() {
+            const data = {
+                approach: calculationApproach,
+                timestamp: new Date().toISOString(),
+                forRequirement: document.getElementById('forResult').textContent,
+                adjustments: adjustments,
+                breakdown: calculationApproach === 'granular' ? costCategories : null
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `FOR_Calculation_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function saveSnapshot() {
+            const snapshot = {
+                date: new Date().toISOString(),
+                forValue: parseFloat(document.getElementById('forResult').textContent.replace(/,/g, '')),
+                approach: calculationApproach,
+                adjustments: getTotalAdjustments()
+            };
+            
+            historicalData.push({
+                year: new Date().getFullYear(),
+                for: snapshot.forValue
+            });
+            
+            updateTrendChart();
+            saveData();
+            
+            alert('Snapshot saved successfully!');
+        }
+
+        function saveData() {
+            const data = {
+                approach: calculationApproach,
+                costCategories,
+                adjustments,
+                historicalData
+            };
+            localStorage.setItem('for_calculator_data', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('for_calculator_data');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    calculationApproach = data.approach || 'consolidated';
+                    // Ensure proper structure for cost categories
+                    if (data.costCategories) {
+                        // Merge saved data with default structure to ensure subcategories exist
+                        Object.keys(costCategories).forEach(key => {
+                            if (data.costCategories[key]) {
+                                costCategories[key].value = data.costCategories[key].value || 0;
+                                // Ensure subcategories exist
+                                if (data.costCategories[key].subcategories) {
+                                    Object.keys(costCategories[key].subcategories).forEach(subKey => {
+                                        if (data.costCategories[key].subcategories[subKey]) {
+                                            costCategories[key].subcategories[subKey].value = 
+                                                data.costCategories[key].subcategories[subKey].value || 0;
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                    adjustments = data.adjustments || [];
+                    historicalData = data.historicalData || [];
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+../by-category/calculator-modules/2025-09-19_kfr-module-implementation.md

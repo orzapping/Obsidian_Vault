@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-CMH Calculator - MIFIDPRU Compliant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#f59e0b;--accent-hi:#fbbf24;--muted:#9ca3af;--subtle:#6b7280;--seg:#f97316;--nonseg:#dc2626}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1200px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#f59e0b,#f97316);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    .card:hover{border-color:var(--accent);transition:border-color 0.3s}
+    h2{margin:0 0 16px;color:#fbbf24;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+    .stat{background:#0f172a;border:1px solid #1e293b;border-radius:.75rem;padding:16px}
+    .stat h3{margin:0 0 8px;font-size:.9rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+    .stat p{margin:0;font-size:1.5rem;font-weight:700}
+    .stat.primary{border-color:var(--accent);background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(249,115,22,0.1))}
+    .stat.seg{border-color:var(--seg)}
+    .stat.nonseg{border-color:var(--nonseg)}
+    .badge{display:inline-block;padding:4px 8px;border-radius:.375rem;font-size:.8rem;font-weight:600;margin-left:8px}
+    .badge-seg{background:#f97316;color:#fff}
+    .badge-nonseg{background:#dc2626;color:#fff}
+    .ok{background:#15803d;color:#bbf7d0}
+    .warn{background:#ca8a04;color:#fef08a}
+    .err{background:#b91c1c;color:#fecaca}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    canvas{background:#0f172a;border-radius:.75rem;border:1px solid #1e293b}
+    .mt{margin-top:20px}
+    .mb{margin-bottom:20px}
+    .debug{background:#1e293b;padding:16px;border-radius:.5rem;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--border)}
+    .info-box{background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(249,115,22,0.1));border:1px solid var(--accent);border-radius:.75rem;padding:16px;margin-bottom:20px}
+    .info-box strong{color:#fbbf24}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .formula{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.9rem;overflow-x:auto}
+    .formula-title{color:var(--accent);font-weight:600;margin-bottom:8px}
+    .timeline{display:flex;align-items:center;justify-content:space-between;margin:20px 0;padding:20px;background:#0f172a;border-radius:.75rem;border:1px solid var(--border)}
+    .timeline-item{text-align:center;flex:1;position:relative}
+    .timeline-item::after{content:'→';position:absolute;right:-20px;top:50%;transform:translateY(-50%);color:var(--muted)}
+    .timeline-item:last-child::after{display:none}
+    .timeline-period{color:var(--accent);font-weight:600;font-size:.9rem}
+    .timeline-desc{color:var(--muted);font-size:.8rem;margin-top:4px}
+    .excluded{opacity:0.5;text-decoration:line-through}
+    .spinner{border:3px solid rgba(255,255,255,0.1);border-radius:50%;border-top-color:var(--accent);width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .coefficient-box{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+    .coefficient-item{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:12px;text-align:center}
+    .coefficient-label{color:var(--muted);font-size:.85rem;display:block;margin-bottom:4px}
+    .coefficient-value{color:#e0e7ff;font-weight:700;font-size:1.1rem}
+    .warning-box{background:rgba(251,146,60,0.1);border:1px solid #fb923c;border-radius:.5rem;padding:12px;margin:16px 0;font-size:.9rem}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>K-CMH Calculator</h1>
+    <p class="subtitle">MIFIDPRU Compliant • Client Money Held • Segregated & Non-Segregated</p>
+
+    <div class="card">
+      <h2>Instructions & Requirements</h2>
+      <div class="content">
+        <div class="info-box">
+          <strong>CSV Format Required:</strong> Three columns - Date, Segregated_CMH, Non_Segregated_CMH<br>
+          <strong>Date formats accepted:</strong> dd.mm.yyyy, dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd<br>
+          <strong>Values:</strong> Use 0 or leave blank for types not applicable<br>
+          <strong>Important:</strong> Different coefficients apply to segregated (0.4%) vs non-segregated (0.5%)<br>
+          <strong>CASS Rules:</strong> Segregated = CASS 7 compliant, Non-segregated = Other arrangements
+        </div>
+        
+        <label class="label" for="csv">Upload CMH Data (CSV)</label>
+        <input id="csv" class="input" type="file" accept=".csv,text/csv" />
+        <div id="fileInfo" class="note"></div>
+        
+        <div class="row mt">
+          <div>
+            <label class="label" for="currency">Reporting Currency</label>
+            <select id="currency" class="select">
+              <option value="GBP">GBP (£)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="own">Own Funds</label>
+            <input id="own" class="input" type="number" placeholder="50000000" value="50000000" />
+          </div>
+        </div>
+        
+        <div class="mt mb">
+          <button class="btn" id="calculate">Calculate K-CMH</button>
+        </div>
+        
+        <div id="debugPanel" class="debug" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card" id="methodCard" style="display:none">
+      <h2>Calculation Methodology</h2>
+      <div class="content">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-period">Month 6</div>
+            <div class="timeline-desc">6 months ago</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-period">Month 5</div>
+            <div class="timeline-desc">5 months ago</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-period">Month 4</div>
+            <div class="timeline-desc">4 months ago</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 3</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 2</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+          <div class="timeline-item excluded">
+            <div class="timeline-period">Month 1</div>
+            <div class="timeline-desc">Excluded</div>
+          </div>
+        </div>
+        
+        <div class="formula">
+          <div class="formula-title">MIFIDPRU 4.11 Formula:</div>
+          1. Take daily CMH for past 6 months<br>
+          2. Exclude most recent 3 months<br>
+          3. Average remaining 3 months (months 4-6)<br>
+          4. K-CMH (Segregated) = Average Segregated CMH × 0.4%<br>
+          5. K-CMH (Non-Segregated) = Average Non-Segregated CMH × 0.5%<br>
+          6. K-CMH Total = K-CMH (Seg) + K-CMH (Non-Seg)
+        </div>
+        
+        <div class="coefficient-box">
+          <div class="coefficient-item">
+            <span class="coefficient-label">Segregated Coefficient (CASS 7)</span>
+            <span class="coefficient-value">0.4%</span>
+          </div>
+          <div class="coefficient-item">
+            <span class="coefficient-label">Non-Segregated Coefficient</span>
+            <span class="coefficient-value">0.5%</span>
+          </div>
+        </div>
+        
+        <div id="calcDetails" class="note mt"></div>
+      </div>
+    </div>
+
+    <div class="card" id="resultsCard" style="display:none">
+      <h2>K-CMH Requirements</h2>
+      <div class="content">
+        <div class="grid mb">
+          <div class="stat seg">
+            <h3>K-CMH (Segregated) <span class="badge badge-seg">0.4%</span></h3>
+            <p id="kcmhSeg">£0</p>
+            <div class="note">CASS 7 compliant balances</div>
+          </div>
+          <div class="stat nonseg">
+            <h3>K-CMH (Non-Segregated) <span class="badge badge-nonseg">0.5%</span></h3>
+            <p id="kcmhNonSeg">£0</p>
+            <div class="note">Other client money</div>
+          </div>
+          <div class="stat primary">
+            <h3>K-CMH Total</h3>
+            <p id="kcmhTotal">£0</p>
+            <div class="note">Combined requirement</div>
+          </div>
+        </div>
+        
+        <div class="grid">
+          <div class="stat">
+            <h3>Average Segregated CMH</h3>
+            <p id="avgSeg">£0</p>
+          </div>
+          <div class="stat">
+            <h3>Average Non-Segregated CMH</h3>
+            <p id="avgNonSeg">£0</p>
+          </div>
+          <div class="stat">
+            <h3>Segregation Ratio</h3>
+            <p id="segRatio">0%</p>
+            <div class="note">Segregated / Total</div>
+          </div>
+        </div>
+        
+        <div class="grid mt">
+          <div class="stat">
+            <h3>Headroom</h3>
+            <p id="headroom">£0</p>
+            <div class="note">Own Funds - K-CMH</div>
+          </div>
+          <div class="stat">
+            <h3>Headroom Ratio</h3>
+            <p id="headroomRatio">0%</p>
+          </div>
+          <div class="stat">
+            <h3>Capital Efficiency</h3>
+            <p id="efficiency">£0</p>
+            <div class="note">Benefit from segregation</div>
+          </div>
+        </div>
+        
+        <div id="dataInfo" class="note mt"></div>
+        
+        <div class="warning-box" id="segregationWarning" style="display:none">
+          <strong>⚠️ Segregation Opportunity:</strong> <span id="segregationMessage"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="chartsCard" style="display:none">
+      <h2>CMH Trends & Analysis</h2>
+      <div class="content">
+        <canvas id="trendChart" height="120"></canvas>
+        <div class="row mt">
+          <div>
+            <canvas id="distributionChart" height="200"></canvas>
+          </div>
+          <div>
+            <canvas id="compositionChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Currency symbols
+const CURRENCY_SYMBOLS = {
+  'GBP': '£',
+  'USD': '$',
+  'EUR': '€',
+  'OTHER': ''
+};
+
+// Parse European date formats
+function parseDate(dateStr) {
+  const s = dateStr.trim();
+  if (!s) return null;
+  
+  // Try different date formats
+  if (/^\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}$/.test(s)) {
+    const parts = s.split(/[.\/-]/);
+    const [d, m, y] = parts;
+    return new Date(y, m-1, d);
+  }
+  
+  if (/^\d{8}$/.test(s)) {
+    return new Date(s.slice(4,8), s.slice(2,4)-1, s.slice(0,2));
+  }
+  
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return new Date(s);
+  }
+  
+  return null;
+}
+
+// Format date as yyyy-mm-dd
+function formatDate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+// Format currency
+function formatCurrency(value, currency) {
+  const symbol = CURRENCY_SYMBOLS[currency];
+  const absValue = Math.abs(value);
+  
+  // Format based on magnitude
+  if (absValue >= 1e9) {
+    return symbol + (value/1e9).toFixed(2) + 'B';
+  } else if (absValue >= 1e6) {
+    return symbol + (value/1e6).toFixed(2) + 'M';
+  } else if (absValue >= 1e3) {
+    return symbol + (value/1e3).toFixed(2) + 'K';
+  }
+  
+  return symbol + value.toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+// Parse CSV
+function parseCSV(text) {
+  const debug = document.getElementById('debugPanel');
+  debug.style.display = 'block';
+  debug.textContent = '=== CSV Processing ===\n';
+  
+  // Remove BOM if present
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  
+  // Split into lines
+  const lines = text.trim().split(/\r?\n/);
+  debug.textContent += `Total lines: ${lines.length}\n`;
+  
+  // Parse header
+  const headers = lines[0].toLowerCase().split(/[,;\t]/).map(h => h.trim());
+  debug.textContent += `Headers: [${headers.join(', ')}]\n`;
+  
+  // Find columns
+  const dateIdx = headers.findIndex(h => h.includes('date'));
+  const segIdx = headers.findIndex(h => h.includes('segregated') || h.includes('seg'));
+  const nonSegIdx = headers.findIndex(h => h.includes('non') || h.includes('unseg'));
+  
+  if (dateIdx === -1) throw new Error('Date column not found');
+  if (segIdx === -1 && nonSegIdx === -1) throw new Error('Neither Segregated_CMH nor Non_Segregated_CMH column found');
+  
+  debug.textContent += `Column indices - Date: ${dateIdx}, Segregated: ${segIdx}, Non-Segregated: ${nonSegIdx}\n\n`;
+  
+  // Parse data
+  const data = new Map();
+  let errors = 0;
+  
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(/[,;\t]/);
+    if (parts.length <= dateIdx) continue;
+    
+    const date = parseDate(parts[dateIdx]);
+    if (!date) {
+      errors++;
+      if (errors <= 3) debug.textContent += `Line ${i+1}: Invalid date "${parts[dateIdx]}"\n`;
+      continue;
+    }
+    
+    const dateStr = formatDate(date);
+    const seg = segIdx >= 0 ? parseFloat(parts[segIdx]?.replace(/[,\s]/g, '') || '0') : 0;
+    const nonSeg = nonSegIdx >= 0 ? parseFloat(parts[nonSegIdx]?.replace(/[,\s]/g, '') || '0') : 0;
+    
+    if (!data.has(dateStr)) {
+      data.set(dateStr, { seg: 0, nonSeg: 0 });
+    }
+    
+    // Aggregate if multiple entries for same date
+    const existing = data.get(dateStr);
+    existing.seg += isNaN(seg) ? 0 : seg;
+    existing.nonSeg += isNaN(nonSeg) ? 0 : nonSeg;
+  }
+  
+  debug.textContent += `\nParsing complete:\n`;
+  debug.textContent += `- Valid dates: ${data.size}\n`;
+  debug.textContent += `- Parse errors: ${errors}\n`;
+  
+  if (data.size > 0) {
+    const dates = Array.from(data.keys()).sort();
+    debug.textContent += `- Date range: ${dates[0]} to ${dates[dates.length-1]}\n`;
+  }
+  
+  return data;
+}
+
+// Calculate K-CMH using MIFIDPRU methodology
+function calculateKCMH(data) {
+  const debug = document.getElementById('debugPanel');
+  debug.textContent += '\n=== K-CMH Calculation (MIFIDPRU 4.11) ===\n';
+  
+  // Get all dates sorted
+  const allDates = Array.from(data.keys()).sort();
+  if (allDates.length === 0) throw new Error('No data to calculate');
+  
+  const endDate = new Date(allDates[allDates.length - 1]);
+  const sixMonthsAgo = new Date(endDate);
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  
+  debug.textContent += `Calculation date: ${formatDate(endDate)}\n`;
+  debug.textContent += `6 months ago: ${formatDate(sixMonthsAgo)}\n`;
+  
+  // Get dates in 6-month window
+  const sixMonthDates = allDates.filter(d => new Date(d) > sixMonthsAgo && new Date(d) <= endDate);
+  debug.textContent += `Dates in 6-month window: ${sixMonthDates.length}\n`;
+  
+  // Calculate which 3 months to exclude
+  const threeMonthsAgo = new Date(endDate);
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  
+  debug.textContent += `3 months ago (cutoff): ${formatDate(threeMonthsAgo)}\n`;
+  
+  // Get dates to average (months 4-6)
+  const datesToAverage = sixMonthDates.filter(d => new Date(d) <= threeMonthsAgo);
+  debug.textContent += `Dates to average (months 4-6): ${datesToAverage.length}\n`;
+  
+  if (datesToAverage.length === 0) {
+    debug.textContent += '\nWARNING: No data in months 4-6, using all available data\n';
+    datesToAverage.push(...sixMonthDates);
+  }
+  
+  // Calculate averages
+  let totalSeg = 0, totalNonSeg = 0;
+  datesToAverage.forEach(date => {
+    const day = data.get(date);
+    totalSeg += day.seg;
+    totalNonSeg += day.nonSeg;
+  });
+  
+  const avgSeg = datesToAverage.length > 0 ? totalSeg / datesToAverage.length : 0;
+  const avgNonSeg = datesToAverage.length > 0 ? totalNonSeg / datesToAverage.length : 0;
+  
+  // Apply coefficients
+  const kcmhSeg = avgSeg * 0.004;  // 0.4% for segregated
+  const kcmhNonSeg = avgNonSeg * 0.005; // 0.5% for non-segregated
+  const kcmhTotal = kcmhSeg + kcmhNonSeg;
+  
+  // Calculate what K-CMH would be if all was segregated
+  const kcmhIfAllSeg = (avgSeg + avgNonSeg) * 0.004;
+  const efficiencyGain = kcmhTotal - kcmhIfAllSeg;
+  
+  debug.textContent += `\nCalculation results:\n`;
+  debug.textContent += `- Average Segregated CMH: ${avgSeg.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Average Non-Segregated CMH: ${avgNonSeg.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- K-CMH (Segregated @ 0.4%): ${kcmhSeg.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- K-CMH (Non-Segregated @ 0.5%): ${kcmhNonSeg.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- K-CMH Total: ${kcmhTotal.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Efficiency gain from segregation: ${efficiencyGain.toLocaleString('en-GB')}\n`;
+  
+  return {
+    avgSeg,
+    avgNonSeg,
+    kcmhSeg,
+    kcmhNonSeg,
+    kcmhTotal,
+    efficiencyGain,
+    allDates,
+    sixMonthDates,
+    datesToAverage,
+    endDate,
+    sixMonthsAgo,
+    threeMonthsAgo
+  };
+}
+
+// Draw charts
+let trendChart = null, distributionChart = null, compositionChart = null;
+
+function drawCharts(data, results, currency) {
+  // Trend chart
+  if (trendChart) trendChart.destroy();
+  
+  const ctx1 = document.getElementById('trendChart').getContext('2d');
+  const dates = results.sixMonthDates.slice(-90); // Last 90 days
+  const segValues = dates.map(d => data.get(d).seg);
+  const nonSegValues = dates.map(d => data.get(d).nonSeg);
+  
+  trendChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'Segregated CMH',
+        data: segValues,
+        borderColor: '#f97316',
+        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }, {
+        label: 'Non-Segregated CMH',
+        data: nonSegValues,
+        borderColor: '#dc2626',
+        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#e0e7ff' }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ' + formatCurrency(context.raw, currency);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 15
+          }
+        },
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            callback: function(value) {
+              return formatCurrency(value, currency);
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Distribution chart
+  if (distributionChart) distributionChart.destroy();
+  
+  const ctx2 = document.getElementById('distributionChart').getContext('2d');
+  distributionChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Segregated K-CMH', 'Non-Segregated K-CMH'],
+      datasets: [{
+        data: [results.kcmhSeg, results.kcmhNonSeg],
+        backgroundColor: ['#f97316', '#dc2626'],
+        borderColor: ['#fb923c', '#ef4444'],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: 'K-CMH Breakdown',
+          color: '#e0e7ff'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const pct = ((context.raw / results.kcmhTotal) * 100).toFixed(1);
+              return formatCurrency(context.raw, currency) + ' (' + pct + '%)';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            callback: function(value) {
+              return formatCurrency(value, currency);
+            }
+          }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#e0e7ff' }
+        }
+      }
+    }
+  });
+  
+  // Composition chart
+  if (compositionChart) compositionChart.destroy();
+  
+  const ctx3 = document.getElementById('compositionChart').getContext('2d');
+  
+  const totalCMH = results.avgSeg + results.avgNonSeg;
+  const segPct = totalCMH > 0 ? (results.avgSeg / totalCMH * 100) : 0;
+  const nonSegPct = totalCMH > 0 ? (results.avgNonSeg / totalCMH * 100) : 0;
+  
+  compositionChart = new Chart(ctx3, {
+    type: 'doughnut',
+    data: {
+      labels: [`Segregated (${segPct.toFixed(1)}%)`, `Non-Segregated (${nonSegPct.toFixed(1)}%)`],
+      datasets: [{
+        data: [results.avgSeg, results.avgNonSeg],
+        backgroundColor: ['#f97316', '#dc2626'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#e0e7ff' }
+        },
+        title: {
+          display: true,
+          text: 'CMH Composition',
+          color: '#e0e7ff'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return formatCurrency(context.raw, currency);
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// Main calculation
+function runCalculation() {
+  try {
+    const fileInput = document.getElementById('csv');
+    if (!fileInput.files.length) {
+      alert('Please select a CSV file');
+      return;
+    }
+    
+    const currency = document.getElementById('currency').value;
+    const ownFunds = parseFloat(document.getElementById('own').value) || 50000000;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        // Parse CSV
+        const data = parseCSV(e.target.result);
+        
+        if (data.size === 0) {
+          alert('No valid data found in CSV');
+          return;
+        }
+        
+        // Calculate K-CMH
+        const results = calculateKCMH(data);
+        
+        // Display results
+        document.getElementById('kcmhSeg').textContent = formatCurrency(results.kcmhSeg, currency);
+        document.getElementById('kcmhNonSeg').textContent = formatCurrency(results.kcmhNonSeg, currency);
+        document.getElementById('kcmhTotal').textContent = formatCurrency(results.kcmhTotal, currency);
+        
+        document.getElementById('avgSeg').textContent = formatCurrency(results.avgSeg, currency);
+        document.getElementById('avgNonSeg').textContent = formatCurrency(results.avgNonSeg, currency);
+        
+        // Segregation ratio
+        const totalCMH = results.avgSeg + results.avgNonSeg;
+        const segRatio = totalCMH > 0 ? (results.avgSeg / totalCMH * 100) : 0;
+        document.getElementById('segRatio').textContent = segRatio.toFixed(1) + '%';
+        
+        // Headroom analysis
+        const headroom = ownFunds - results.kcmhTotal;
+        document.getElementById('headroom').textContent = formatCurrency(headroom, currency);
+        
+        const headroomRatio = ((headroom / ownFunds) * 100).toFixed(2);
+        document.getElementById('headroomRatio').textContent = headroomRatio + '%';
+        
+        // Efficiency from segregation
+        document.getElementById('efficiency').textContent = formatCurrency(results.efficiencyGain, currency);
+        
+        // Data info
+        const info = document.getElementById('dataInfo');
+        info.innerHTML = `Data period: ${results.allDates[0]} to ${results.allDates[results.allDates.length-1]} (${results.allDates.length} days)<br>`;
+        info.innerHTML += `Calculation window: ${formatDate(results.sixMonthsAgo)} to ${formatDate(results.endDate)}<br>`;
+        info.innerHTML += `Averaged period: ${formatDate(results.sixMonthsAgo)} to ${formatDate(results.threeMonthsAgo)} (${results.datesToAverage.length} days)`;
+        
+        // Calculation details
+        const calcDetails = document.getElementById('calcDetails');
+        calcDetails.innerHTML = `Using ${results.datesToAverage.length} days from months 4-6 for averaging<br>`;
+        calcDetails.innerHTML += `Excluded ${results.sixMonthDates.length - results.datesToAverage.length} days from most recent 3 months`;
+        
+        // Segregation warning
+        if (results.avgNonSeg > results.avgSeg * 0.1) { // If non-seg > 10% of seg
+          const potentialSaving = results.avgNonSeg * 0.001; // 0.1% difference
+          document.getElementById('segregationWarning').style.display = 'block';
+          document.getElementById('segregationMessage').textContent = 
+            `Converting non-segregated to segregated could save ${formatCurrency(potentialSaving, currency)} in K-CMH requirement`;
+        }
+        
+        // Draw charts
+        drawCharts(data, results, currency);
+        
+        // Show all cards
+        document.getElementById('methodCard').style.display = 'block';
+        document.getElementById('resultsCard').style.display = 'block';
+        document.getElementById('chartsCard').style.display = 'block';
+        
+      } catch (error) {
+        alert('Error: ' + error.message);
+        console.error(error);
+      }
+    };
+    
+    reader.readAsText(fileInput.files[0]);
+    
+  } catch (error) {
+    alert('Error: ' + error.message);
+    console.error(error);
+  }
+}
+
+// Event handlers
+document.getElementById('csv').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('fileInfo').textContent = 
+      `Selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    document.getElementById('debugPanel').style.display = 'none';
+  }
+});
+
+document.getElementById('calculate').addEventListener('click', runCalculation);
+
+// Set Chart.js defaults
+Chart.defaults.color = '#e0e7ff';
+Chart.defaults.borderColor = '#334155';
+</script>
+</body>
+</html>

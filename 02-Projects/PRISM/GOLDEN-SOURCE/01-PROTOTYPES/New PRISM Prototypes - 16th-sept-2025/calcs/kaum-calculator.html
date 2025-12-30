@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-AUM Calculator - MIFIDPRU Compliant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#10b981;--accent-hi:#34d399;--muted:#9ca3af;--subtle:#6b7280;--aum:#059669;--aum-light:#6ee7b7}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1200px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#10b981,#059669);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    .card:hover{border-color:var(--accent);transition:border-color 0.3s}
+    h2{margin:0 0 16px;color:#6ee7b7;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+    .stat{background:#0f172a;border:1px solid #1e293b;border-radius:.75rem;padding:16px}
+    .stat h3{margin:0 0 8px;font-size:.9rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+    .stat p{margin:0;font-size:1.5rem;font-weight:700}
+    .stat.primary{border-color:var(--accent);background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(5,150,105,0.1))}
+    .stat.aum{border-color:var(--aum)}
+    .badge{display:inline-block;padding:4px 8px;border-radius:.375rem;font-size:.8rem;font-weight:600;margin-left:8px}
+    .ok{background:#15803d;color:#bbf7d0}
+    .warn{background:#ca8a04;color:#fef08a}
+    .err{background:#b91c1c;color:#fecaca}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    canvas{background:#0f172a;border-radius:.75rem;border:1px solid #1e293b}
+    .mt{margin-top:20px}
+    .mb{margin-bottom:20px}
+    .debug{background:#1e293b;padding:16px;border-radius:.5rem;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--border)}
+    .info-box{background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(5,150,105,0.1));border:1px solid var(--accent);border-radius:.75rem;padding:16px;margin-bottom:20px}
+    .info-box strong{color:#34d399}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .formula{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.9rem;overflow-x:auto}
+    .formula-title{color:var(--accent);font-weight:600;margin-bottom:8px}
+    .timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:8px;margin:20px 0;padding:20px;background:#0f172a;border-radius:.75rem;border:1px solid var(--border)}
+    .timeline-item{text-align:center;padding:8px 4px;background:#1e293b;border-radius:.375rem;border:1px solid var(--border)}
+    .timeline-item.included{border-color:var(--accent);background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(5,150,105,0.1))}
+    .timeline-period{color:var(--accent);font-weight:600;font-size:.75rem}
+    .timeline-desc{color:var(--muted);font-size:.65rem;margin-top:2px}
+    .excluded{opacity:0.5;text-decoration:line-through}
+    .spinner{border:3px solid rgba(255,255,255,0.1);border-radius:50%;border-top-color:var(--accent);width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .sensitivity{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin-top:16px}
+    .sensitivity h4{margin:0 0 12px;color:var(--accent);font-size:1rem}
+    .sensitivity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+    .sensitivity-item{text-align:center;padding:8px;background:#1e293b;border-radius:.375rem;border:1px solid var(--border)}
+    .sensitivity-item.current{border-color:var(--accent);background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(5,150,105,0.1))}
+    .sensitivity-label{color:var(--muted);font-size:.75rem;display:block;margin-bottom:4px}
+    .sensitivity-value{color:#e0e7ff;font-weight:600;font-size:.9rem}
+    .month-table{width:100%;margin-top:16px;border-collapse:collapse}
+    .month-table th{background:#1e293b;padding:8px;text-align:left;color:var(--accent);font-size:.85rem;border-bottom:1px solid var(--border)}
+    .month-table td{padding:8px;border-bottom:1px solid rgba(51,65,85,0.3);font-size:.9rem}
+    .month-table tr:hover{background:rgba(16,185,129,0.05)}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>K-AUM Calculator</h1>
+    <p class="subtitle">MIFIDPRU Compliant • Assets Under Management • 15-Month Average</p>
+
+    <div class="card">
+      <h2>Instructions & Requirements</h2>
+      <div class="content">
+        <div class="info-box">
+          <strong>CSV Format Required:</strong> Two columns - Month, AUM_Value<br>
+          <strong>Month formats accepted:</strong> YYYY-MM, MM/YYYY, or Month YYYY<br>
+          <strong>AUM Values:</strong> Month-end total assets under management<br>
+          <strong>Important:</strong> Include both discretionary and non-discretionary managed assets<br>
+          <strong>Note:</strong> K-AUM uses monthly values (not daily) with 15-month averaging
+        </div>
+        
+        <label class="label" for="csv">Upload AUM Data (CSV)</label>
+        <input id="csv" class="input" type="file" accept=".csv,text/csv" />
+        <div id="fileInfo" class="note"></div>
+        
+        <div class="row mt">
+          <div>
+            <label class="label" for="currency">Reporting Currency</label>
+            <select id="currency" class="select">
+              <option value="GBP">GBP (£)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="own">Own Funds</label>
+            <input id="own" class="input" type="number" placeholder="50000000" value="50000000" />
+          </div>
+        </div>
+        
+        <div class="mt mb">
+          <button class="btn" id="calculate">Calculate K-AUM</button>
+        </div>
+        
+        <div id="debugPanel" class="debug" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card" id="methodCard" style="display:none">
+      <h2>Calculation Methodology</h2>
+      <div class="content">
+        <div class="timeline" id="timelineVisual"></div>
+        
+        <div class="formula">
+          <div class="formula-title">MIFIDPRU 4.7 Formula:</div>
+          1. Take month-end AUM values for past 15 months<br>
+          2. Calculate simple average of all 15 months<br>
+          3. K-AUM = Average AUM × 0.02%<br>
+          <br>
+          Coefficient: 0.02% (0.0002) per MIFIDPRU 4.7.7<br>
+          <br>
+          Note: Unlike K-COH/K-ASA, K-AUM uses ALL 15 months (no exclusion period)
+        </div>
+        
+        <div id="calcDetails" class="note mt"></div>
+      </div>
+    </div>
+
+    <div class="card" id="resultsCard" style="display:none">
+      <h2>K-AUM Requirements</h2>
+      <div class="content">
+        <div class="grid mb">
+          <div class="stat primary">
+            <h3>K-AUM Requirement</h3>
+            <p id="kaumTotal">£0</p>
+            <div class="note">0.02% of average AUM</div>
+          </div>
+          <div class="stat aum">
+            <h3>Average AUM</h3>
+            <p id="avgAUM">£0</p>
+            <div class="note">15-month average</div>
+          </div>
+          <div class="stat">
+            <h3>Headroom</h3>
+            <p id="headroom">£0</p>
+            <div class="note">Own Funds - K-AUM</div>
+          </div>
+        </div>
+        
+        <div class="grid">
+          <div class="stat">
+            <h3>Headroom Ratio</h3>
+            <p id="headroomRatio">0%</p>
+          </div>
+          <div class="stat">
+            <h3>Implied Max AUM</h3>
+            <p id="impliedAUM">£0</p>
+            <div class="note">At current Own Funds</div>
+          </div>
+          <div class="stat">
+            <h3>AUM Utilisation</h3>
+            <p id="utilisation">0%</p>
+            <div class="note">Current vs Max AUM</div>
+          </div>
+        </div>
+        
+        <div class="grid mt">
+          <div class="stat">
+            <h3>Latest Month AUM</h3>
+            <p id="latestAUM">£0</p>
+          </div>
+          <div class="stat">
+            <h3>AUM Growth</h3>
+            <p id="aumGrowth">0%</p>
+            <div class="note">15-month change</div>
+          </div>
+          <div class="stat">
+            <h3>AUM Volatility</h3>
+            <p id="aumVolatility">0%</p>
+            <div class="note">Standard deviation</div>
+          </div>
+        </div>
+        
+        <div id="dataInfo" class="note mt"></div>
+        
+        <div class="sensitivity">
+          <h4>Sensitivity Analysis - K-AUM at Different AUM Levels</h4>
+          <div class="sensitivity-grid" id="sensitivityGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="monthlyCard" style="display:none">
+      <h2>Monthly AUM Breakdown</h2>
+      <div class="content">
+        <table class="month-table" id="monthTable">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>AUM Value</th>
+              <th>Month-on-Month</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="monthTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="chartsCard" style="display:none">
+      <h2>AUM Analysis</h2>
+      <div class="content">
+        <canvas id="trendChart" height="120"></canvas>
+        <div class="row mt">
+          <div>
+            <canvas id="growthChart" height="200"></canvas>
+          </div>
+          <div>
+            <canvas id="kaumChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Currency symbols
+const CURRENCY_SYMBOLS = {
+  'GBP': '£',
+  'USD': '$',
+  'EUR': '€',
+  'OTHER': ''
+};
+
+// Parse month formats
+function parseMonth(monthStr) {
+  const s = monthStr.trim();
+  if (!s) return null;
+  
+  // Try YYYY-MM format
+  if (/^\d{4}-\d{1,2}$/.test(s)) {
+    const [y, m] = s.split('-');
+    return new Date(y, parseInt(m) - 1, 1);
+  }
+  
+  // Try MM/YYYY format
+  if (/^\d{1,2}\/\d{4}$/.test(s)) {
+    const [m, y] = s.split('/');
+    return new Date(y, parseInt(m) - 1, 1);
+  }
+  
+  // Try Month YYYY format
+  if (/^[A-Za-z]+ \d{4}$/.test(s)) {
+    return new Date(s + ' 1');
+  }
+  
+  // Try YYYYMM format
+  if (/^\d{6}$/.test(s)) {
+    return new Date(s.slice(0,4), parseInt(s.slice(4,6)) - 1, 1);
+  }
+  
+  return null;
+}
+
+// Format month for display
+function formatMonth(date) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return months[date.getMonth()] + ' ' + date.getFullYear();
+}
+
+// Format month as YYYY-MM for sorting
+function formatMonthKey(date) {
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+// Format currency
+function formatCurrency(value, currency) {
+  const symbol = CURRENCY_SYMBOLS[currency];
+  const absValue = Math.abs(value);
+  
+  // Format based on magnitude
+  if (absValue >= 1e12) {
+    return symbol + (value/1e12).toFixed(2) + 'T';
+  } else if (absValue >= 1e9) {
+    return symbol + (value/1e9).toFixed(2) + 'B';
+  } else if (absValue >= 1e6) {
+    return symbol + (value/1e6).toFixed(2) + 'M';
+  } else if (absValue >= 1e3) {
+    return symbol + (value/1e3).toFixed(2) + 'K';
+  }
+  
+  return symbol + value.toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+// Parse CSV
+function parseCSV(text) {
+  const debug = document.getElementById('debugPanel');
+  debug.style.display = 'block';
+  debug.textContent = '=== CSV Processing ===\n';
+  
+  // Remove BOM if present
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  
+  // Split into lines
+  const lines = text.trim().split(/\r?\n/);
+  debug.textContent += `Total lines: ${lines.length}\n`;
+  
+  // Parse header
+  const headers = lines[0].toLowerCase().split(/[,;\t]/).map(h => h.trim());
+  debug.textContent += `Headers: [${headers.join(', ')}]\n`;
+  
+  // Find columns
+  const monthIdx = headers.findIndex(h => h.includes('month') || h.includes('date') || h.includes('period'));
+  const aumIdx = headers.findIndex(h => h.includes('aum') || h.includes('value') || h.includes('amount'));
+  
+  if (monthIdx === -1) throw new Error('Month column not found. Looking for "month", "date", or "period"');
+  if (aumIdx === -1) throw new Error('AUM_Value column not found. Looking for "aum", "value", or "amount"');
+  
+  debug.textContent += `Column indices - Month: ${monthIdx}, AUM: ${aumIdx}\n\n`;
+  
+  // Parse data
+  const data = new Map();
+  let errors = 0;
+  
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(/[,;\t]/);
+    if (parts.length <= monthIdx) continue;
+    
+    const month = parseMonth(parts[monthIdx]);
+    if (!month) {
+      errors++;
+      if (errors <= 3) debug.textContent += `Line ${i+1}: Invalid month "${parts[monthIdx]}"\n`;
+      continue;
+    }
+    
+    const monthKey = formatMonthKey(month);
+    const aumValue = parseFloat(parts[aumIdx]?.replace(/[,\s]/g, '') || '0');
+    
+    if (!data.has(monthKey)) {
+      data.set(monthKey, 0);
+    }
+    
+    // Aggregate if multiple entries for same month (shouldn't happen but handle it)
+    data.set(monthKey, data.get(monthKey) + (isNaN(aumValue) ? 0 : aumValue));
+  }
+  
+  debug.textContent += `\nParsing complete:\n`;
+  debug.textContent += `- Valid months: ${data.size}\n`;
+  debug.textContent += `- Parse errors: ${errors}\n`;
+  
+  if (data.size > 0) {
+    const months = Array.from(data.keys()).sort();
+    debug.textContent += `- Month range: ${months[0]} to ${months[months.length-1]}\n`;
+    
+    // Calculate total AUM for info
+    const totalAUM = Array.from(data.values()).reduce((a, b) => a + b, 0);
+    const avgMonthly = totalAUM / data.size;
+    debug.textContent += `- Average monthly AUM: ${avgMonthly.toLocaleString('en-GB')}\n`;
+  }
+  
+  return data;
+}
+
+// Calculate K-AUM using MIFIDPRU methodology
+function calculateKAUM(data) {
+  const debug = document.getElementById('debugPanel');
+  debug.textContent += '\n=== K-AUM Calculation (MIFIDPRU 4.7) ===\n';
+  
+  // Get all months sorted
+  const allMonths = Array.from(data.keys()).sort();
+  if (allMonths.length === 0) throw new Error('No data to calculate');
+  
+  // Get last 15 months (or all available if less than 15)
+  const monthsToUse = allMonths.slice(-15);
+  
+  debug.textContent += `Total months available: ${allMonths.length}\n`;
+  debug.textContent += `Months used for calculation: ${monthsToUse.length}\n`;
+  
+  if (monthsToUse.length < 15) {
+    debug.textContent += `WARNING: Less than 15 months of data (${monthsToUse.length} months). `;
+    debug.textContent += `Per MIFIDPRU 4.7.8, using available data.\n`;
+  }
+  
+  debug.textContent += `Calculation period: ${monthsToUse[0]} to ${monthsToUse[monthsToUse.length-1]}\n`;
+  
+  // Calculate average AUM (simple average of all months)
+  let totalAUM = 0;
+  monthsToUse.forEach(month => {
+    totalAUM += data.get(month);
+  });
+  
+  const avgAUM = totalAUM / monthsToUse.length;
+  
+  // Apply coefficient (0.02% per MIFIDPRU 4.7.7)
+  const kaum = avgAUM * 0.0002;
+  
+  debug.textContent += `\nCalculation results:\n`;
+  debug.textContent += `- Total AUM for period: ${totalAUM.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Average AUM: ${avgAUM.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Coefficient applied: 0.02% (0.0002)\n`;
+  debug.textContent += `- K-AUM Requirement: ${kaum.toLocaleString('en-GB')}\n`;
+  
+  // Calculate statistics
+  const values = monthsToUse.map(m => data.get(m));
+  const minAUM = Math.min(...values);
+  const maxAUM = Math.max(...values);
+  const stdDev = calculateStdDev(values);
+  const latestAUM = data.get(allMonths[allMonths.length - 1]);
+  const firstAUM = data.get(monthsToUse[0]);
+  const growth = ((latestAUM - firstAUM) / firstAUM * 100);
+  
+  debug.textContent += `\nPeriod statistics:\n`;
+  debug.textContent += `- Min AUM: ${minAUM.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Max AUM: ${maxAUM.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Std Dev: ${stdDev.toLocaleString('en-GB')}\n`;
+  debug.textContent += `- Period growth: ${growth.toFixed(2)}%\n`;
+  
+  return {
+    avgAUM,
+    kaum,
+    allMonths,
+    monthsToUse,
+    minAUM,
+    maxAUM,
+    stdDev,
+    latestAUM,
+    growth
+  };
+}
+
+// Calculate standard deviation
+function calculateStdDev(values) {
+  const n = values.length;
+  if (n === 0) return 0;
+  
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const squareDiffs = values.map(v => Math.pow(v - mean, 2));
+  const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / n;
+  return Math.sqrt(avgSquareDiff);
+}
+
+// Generate timeline visual
+function generateTimeline(monthsUsed) {
+  const timeline = document.getElementById('timelineVisual');
+  timeline.innerHTML = '';
+  
+  // Show last 15 months in timeline
+  const displayMonths = monthsUsed.slice(-15);
+  
+  displayMonths.forEach((month, idx) => {
+    const item = document.createElement('div');
+    item.className = 'timeline-item included';
+    
+    const date = new Date(month + '-01');
+    const monthName = formatMonth(date);
+    
+    item.innerHTML = `
+      <div class="timeline-period">M${15 - (displayMonths.length - 1 - idx)}</div>
+      <div class="timeline-desc">${monthName}</div>
+    `;
+    timeline.appendChild(item);
+  });
+}
+
+// Generate monthly table
+function generateMonthlyTable(data, monthsUsed, currency) {
+  const tbody = document.getElementById('monthTableBody');
+  tbody.innerHTML = '';
+  
+  let prevValue = null;
+  monthsUsed.forEach((month, idx) => {
+    const value = data.get(month);
+    const date = new Date(month + '-01');
+    
+    let changeText = '-';
+    let changeClass = '';
+    
+    if (prevValue !== null) {
+      const change = ((value - prevValue) / prevValue * 100);
+      changeText = change.toFixed(2) + '%';
+      changeClass = change > 0 ? 'ok' : (change < 0 ? 'err' : '');
+    }
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${formatMonth(date)}</td>
+      <td>${formatCurrency(value, currency)}</td>
+      <td><span class="${changeClass}">${changeText}</span></td>
+      <td>${idx >= monthsUsed.length - 15 ? '<span class="badge ok">Included</span>' : '<span class="badge">Historical</span>'}</td>
+    `;
+    tbody.appendChild(row);
+    
+    prevValue = value;
+  });
+}
+
+// Draw charts
+let trendChart = null, growthChart = null, kaumChart = null;
+
+function drawCharts(data, results, currency, ownFunds) {
+  // Trend chart
+  if (trendChart) trendChart.destroy();
+  
+  const ctx1 = document.getElementById('trendChart').getContext('2d');
+  const months = results.monthsToUse;
+  const aumValues = months.map(m => data.get(m));
+  const labels = months.map(m => {
+    const date = new Date(m + '-01');
+    return formatMonth(date);
+  });
+  
+  trendChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Monthly AUM',
+        data: aumValues,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }, {
+        label: '15-Month Average',
+        data: Array(aumValues.length).fill(results.avgAUM),
+        borderColor: '#059669',
+        borderWidth: 2,
+        borderDash: [5, 5],
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#e0e7ff' }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ' + formatCurrency(context.raw, currency);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 15
+          }
+        },
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            callback: function(value) {
+              return formatCurrency(value, currency);
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Growth chart
+  if (growthChart) growthChart.destroy();
+  
+  const ctx2 = document.getElementById('growthChart').getContext('2d');
+  
+  // Calculate month-on-month growth rates
+  const growthRates = [];
+  for (let i = 1; i < aumValues.length; i++) {
+    const growth = ((aumValues[i] - aumValues[i-1]) / aumValues[i-1] * 100);
+    growthRates.push(growth);
+  }
+  
+  growthChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: labels.slice(1),
+      datasets: [{
+        label: 'Month-on-Month Growth',
+        data: growthRates,
+        backgroundColor: growthRates.map(r => r >= 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)'),
+        borderColor: growthRates.map(r => r >= 0 ? '#10b981' : '#ef4444'),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#e0e7ff' }
+        },
+        title: {
+          display: true,
+          text: 'AUM Growth Pattern',
+          color: '#e0e7ff'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return 'Growth: ' + context.raw.toFixed(2) + '%';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            maxRotation: 45,
+            minRotation: 45,
+            display: false
+          }
+        },
+        y: {
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            callback: function(value) {
+              return value + '%';
+            }
+          },
+          title: {
+            display: true,
+            text: 'Growth Rate (%)',
+            color: '#9ca3af'
+          }
+        }
+      }
+    }
+  });
+  
+  // K-AUM vs Own Funds chart
+  if (kaumChart) kaumChart.destroy();
+  
+  const ctx3 = document.getElementById('kaumChart').getContext('2d');
+  
+  const kaumData = [
+    { label: 'K-AUM', value: results.kaum, color: '#10b981' },
+    { label: 'Headroom', value: ownFunds - results.kaum, color: '#0891b2' }
+  ];
+  
+  kaumChart = new Chart(ctx3, {
+    type: 'doughnut',
+    data: {
+      labels: kaumData.map(d => d.label),
+      datasets: [{
+        data: kaumData.map(d => d.value),
+        backgroundColor: kaumData.map(d => d.color),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#e0e7ff' }
+        },
+        title: {
+          display: true,
+          text: 'K-AUM vs Own Funds',
+          color: '#e0e7ff'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const value = context.raw;
+              const total = ownFunds;
+              const percentage = ((value / total) * 100).toFixed(2);
+              return context.label + ': ' + formatCurrency(value, currency) + ' (' + percentage + '%)';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// Generate sensitivity analysis
+function generateSensitivity(currentAUM, currency) {
+  const grid = document.getElementById('sensitivityGrid');
+  grid.innerHTML = '';
+  
+  const scenarios = [
+    { label: '-50%', multiplier: 0.5 },
+    { label: '-25%', multiplier: 0.75 },
+    { label: 'Current', multiplier: 1, current: true },
+    { label: '+25%', multiplier: 1.25 },
+    { label: '+50%', multiplier: 1.5 },
+    { label: '+100%', multiplier: 2 }
+  ];
+  
+  scenarios.forEach(scenario => {
+    const aumValue = currentAUM * scenario.multiplier;
+    const kaumValue = aumValue * 0.0002;
+    
+    const item = document.createElement('div');
+    item.className = 'sensitivity-item' + (scenario.current ? ' current' : '');
+    item.innerHTML = `
+      <span class="sensitivity-label">${scenario.label}</span>
+      <span class="sensitivity-value">${formatCurrency(kaumValue, currency)}</span>
+    `;
+    grid.appendChild(item);
+  });
+}
+
+// Main calculation
+function runCalculation() {
+  try {
+    const fileInput = document.getElementById('csv');
+    if (!fileInput.files.length) {
+      alert('Please select a CSV file');
+      return;
+    }
+    
+    const currency = document.getElementById('currency').value;
+    const ownFunds = parseFloat(document.getElementById('own').value) || 50000000;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        // Parse CSV
+        const data = parseCSV(e.target.result);
+        
+        if (data.size === 0) {
+          alert('No valid data found in CSV');
+          return;
+        }
+        
+        // Calculate K-AUM
+        const results = calculateKAUM(data);
+        
+        // Display results
+        document.getElementById('kaumTotal').textContent = formatCurrency(results.kaum, currency);
+        document.getElementById('avgAUM').textContent = formatCurrency(results.avgAUM, currency);
+        
+        const headroom = ownFunds - results.kaum;
+        document.getElementById('headroom').textContent = formatCurrency(headroom, currency);
+        
+        const headroomRatio = ((headroom / ownFunds) * 100).toFixed(2);
+        document.getElementById('headroomRatio').textContent = headroomRatio + '%';
+        
+        // Calculate implied max AUM at current own funds
+        const impliedMaxAUM = ownFunds / 0.0002;
+        document.getElementById('impliedAUM').textContent = formatCurrency(impliedMaxAUM, currency);
+        
+        // Calculate utilisation
+        const utilisation = ((results.avgAUM / impliedMaxAUM) * 100).toFixed(2);
+        document.getElementById('utilisation').textContent = utilisation + '%';
+        
+        // Additional metrics
+        document.getElementById('latestAUM').textContent = formatCurrency(results.latestAUM, currency);
+        document.getElementById('aumGrowth').textContent = results.growth.toFixed(2) + '%';
+        const volatilityPct = (results.stdDev / results.avgAUM * 100).toFixed(2);
+        document.getElementById('aumVolatility').textContent = volatilityPct + '%';
+        
+        // Data info
+        const info = document.getElementById('dataInfo');
+        info.innerHTML = `Data period: ${results.allMonths[0]} to ${results.allMonths[results.allMonths.length-1]} (${results.allMonths.length} months)<br>`;
+        info.innerHTML += `Calculation period: ${results.monthsToUse[0]} to ${results.monthsToUse[results.monthsToUse.length-1]} (${results.monthsToUse.length} months)<br>`;
+        if (results.monthsToUse.length < 15) {
+          info.innerHTML += `<span style="color:#fbbf24">Note: Using ${results.monthsToUse.length} months (less than standard 15 months)</span>`;
+        }
+        
+        // Calculation details
+        const calcDetails = document.getElementById('calcDetails');
+        calcDetails.innerHTML = `Using ${results.monthsToUse.length} months for averaging<br>`;
+        calcDetails.innerHTML += `Min AUM in period: ${formatCurrency(results.minAUM, currency)}, Max: ${formatCurrency(results.maxAUM, currency)}`;
+        
+        // Generate visuals
+        generateTimeline(results.monthsToUse);
+        generateMonthlyTable(data, results.allMonths, currency);
+        generateSensitivity(results.avgAUM, currency);
+        
+        // Draw charts
+        drawCharts(data, results, currency, ownFunds);
+        
+        // Show all cards
+        document.getElementById('methodCard').style.display = 'block';
+        document.getElementById('resultsCard').style.display = 'block';
+        document.getElementById('monthlyCard').style.display = 'block';
+        document.getElementById('chartsCard').style.display = 'block';
+        
+      } catch (error) {
+        alert('Error: ' + error.message);
+        console.error(error);
+      }
+    };
+    
+    reader.readAsText(fileInput.files[0]);
+    
+  } catch (error) {
+    alert('Error: ' + error.message);
+    console.error(error);
+  }
+}
+
+// Event handlers
+document.getElementById('csv').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('fileInfo').textContent = 
+      `Selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    document.getElementById('debugPanel').style.display = 'none';
+  }
+});
+
+document.getElementById('calculate').addEventListener('click', runCalculation);
+
+// Set Chart.js defaults
+Chart.defaults.color = '#e0e7ff';
+Chart.defaults.borderColor = '#334155';
+</script>
+</body>
+</html>

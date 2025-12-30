@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Assessment (RA) Calculator - Enhanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+        }
+        .input-field {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+        }
+        .input-field:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        .formula-box {
+            background: rgba(236, 72, 153, 0.1);
+            border: 1px solid #ec4899;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Custom slider styles */
+        .risk-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #1e293b;
+            outline: none;
+            position: relative;
+        }
+        
+        .risk-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .risk-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .impact-slider { background: linear-gradient(to right, #10b981 0%, #f59e0b 50%, #ef4444 100%); }
+        .impact-slider::-webkit-slider-thumb { background: #ef4444; border: 2px solid #fff; }
+        .impact-slider::-moz-range-thumb { background: #ef4444; border: 2px solid #fff; }
+        
+        .probability-slider { background: linear-gradient(to right, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%); }
+        .probability-slider::-webkit-slider-thumb { background: #8b5cf6; border: 2px solid #fff; }
+        .probability-slider::-moz-range-thumb { background: #8b5cf6; border: 2px solid #fff; }
+        
+        .velocity-slider { background: linear-gradient(to right, #06b6d4 0%, #f59e0b 50%, #dc2626 100%); }
+        .velocity-slider::-webkit-slider-thumb { background: #f59e0b; border: 2px solid #fff; }
+        .velocity-slider::-moz-range-thumb { background: #f59e0b; border: 2px solid #fff; }
+        
+        .risk-card {
+            border-left: 4px solid #ec4899;
+            transition: all 0.3s ease;
+        }
+        .risk-card.operational { border-left-color: #3b82f6; }
+        .risk-card.strategic { border-left-color: #10b981; }
+        .risk-card.financial { border-left-color: #f59e0b; }
+        .risk-card.regulatory { border-left-color: #8b5cf6; }
+        .risk-card.reputational { border-left-color: #ec4899; }
+        .risk-card.cyber { border-left-color: #ef4444; }
+        
+        .risk-score {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+            position: relative;
+        }
+        
+        .risk-score::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            padding: 3px;
+            background: linear-gradient(45deg, #4f46e5, #ec4899);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        /* Higher z-index for controls library modal when layered */
+        #controlsLibraryModal {
+            z-index: 1100;
+        }
+        .modal-content {
+            background: #111827;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .correlation-cell {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .correlation-cell:hover {
+            transform: scale(1.1);
+        }
+        .correlation-low { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .correlation-medium { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .correlation-high { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        
+        .metric-card {
+            background: rgba(236, 72, 153, 0.1);
+            border: 1px solid #ec4899;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .risk-heatmap-cell {
+            width: 100%;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .control-chip {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid #8b5cf6;
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin: 0.25rem;
+        }
+        .control-chip.preventive { border-color: #3b82f6; background: rgba(59, 130, 246, 0.2); }
+        .control-chip.detective { border-color: #f59e0b; background: rgba(245, 158, 11, 0.2); }
+        .control-chip.corrective { border-color: #10b981; background: rgba(16, 185, 129, 0.2); }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-600">
+                Risk Assessment (RA) Calculator
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">MiFIDPRU 7.6 - Firm-Specific Risk Capital Assessment</p>
+        </header>
+
+        <!-- Main Formula Display -->
+        <div class="card p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-pink-400">RA Formula</h2>
+            <div class="formula-box text-center text-lg">
+                RA = Σ(Risk Score × Capital Intensity × Correlation Factor)
+                <div class="text-sm mt-2 text-gray-400">
+                    Capturing residual risks not covered by FOR, KFR, or WDA
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <button onclick="showRiskLibrary()" class="card p-4 text-center hover:border-pink-500 transition-all">
+                <div class="text-2xl mb-2">📚</div>
+                <div class="font-bold">Risk Library</div>
+                <div class="text-sm text-gray-400">Pre-defined risks</div>
+            </button>
+            <button onclick="showControlsLibrary()" class="card p-4 text-center hover:border-pink-500 transition-all">
+                <div class="text-2xl mb-2">🛡️</div>
+                <div class="font-bold">Controls Library</div>
+                <div class="text-sm text-gray-400">Mitigating controls</div>
+            </button>
+            <button onclick="showCorrelationMatrix()" class="card p-4 text-center hover:border-pink-500 transition-all">
+                <div class="text-2xl mb-2">🔗</div>
+                <div class="font-bold">Correlations</div>
+                <div class="text-sm text-gray-400">Risk interactions</div>
+            </button>
+            <button onclick="showScenarioBuilder()" class="card p-4 text-center hover:border-pink-500 transition-all">
+                <div class="text-2xl mb-2">🎯</div>
+                <div class="font-bold">Scenarios</div>
+                <div class="text-sm text-gray-400">Stress testing</div>
+            </button>
+            <button onclick="showCapitalCalibration()" class="card p-4 text-center hover:border-pink-500 transition-all">
+                <div class="text-2xl mb-2">⚖️</div>
+                <div class="font-bold">Calibration</div>
+                <div class="text-sm text-gray-400">Capital settings</div>
+            </button>
+        </div>
+
+        <!-- Risk Assessment Framework -->
+        <div class="card p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-cyan-400">Active Risk Register</h2>
+                <button onclick="addCustomRisk()" class="btn-primary">
+                    + Add Risk
+                </button>
+            </div>
+            
+            <div id="riskRegister" class="space-y-4">
+                <!-- Dynamic risk entries -->
+            </div>
+        </div>
+
+        <!-- RA Calculation Result -->
+        <div class="card p-6 mb-6 bg-gradient-to-r from-pink-900/20 to-purple-900/20 border-pink-500">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-2">Risk Assessment Capital (RA)</h3>
+                <div class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-600">
+                    £<span id="raResult">0</span>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-4">
+                    <div>
+                        <div class="text-sm text-gray-400">Base Risk Capital</div>
+                        <div class="text-xl font-bold">£<span id="baseCapital">0</span></div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-400">Correlation Adjustment</div>
+                        <div class="text-xl font-bold"><span id="correlationAdjustment">0</span>%</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-400">Confidence Level</div>
+                        <div class="text-xl font-bold">
+                            <select id="confidenceSelect" class="bg-transparent border-b border-gray-600 text-white outline-none" 
+                                    onchange="updateConfidence()">
+                                <option value="90">90%</option>
+                                <option value="95" selected>95%</option>
+                                <option value="99">99%</option>
+                                <option value="99.9">99.9%</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Risk Heat Map -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-purple-400">Risk Heat Map</h3>
+                <div id="riskHeatMap" class="relative" style="height: 400px;">
+                    <!-- Dynamic heat map -->
+                </div>
+            </div>
+
+            <!-- Risk Distribution -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-pink-400">Risk Category Distribution</h3>
+                <div style="height: 400px; position: relative;">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="totalRisks">0</div>
+                <div class="text-sm text-gray-400">Total Risks</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="highRisks">0</div>
+                <div class="text-sm text-gray-400">High Severity</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="avgRiskScore">0</div>
+                <div class="text-sm text-gray-400">Avg Risk Score</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="mitigationRate">0%</div>
+                <div class="text-sm text-gray-400">Mitigation Rate</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-4 justify-center">
+            <button onclick="exportData()" class="btn-primary">
+                📥 Export Assessment
+            </button>
+            <button onclick="generateReport()" class="btn-primary">
+                📄 Generate ICARA Report
+            </button>
+            <button onclick="runMonteCarlo()" class="btn-primary">
+                🎲 Monte Carlo Analysis
+            </button>
+        </div>
+    </div>
+
+    <!-- Risk Library Modal -->
+    <div id="riskLibraryModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Risk Universe Library</h2>
+                    <button onclick="closeModal('riskLibraryModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="mb-4">
+                    <input type="text" id="riskSearch" placeholder="Search risks..." 
+                           class="input-field" oninput="filterRisks()">
+                </div>
+                
+                <div class="space-y-6" id="riskLibraryContent">
+                    <!-- Dynamic risk library content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Correlation Matrix Modal -->
+    <div id="correlationModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Risk Correlation Matrix</h2>
+                    <button onclick="closeModal('correlationModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <p class="text-gray-400 mb-6">
+                    Define how risks interact and compound. Higher correlation = greater combined impact.
+                </p>
+                
+                <div id="correlationMatrix" class="overflow-auto">
+                    <!-- Dynamic correlation matrix -->
+                </div>
+                
+                <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                        <div class="correlation-cell correlation-low">0.2</div>
+                        <span class="text-sm">Low Correlation</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2">
+                        <div class="correlation-cell correlation-medium">0.5</div>
+                        <span class="text-sm">Medium Correlation</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2">
+                        <div class="correlation-cell correlation-high">0.8</div>
+                        <span class="text-sm">High Correlation</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Builder Modal -->
+    <div id="scenarioModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Scenario Builder</h2>
+                    <button onclick="closeModal('scenarioModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="card p-4">
+                        <h3 class="font-bold mb-3 text-red-400">Severe Market Stress</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm mb-2">Market Volatility Multiplier</label>
+                                <input type="range" class="risk-slider velocity-slider" min="1" max="3" step="0.1" value="2">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-2">Correlation Increase</label>
+                                <input type="range" class="risk-slider velocity-slider" min="0" max="50" step="5" value="25">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <h3 class="font-bold mb-3 text-yellow-400">Operational Crisis</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm mb-2">System Failure Probability</label>
+                                <input type="range" class="risk-slider probability-slider" min="0" max="100" step="5" value="40">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-2">Recovery Time (days)</label>
+                                <input type="range" class="risk-slider velocity-slider" min="1" max="30" step="1" value="7">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <h3 class="font-bold mb-3 text-purple-400">Regulatory Change</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm mb-2">Compliance Cost Increase</label>
+                                <input type="range" class="risk-slider impact-slider" min="0" max="200" step="10" value="50">
+                            </div>
+                            <div>
+                                <label class="block text-sm mb-2">Implementation Timeline</label>
+                                <input type="range" class="risk-slider velocity-slider" min="3" max="24" step="3" value="12">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="runScenarioAnalysis()" class="btn-primary w-full mt-6">
+                    Run Scenario Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Library Modal -->
+    <div id="controlsLibraryModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Controls Library</h2>
+                    <button onclick="closeModal('controlsLibraryModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="mb-4 flex gap-2">
+                    <input type="text" id="controlSearch" placeholder="Search controls..." 
+                           class="input-field flex-1" oninput="filterControls()">
+                    <button onclick="addCustomControl()" class="btn-primary">
+                        + Add Custom Control
+                    </button>
+                </div>
+                
+                <div class="space-y-6" id="controlsLibraryContent">
+                    <!-- Dynamic controls library content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capital Calibration Modal -->
+    <div id="calibrationModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Capital Calibration Settings</h2>
+                    <button onclick="closeModal('calibrationModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="card p-4">
+                        <h3 class="font-bold mb-3">Base Capital Intensity</h3>
+                        <label class="block text-sm mb-2">Capital per Risk Score Point (£)</label>
+                        <input type="range" id="baseCapitalIntensity" class="risk-slider impact-slider" 
+                               min="1000" max="25000" step="500" value="5000"
+                               oninput="updateCapitalIntensity(this.value)">
+                        <div class="text-center text-xl font-bold mt-2">£<span id="capitalIntensityDisplay">5,000</span></div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <h3 class="font-bold mb-3">Risk Category Multipliers</h3>
+                        <div class="space-y-3" id="categoryMultipliersContainer">
+                            <!-- Dynamic content will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div class="card p-4">
+                        <h3 class="font-bold mb-3">Firm Size Adjustment</h3>
+                        <select id="firmSizeAdjustment" class="input-field" onchange="updateFirmSizeAdjustment()">
+                            <option value="0.5">Small Firm (50% of base)</option>
+                            <option value="1.0" selected>Medium Firm (100% of base)</option>
+                            <option value="1.5">Large Firm (150% of base)</option>
+                            <option value="2.0">Complex Firm (200% of base)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button onclick="applyCalibration()" class="btn-primary w-full mt-6">
+                    Apply Calibration
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Controls Modal -->
+    <div id="riskControlsModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Risk Controls - <span id="controlsRiskName"></span></h2>
+                    <button onclick="closeModal('riskControlsModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="mb-6">
+                    <button onclick="showControlsToAdd()" class="btn-primary">
+                        + Add Control
+                    </button>
+                </div>
+                
+                <div id="riskControlsList" class="space-y-4">
+                    <!-- Dynamic controls list -->
+                </div>
+                
+                <div class="mt-6 card p-4 bg-gray-800">
+                    <h4 class="font-bold mb-3">Control Effectiveness Summary</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-sm text-gray-400">Combined Effectiveness</div>
+                            <div class="text-2xl font-bold" id="combinedEffectiveness">0%</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-400">Residual Risk Score</div>
+                            <div class="text-2xl font-bold" id="residualRiskScore">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Note: This calculator is optimized for Chrome and Firefox
+        // Safari users may experience some compatibility issues with certain CSS features
+        
+        // Risk categories - Define BEFORE any other code
+        const riskCategories = {
+            operational: { name: 'Operational Risk', color: '#3b82f6', icon: '⚙️' },
+            strategic: { name: 'Strategic Risk', color: '#10b981', icon: '🎯' },
+            financial: { name: 'Financial Risk', color: '#f59e0b', icon: '💰' },
+            regulatory: { name: 'Regulatory Risk', color: '#8b5cf6', icon: '📋' },
+            reputational: { name: 'Reputational Risk', color: '#ec4899', icon: '⭐' },
+            cyber: { name: 'Cyber Risk', color: '#ef4444', icon: '🔒' }
+        };
+
+        // Risk library
+        const riskLibrary = {
+            operational: [
+                { name: 'Key Person Dependency', grossImpact: 7, grossProbability: 60 },
+                { name: 'System Outage', grossImpact: 8, grossProbability: 40 },
+                { name: 'Process Failure', grossImpact: 6, grossProbability: 50 },
+                { name: 'Third Party Failure', grossImpact: 7, grossProbability: 35 },
+                { name: 'Human Error', grossImpact: 5, grossProbability: 70 }
+            ],
+            strategic: [
+                { name: 'Business Model Disruption', grossImpact: 9, grossProbability: 30 },
+                { name: 'Competition Intensification', grossImpact: 6, grossProbability: 60 },
+                { name: 'Market Share Loss', grossImpact: 7, grossProbability: 45 },
+                { name: 'Innovation Lag', grossImpact: 8, grossProbability: 40 }
+            ],
+            financial: [
+                { name: 'Revenue Concentration', grossImpact: 8, grossProbability: 50 },
+                { name: 'Credit Risk', grossImpact: 7, grossProbability: 40 },
+                { name: 'Liquidity Stress', grossImpact: 9, grossProbability: 25 },
+                { name: 'Market Risk', grossImpact: 6, grossProbability: 60 }
+            ],
+            regulatory: [
+                { name: 'Regulatory Change', grossImpact: 7, grossProbability: 70 },
+                { name: 'Compliance Breach', grossImpact: 9, grossProbability: 20 },
+                { name: 'Licensing Risk', grossImpact: 10, grossProbability: 15 },
+                { name: 'Reporting Failure', grossImpact: 6, grossProbability: 30 }
+            ],
+            reputational: [
+                { name: 'Client Complaint', grossImpact: 6, grossProbability: 50 },
+                { name: 'Media Coverage', grossImpact: 8, grossProbability: 30 },
+                { name: 'Social Media Crisis', grossImpact: 7, grossProbability: 40 },
+                { name: 'Brand Damage', grossImpact: 9, grossProbability: 25 }
+            ],
+            cyber: [
+                { name: 'Data Breach', grossImpact: 10, grossProbability: 35 },
+                { name: 'Ransomware Attack', grossImpact: 9, grossProbability: 30 },
+                { name: 'Phishing Success', grossImpact: 6, grossProbability: 60 },
+                { name: 'System Intrusion', grossImpact: 8, grossProbability: 40 }
+            ]
+        };
+
+        // Controls library
+        const controlsLibrary = {
+            governance: {
+                name: 'Governance Controls',
+                icon: '👔',
+                controls: [
+                    { name: 'Board Risk Committee', type: 'preventive', baseEffectiveness: 70 },
+                    { name: 'Risk Management Policy', type: 'preventive', baseEffectiveness: 60 },
+                    { name: 'Internal Audit Reviews', type: 'detective', baseEffectiveness: 80 },
+                    { name: 'Management Oversight', type: 'preventive', baseEffectiveness: 65 },
+                    { name: 'Escalation Procedures', type: 'corrective', baseEffectiveness: 75 }
+                ]
+            },
+            operational: {
+                name: 'Operational Controls',
+                icon: '⚙️',
+                controls: [
+                    { name: 'Daily Reconciliations', type: 'detective', baseEffectiveness: 85 },
+                    { name: 'Segregation of Duties', type: 'preventive', baseEffectiveness: 80 },
+                    { name: 'Process Documentation', type: 'preventive', baseEffectiveness: 60 },
+                    { name: 'Exception Reporting', type: 'detective', baseEffectiveness: 75 },
+                    { name: 'Business Continuity Plan', type: 'corrective', baseEffectiveness: 70 }
+                ]
+            },
+            technical: {
+                name: 'Technical Controls',
+                icon: '🔐',
+                controls: [
+                    { name: 'Access Controls', type: 'preventive', baseEffectiveness: 90 },
+                    { name: 'Data Encryption', type: 'preventive', baseEffectiveness: 95 },
+                    { name: 'System Monitoring', type: 'detective', baseEffectiveness: 80 },
+                    { name: 'Backup Procedures', type: 'corrective', baseEffectiveness: 85 },
+                    { name: 'Firewall Protection', type: 'preventive', baseEffectiveness: 85 }
+                ]
+            },
+            personnel: {
+                name: 'Personnel Controls',
+                icon: '👥',
+                controls: [
+                    { name: 'Staff Training Program', type: 'preventive', baseEffectiveness: 70 },
+                    { name: 'Background Checks', type: 'preventive', baseEffectiveness: 75 },
+                    { name: 'Performance Reviews', type: 'detective', baseEffectiveness: 65 },
+                    { name: 'Whistleblowing Hotline', type: 'detective', baseEffectiveness: 60 },
+                    { name: 'Code of Conduct', type: 'preventive', baseEffectiveness: 55 }
+                ]
+            }
+        };
+
+        // Data storage
+        let activeRisks = [];
+        let correlationMatrix = {};
+        let confidenceLevel = 95;
+        let distributionChart = null;
+        let capitalSettings = {
+            baseIntensity: 5000,
+            categoryMultipliers: {
+                operational: 1.0,
+                strategic: 1.2,
+                financial: 1.1,
+                regulatory: 1.3,
+                reputational: 0.9,
+                cyber: 1.5
+            },
+            firmSizeAdjustment: 1.0
+        };
+        let currentEditingRiskId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
+            loadData();
+            initializeDefaultRisks();
+            updateRiskRegister();
+            updateHeatMap();
+            calculateRA();
+            updateCharts();
+            setupCategoryMultipliers();
+        });
+
+        function setupCategoryMultipliers() {
+            const container = document.getElementById('categoryMultipliersContainer');
+            if (!container) {
+                console.error('Category multipliers container not found');
+                return;
+            }
+            
+            let html = '';
+            Object.entries(riskCategories).forEach(([key, cat]) => {
+                html += `
+                    <div class="flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <span class="text-xl">${cat.icon}</span>
+                            ${cat.name}
+                        </span>
+                        <input type="number" id="${key}Multiplier" class="input-field w-24" 
+                               value="${capitalSettings.categoryMultipliers[key] || 1.0}" 
+                               step="0.1" min="0.5" max="2.0"
+                               oninput="updateCategoryMultiplier('${key}', this.value)">
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function initializeDefaultRisks() {
+            if (!activeRisks || activeRisks.length === 0) {
+                console.log('Initializing default risks...');
+                // Add a few default risks with controls
+                activeRisks = [
+                    {
+                        id: Date.now() + 1,
+                        category: 'operational',
+                        name: 'Key Person Dependency',
+                        grossImpact: 7,
+                        grossProbability: 60,
+                        velocity: 1.2,
+                        controls: [],
+                        netImpact: 7,
+                        netProbability: 60,
+                        combinedMitigation: 0,
+                        capital: 0
+                    },
+                    {
+                        id: Date.now() + 2,
+                        category: 'cyber',
+                        name: 'Data Breach',
+                        grossImpact: 9,
+                        grossProbability: 35,
+                        velocity: 1.8,
+                        controls: [],
+                        netImpact: 9,
+                        netProbability: 35,
+                        combinedMitigation: 0,
+                        capital: 0
+                    },
+                    {
+                        id: Date.now() + 3,
+                        category: 'regulatory',
+                        name: 'Regulatory Change',
+                        grossImpact: 6,
+                        grossProbability: 70,
+                        velocity: 0.8,
+                        controls: [],
+                        netImpact: 6,
+                        netProbability: 70,
+                        combinedMitigation: 0,
+                        capital: 0
+                    }
+                ];
+                
+                // Initialize correlations
+                initializeCorrelations();
+                saveData();
+            }
+        }
+
+        function initializeCorrelations() {
+            activeRisks.forEach(risk1 => {
+                activeRisks.forEach(risk2 => {
+                    if (risk1.id !== risk2.id) {
+                        const key = `${Math.min(risk1.id, risk2.id)}_${Math.max(risk1.id, risk2.id)}`;
+                        if (!correlationMatrix[key]) {
+                            // Default correlation based on category
+                            correlationMatrix[key] = risk1.category === risk2.category ? 0.5 : 0.2;
+                        }
+                    }
+                });
+            });
+        }
+
+        function updateRiskRegister() {
+            const container = document.getElementById('riskRegister');
+            if (!container) {
+                console.error('Risk register container not found');
+                return;
+            }
+            
+            if (!activeRisks || activeRisks.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No active risks. Add risks from the library or create custom risks.</p>';
+                return;
+            }
+            
+            container.innerHTML = activeRisks.map(risk => {
+                const category = riskCategories[risk.category];
+                const grossScore = calculateGrossRiskScore(risk);
+                const netScore = calculateNetRiskScore(risk);
+                
+                return `
+                    <div class="card risk-card ${risk.category} p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="text-2xl">${category.icon}</span>
+                                    <div>
+                                        <h3 class="font-bold text-lg">${risk.name}</h3>
+                                        <p class="text-sm text-gray-400">${category.name}</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Gross Risk Assessment -->
+                                <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                                    <h4 class="text-sm font-bold text-red-400 mb-2">GROSS RISK (Inherent)</h4>
+                                    <div class="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-xs text-gray-400 mb-1">Impact (0-10)</label>
+                                            <input type="range" class="risk-slider impact-slider" 
+                                                   min="0" max="10" step="0.1" value="${risk.grossImpact}"
+                                                   oninput="updateGrossRiskValue(${risk.id}, 'grossImpact', this.value)">
+                                            <div class="text-center text-sm font-bold mt-1">${risk.grossImpact.toFixed(1)}</div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-400 mb-1">Probability (%)</label>
+                                            <input type="range" class="risk-slider probability-slider" 
+                                                   min="0" max="100" step="1" value="${risk.grossProbability}"
+                                                   oninput="updateGrossRiskValue(${risk.id}, 'grossProbability', this.value)">
+                                            <div class="text-center text-sm font-bold mt-1">${risk.grossProbability}%</div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-400 mb-1">Velocity (0.5-2.0)</label>
+                                            <input type="range" class="risk-slider velocity-slider" 
+                                                   min="0.5" max="2" step="0.05" value="${risk.velocity}"
+                                                   oninput="updateGrossRiskValue(${risk.id}, 'velocity', this.value)">
+                                            <div class="text-center text-sm font-bold mt-1">${risk.velocity.toFixed(2)}x</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <span class="text-xs text-gray-400">Gross Risk Score: </span>
+                                        <span class="font-bold text-red-400">${grossScore.toFixed(1)}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Controls Section -->
+                                <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h4 class="text-sm font-bold text-blue-400">MITIGATING CONTROLS</h4>
+                                        <button onclick="manageRiskControls(${risk.id})" 
+                                                class="text-xs text-blue-400 hover:text-blue-300">
+                                            Manage Controls →
+                                        </button>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1">
+                                        ${risk.controls && risk.controls.length > 0 ? risk.controls.map(control => `
+                                            <span class="control-chip ${control.type}" title="${control.effectiveness}% effective">
+                                                ${control.name}
+                                            </span>
+                                        `).join('') : '<span class="text-xs text-gray-500">No controls applied</span>'}
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <span class="text-xs text-gray-400">Combined Mitigation: </span>
+                                        <span class="font-bold text-blue-400">${(risk.combinedMitigation || 0).toFixed(0)}%</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Net Risk Assessment -->
+                                <div class="p-3 bg-gray-800 rounded-lg">
+                                    <h4 class="text-sm font-bold text-green-400 mb-2">NET RISK (Residual)</h4>
+                                    <div class="grid grid-cols-2 gap-4 text-center">
+                                        <div>
+                                            <div class="text-xs text-gray-400">Net Impact</div>
+                                            <div class="font-bold">${risk.netImpact.toFixed(1)}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-400">Net Probability</div>
+                                            <div class="font-bold">${risk.netProbability.toFixed(0)}%</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <span class="text-xs text-gray-400">Net Risk Score: </span>
+                                        <span class="font-bold text-green-400">${netScore.toFixed(1)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="ml-4 text-center">
+                                <div class="mb-4">
+                                    <div class="text-xs text-gray-400">Gross</div>
+                                    <div class="risk-score mb-2" style="background: ${getRiskColor(grossScore)};">
+                                        ${grossScore.toFixed(0)}
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="text-xs text-gray-400">Net</div>
+                                    <div class="risk-score" style="background: ${getRiskColor(netScore)};">
+                                        ${netScore.toFixed(0)}
+                                    </div>
+                                </div>
+                                <div class="text-sm text-gray-400 mt-2">Capital Required</div>
+                                <div class="text-lg font-bold mt-1">£${Math.round(risk.capital || 0).toLocaleString()}</div>
+                                <button onclick="removeRisk(${risk.id})" 
+                                        class="text-red-400 hover:text-red-300 text-sm mt-2">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function calculateGrossRiskScore(risk) {
+            return (risk.grossImpact * risk.grossProbability / 10) * risk.velocity;
+        }
+
+        function calculateNetRiskScore(risk) {
+            return (risk.netImpact * risk.netProbability / 10) * risk.velocity;
+        }
+
+        function calculateCombinedMitigation(controls) {
+            if (!controls || controls.length === 0) return 0;
+            
+            // Use the formula: Combined = 1 - ∏(1 - effectiveness_i)
+            const combinedIneffectiveness = controls.reduce((product, control) => {
+                return product * (1 - control.effectiveness / 100);
+            }, 1);
+            
+            return (1 - combinedIneffectiveness) * 100;
+        }
+
+        function updateGrossRiskValue(riskId, field, value) {
+            const risk = activeRisks.find(r => r.id === riskId);
+            if (!risk) return;
+            
+            risk[field] = parseFloat(value);
+            
+            // Recalculate net values based on controls
+            applyControlsToRisk(risk);
+            
+            calculateRA();
+            updateRiskRegister();
+            updateHeatMap();
+            updateCharts();
+            saveData();
+        }
+
+        function applyControlsToRisk(risk) {
+            const mitigation = (risk.combinedMitigation || 0) / 100;
+            
+            // Apply mitigation to both impact and probability
+            risk.netImpact = risk.grossImpact * (1 - mitigation * 0.6); // 60% max impact reduction
+            risk.netProbability = risk.grossProbability * (1 - mitigation * 0.8); // 80% max probability reduction
+        }
+
+        function manageRiskControls(riskId) {
+            currentEditingRiskId = riskId;
+            const risk = activeRisks.find(r => r.id === riskId);
+            if (!risk) return;
+            
+            document.getElementById('controlsRiskName').textContent = risk.name;
+            updateRiskControlsList();
+            document.getElementById('riskControlsModal').style.display = 'block';
+        }
+
+        function updateRiskControlsList() {
+            const risk = activeRisks.find(r => r.id === currentEditingRiskId);
+            if (!risk) return;
+            
+            const container = document.getElementById('riskControlsList');
+            
+            if (!risk.controls || risk.controls.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500 mb-2">No controls applied yet.</p>
+                        <p class="text-sm text-gray-400">Click "Add Control" above to select from the library</p>
+                        <p class="text-sm text-gray-400">or create custom controls to mitigate this risk.</p>
+                    </div>`;
+            } else {
+                container.innerHTML = risk.controls.map((control, index) => `
+                    <div class="card p-4 ${index === risk.controls.length - 1 ? 'animate-pulse' : ''}">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h4 class="font-bold">${control.name}</h4>
+                                <span class="control-chip ${control.type}">${control.type}</span>
+                                <div class="mt-3">
+                                    <label class="block text-xs text-gray-400 mb-1">Effectiveness (%)</label>
+                                    <input type="range" class="risk-slider" 
+                                           min="0" max="100" step="5" value="${control.effectiveness}"
+                                           oninput="updateControlEffectiveness(${currentEditingRiskId}, '${control.id}', this.value)">
+                                    <div class="text-center text-sm font-bold mt-1">${control.effectiveness}%</div>
+                                </div>
+                                <div class="mt-2">
+                                    <label class="block text-xs text-gray-400 mb-1">Evidence/Documentation</label>
+                                    <textarea class="input-field text-sm" rows="2" 
+                                              placeholder="Describe how this control is implemented..."
+                                              onblur="updateControlEvidence(${currentEditingRiskId}, '${control.id}', this.value)">${control.evidence || ''}</textarea>
+                                </div>
+                            </div>
+                            <button onclick="removeControl(${currentEditingRiskId}, '${control.id}')" 
+                                    class="text-red-400 hover:text-red-300 ml-4">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Remove pulse animation after a short delay
+                setTimeout(() => {
+                    const cards = container.querySelectorAll('.card');
+                    cards.forEach(card => card.classList.remove('animate-pulse'));
+                }, 1000);
+            }
+            
+            // Update summary
+            risk.combinedMitigation = calculateCombinedMitigation(risk.controls);
+            document.getElementById('combinedEffectiveness').textContent = `${risk.combinedMitigation.toFixed(0)}%`;
+            document.getElementById('residualRiskScore').textContent = calculateNetRiskScore(risk).toFixed(1);
+        }
+
+        function showControlsToAdd() {
+            showControlsLibrary(currentEditingRiskId);
+        }
+
+        function showControlsLibrary(forRiskId = null) {
+            currentEditingRiskId = forRiskId;
+            const container = document.getElementById('controlsLibraryContent');
+            
+            container.innerHTML = Object.entries(controlsLibrary).map(([category, data]) => `
+                <div class="card p-4">
+                    <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
+                        <span class="text-2xl">${data.icon}</span>
+                        ${data.name}
+                    </h3>
+                    <div class="space-y-2">
+                        ${data.controls.map((control, index) => `
+                            <div class="flex justify-between items-center p-2 rounded hover:bg-gray-800">
+                                <div>
+                                    <span class="font-medium">${control.name}</span>
+                                    <span class="control-chip ${control.type} ml-2">${control.type}</span>
+                                    <span class="text-xs text-gray-400 ml-2">
+                                        Base effectiveness: ${control.baseEffectiveness}%
+                                    </span>
+                                </div>
+                                <button onclick="addControlToRisk('${category}', ${index})" 
+                                        class="text-blue-400 hover:text-blue-300 text-sm">
+                                    + Add
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Show controls library modal without closing the risk controls modal
+            document.getElementById('controlsLibraryModal').style.display = 'block';
+        }
+
+        function addControlToRisk(category, controlIndex) {
+            const risk = activeRisks.find(r => r.id === currentEditingRiskId);
+            if (!risk) return;
+            
+            const controlTemplate = controlsLibrary[category].controls[controlIndex];
+            
+            // Initialize controls array if it doesn't exist
+            if (!risk.controls) {
+                risk.controls = [];
+            }
+            
+            // Check if control already exists
+            if (risk.controls.find(c => c.name === controlTemplate.name)) {
+                alert('This control is already applied to the risk');
+                return;
+            }
+            
+            const newControl = {
+                id: Date.now().toString(),
+                name: controlTemplate.name,
+                type: controlTemplate.type,
+                effectiveness: controlTemplate.baseEffectiveness,
+                evidence: ''
+            };
+            
+            risk.controls.push(newControl);
+            risk.combinedMitigation = calculateCombinedMitigation(risk.controls);
+            applyControlsToRisk(risk);
+            
+            // Close only the controls library modal, keep risk controls modal open
+            closeModal('controlsLibraryModal');
+            
+            // Update the risk controls list to show the new control
+            updateRiskControlsList();
+            
+            // Update the main risk register
+            updateRiskRegister();
+            calculateRA();
+            saveData();
+            
+            // Keep the risk controls modal open and visible
+            document.getElementById('riskControlsModal').style.display = 'block';
+        }
+
+        function addCustomControl() {
+            const name = prompt('Control name:');
+            if (!name) return;
+            
+            const type = prompt('Control type (preventive/detective/corrective):');
+            if (!['preventive', 'detective', 'corrective'].includes(type)) {
+                alert('Invalid control type');
+                return;
+            }
+            
+            const effectiveness = parseInt(prompt('Base effectiveness (0-100):'));
+            if (isNaN(effectiveness) || effectiveness < 0 || effectiveness > 100) {
+                alert('Invalid effectiveness value');
+                return;
+            }
+            
+            // Add to library
+            if (!controlsLibrary.custom) {
+                controlsLibrary.custom = {
+                    name: 'Custom Controls',
+                    icon: '⭐',
+                    controls: []
+                };
+            }
+            
+            controlsLibrary.custom.controls.push({
+                name,
+                type,
+                baseEffectiveness: effectiveness
+            });
+            
+            showControlsLibrary(currentEditingRiskId);
+            saveData();
+        }
+
+        function updateControlEffectiveness(riskId, controlId, value) {
+            const risk = activeRisks.find(r => r.id === riskId);
+            if (!risk || !risk.controls) return;
+            
+            const control = risk.controls.find(c => c.id === controlId);
+            if (!control) return;
+            
+            control.effectiveness = parseFloat(value);
+            risk.combinedMitigation = calculateCombinedMitigation(risk.controls);
+            applyControlsToRisk(risk);
+            
+            updateRiskControlsList();
+            updateRiskRegister();
+            calculateRA();
+            saveData();
+        }
+
+        function updateControlEvidence(riskId, controlId, value) {
+            const risk = activeRisks.find(r => r.id === riskId);
+            if (!risk || !risk.controls) return;
+            
+            const control = risk.controls.find(c => c.id === controlId);
+            if (!control) return;
+            
+            control.evidence = value;
+            saveData();
+        }
+
+        function removeControl(riskId, controlId) {
+            const risk = activeRisks.find(r => r.id === riskId);
+            if (!risk || !risk.controls) return;
+            
+            risk.controls = risk.controls.filter(c => c.id !== controlId);
+            risk.combinedMitigation = calculateCombinedMitigation(risk.controls);
+            applyControlsToRisk(risk);
+            
+            updateRiskControlsList();
+            updateRiskRegister();
+            calculateRA();
+            saveData();
+        }
+
+        function showCapitalCalibration() {
+            document.getElementById('baseCapitalIntensity').value = capitalSettings.baseIntensity;
+            document.getElementById('capitalIntensityDisplay').textContent = capitalSettings.baseIntensity.toLocaleString();
+            
+            // Set category multipliers
+            setupCategoryMultipliers();
+            
+            document.getElementById('firmSizeAdjustment').value = capitalSettings.firmSizeAdjustment;
+            document.getElementById('calibrationModal').style.display = 'block';
+        }
+
+        function updateCapitalIntensity(value) {
+            document.getElementById('capitalIntensityDisplay').textContent = parseInt(value).toLocaleString();
+        }
+
+        function updateCategoryMultiplier(category, value) {
+            // Real-time preview could be added here
+        }
+
+        function updateFirmSizeAdjustment() {
+            // Real-time preview could be added here
+        }
+
+        function applyCalibration() {
+            capitalSettings.baseIntensity = parseInt(document.getElementById('baseCapitalIntensity').value);
+            capitalSettings.firmSizeAdjustment = parseFloat(document.getElementById('firmSizeAdjustment').value);
+            
+            Object.keys(capitalSettings.categoryMultipliers).forEach(category => {
+                const input = document.getElementById(`${category}Multiplier`);
+                if (input) {
+                    capitalSettings.categoryMultipliers[category] = parseFloat(input.value);
+                }
+            });
+            
+            closeModal('calibrationModal');
+            calculateRA();
+            saveData();
+        }
+
+        function getRiskColor(score) {
+            if (score < 20) return '#10b981';
+            if (score < 40) return '#f59e0b';
+            if (score < 60) return '#ec4899';
+            return '#ef4444';
+        }
+
+        function removeRisk(riskId) {
+            activeRisks = activeRisks.filter(r => r.id !== riskId);
+            
+            // Remove from correlation matrix
+            Object.keys(correlationMatrix).forEach(key => {
+                if (key.includes(riskId.toString())) {
+                    delete correlationMatrix[key];
+                }
+            });
+            
+            updateRiskRegister();
+            calculateRA();
+            updateHeatMap();
+            updateCharts();
+            saveData();
+        }
+
+        function addCustomRisk() {
+            const name = prompt('Risk name:');
+            if (!name) return;
+            
+            const category = prompt('Category (operational/strategic/financial/regulatory/reputational/cyber):');
+            if (!riskCategories[category]) {
+                alert('Invalid category');
+                return;
+            }
+            
+            const newRisk = {
+                id: Date.now(),
+                category,
+                name,
+                grossImpact: 5,
+                grossProbability: 50,
+                velocity: 1,
+                controls: [],
+                netImpact: 5,
+                netProbability: 50,
+                combinedMitigation: 0,
+                capital: 0
+            };
+            
+            activeRisks.push(newRisk);
+            
+            // Initialize correlations for new risk
+            activeRisks.forEach(risk => {
+                if (risk.id !== newRisk.id) {
+                    const key = `${Math.min(risk.id, newRisk.id)}_${Math.max(risk.id, newRisk.id)}`;
+                    correlationMatrix[key] = risk.category === newRisk.category ? 0.5 : 0.2;
+                }
+            });
+            
+            updateRiskRegister();
+            calculateRA();
+            updateHeatMap();
+            updateCharts();
+            saveData();
+        }
+
+        function calculateRA() {
+            if (!activeRisks || activeRisks.length === 0) {
+                updateRADisplay(0, 0, 0);
+                return;
+            }
+            
+            // Calculate base capital for each risk using NET risk scores
+            const confidenceMultiplier = 1 + ((confidenceLevel - 90) / 10) * 0.1; // 0-40% adjustment
+            
+            activeRisks.forEach(risk => {
+                const netRiskScore = calculateNetRiskScore(risk);
+                const categoryMultiplier = capitalSettings.categoryMultipliers[risk.category] || 1.0;
+                
+                risk.capital = Math.max(
+                    netRiskScore * capitalSettings.baseIntensity * categoryMultiplier * 
+                    capitalSettings.firmSizeAdjustment * confidenceMultiplier,
+                    1000 // Minimum £1k per risk
+                );
+            });
+            
+            // Calculate correlation-adjusted total
+            let totalVariance = 0;
+            
+            activeRisks.forEach((risk1, i) => {
+                activeRisks.forEach((risk2, j) => {
+                    if (i <= j) {
+                        const correlation = i === j ? 1 : getCorrelation(risk1.id, risk2.id);
+                        const contribution = risk1.capital * risk2.capital * correlation;
+                        totalVariance += contribution;
+                    }
+                });
+            });
+            
+            const correlatedTotal = Math.sqrt(totalVariance);
+            const simpleTotal = activeRisks.reduce((sum, risk) => sum + risk.capital, 0);
+            const correlationBenefit = simpleTotal > 0 ? ((simpleTotal - correlatedTotal) / simpleTotal) * 100 : 0;
+            
+            updateRADisplay(correlatedTotal, simpleTotal, correlationBenefit);
+            updateMetrics();
+        }
+
+        function getCorrelation(id1, id2) {
+            const key = `${Math.min(id1, id2)}_${Math.max(id1, id2)}`;
+            return correlationMatrix[key] || 0.2;
+        }
+
+        function updateRADisplay(total, baseTotal, correlationBenefit) {
+            document.getElementById('raResult').textContent = Math.round(total).toLocaleString();
+            document.getElementById('baseCapital').textContent = Math.round(baseTotal).toLocaleString();
+            document.getElementById('correlationAdjustment').textContent = correlationBenefit.toFixed(1);
+        }
+
+        function updateMetrics() {
+            const totalRisks = activeRisks.length;
+            const highRisks = activeRisks.filter(r => calculateNetRiskScore(r) > 60).length;
+            const avgScore = totalRisks > 0 
+                ? activeRisks.reduce((sum, r) => sum + calculateNetRiskScore(r), 0) / totalRisks 
+                : 0;
+            const avgMitigation = totalRisks > 0
+                ? activeRisks.reduce((sum, r) => sum + (r.combinedMitigation || 0), 0) / totalRisks
+                : 0;
+            
+            document.getElementById('totalRisks').textContent = totalRisks;
+            document.getElementById('highRisks').textContent = highRisks;
+            document.getElementById('avgRiskScore').textContent = avgScore.toFixed(0);
+            document.getElementById('mitigationRate').textContent = `${avgMitigation.toFixed(0)}%`;
+        }
+
+        function updateHeatMap() {
+            const container = document.getElementById('riskHeatMap');
+            if (!container) return;
+            
+            // Create 5x5 heat map grid
+            const impactLevels = ['Catastrophic', 'Major', 'Moderate', 'Minor', 'Negligible'];
+            const probabilityLevels = ['Almost Certain', 'Likely', 'Possible', 'Unlikely', 'Rare'];
+            
+            let html = '<div class="grid grid-cols-6 gap-2 h-full">';
+            
+            // Y-axis labels
+            html += '<div></div>'; // Empty corner
+            probabilityLevels.forEach(label => {
+                html += `<div class="text-xs text-gray-400 text-center">${label}</div>`;
+            });
+            
+            // Grid cells
+            impactLevels.forEach((impactLabel, i) => {
+                html += `<div class="text-xs text-gray-400 text-right pr-2">${impactLabel}</div>`;
+                
+                probabilityLevels.forEach((_, j) => {
+                    const impactRange = [8-i*2, 10-i*2];
+                    const probRange = [80-j*20, 100-j*20];
+                    
+                    // Use GROSS values for heat map positioning
+                    const risksInCell = activeRisks.filter(r => 
+                        r.grossImpact >= impactRange[0] && r.grossImpact <= impactRange[1] &&
+                        r.grossProbability >= probRange[0] && r.grossProbability <= probRange[1]
+                    );
+                    
+                    let cellColor = '#1e293b';
+                    if (risksInCell.length > 0) {
+                        const maxScore = Math.max(...risksInCell.map(r => calculateGrossRiskScore(r)));
+                        cellColor = getRiskHeatMapColor(maxScore);
+                    }
+                    
+                    html += `
+                        <div class="risk-heatmap-cell" style="background: ${cellColor};"
+                             title="${risksInCell.length} risk(s)">
+                            ${risksInCell.length || ''}
+                        </div>
+                    `;
+                });
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function filterControls() {
+            const searchTerm = document.getElementById('controlSearch').value.toLowerCase();
+            const container = document.getElementById('controlsLibraryContent');
+            const categories = container.querySelectorAll('.card');
+            
+            categories.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        }
+
+        function getRiskHeatMapColor(score) {
+            if (score < 20) return 'rgba(16, 185, 129, 0.5)';
+            if (score < 40) return 'rgba(245, 158, 11, 0.5)';
+            if (score < 60) return 'rgba(236, 72, 153, 0.5)';
+            return 'rgba(239, 68, 68, 0.7)';
+        }
+
+        function updateCharts() {
+            updateDistributionChart();
+        }
+
+        function updateDistributionChart() {
+            const ctx = document.getElementById('riskDistributionChart');
+            if (!ctx) return;
+            
+            // Aggregate by category
+            const categoryData = {};
+            Object.keys(riskCategories).forEach(cat => {
+                categoryData[cat] = 0;
+            });
+            
+            activeRisks.forEach(risk => {
+                categoryData[risk.category] += (risk.capital || 0);
+            });
+            
+            const data = Object.entries(categoryData)
+                .filter(([_, value]) => value > 0)
+                .map(([cat, value]) => ({
+                    category: riskCategories[cat].name,
+                    value: value,
+                    color: riskCategories[cat].color
+                }));
+            
+            if (data.length === 0) {
+                if (distributionChart) {
+                    distributionChart.destroy();
+                    distributionChart = null;
+                }
+                return;
+            }
+            
+            const chartData = {
+                labels: data.map(d => d.category),
+                datasets: [{
+                    data: data.map(d => d.value),
+                    backgroundColor: data.map(d => d.color),
+                    borderWidth: 0
+                }]
+            };
+            
+            if (distributionChart) {
+                distributionChart.data = chartData;
+                distributionChart.update();
+            } else {
+                const chartCtx = ctx.getContext('2d');
+                if (chartCtx) {
+                    distributionChart = new Chart(chartCtx, {
+                        type: 'doughnut',
+                        data: chartData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { 
+                                        color: '#e0e7ff',
+                                        padding: 20,
+                                        font: { size: 12 }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                            return `${context.label}: £${Math.round(context.parsed).toLocaleString()} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        function showRiskLibrary() {
+            const container = document.getElementById('riskLibraryContent');
+            
+            container.innerHTML = Object.entries(riskLibrary).map(([category, risks]) => {
+                const categoryInfo = riskCategories[category];
+                
+                return `
+                    <div class="card p-4">
+                        <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
+                            <span class="text-2xl">${categoryInfo.icon}</span>
+                            ${categoryInfo.name}
+                        </h3>
+                        <div class="space-y-2">
+                            ${risks.map(risk => `
+                                <div class="flex justify-between items-center p-2 rounded hover:bg-gray-800">
+                                    <div>
+                                        <span class="font-medium">${risk.name}</span>
+                                        <span class="text-xs text-gray-400 ml-2">
+                                            Impact: ${risk.grossImpact} | Probability: ${risk.grossProbability}%
+                                        </span>
+                                    </div>
+                                    <button onclick="addFromLibrary('${category}', '${risk.name}', ${risk.grossImpact}, ${risk.grossProbability})" 
+                                            class="text-blue-400 hover:text-blue-300 text-sm">
+                                        + Add
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('riskLibraryModal').style.display = 'block';
+        }
+
+        function addFromLibrary(category, name, impact, probability) {
+            const existingRisk = activeRisks.find(r => r.name === name);
+            if (existingRisk) {
+                alert('This risk is already in your register');
+                return;
+            }
+            
+            const newRisk = {
+                id: Date.now(),
+                category,
+                name,
+                grossImpact: impact,
+                grossProbability: probability,
+                velocity: 1,
+                controls: [],
+                netImpact: impact,
+                netProbability: probability,
+                combinedMitigation: 0,
+                capital: 0
+            };
+            
+            activeRisks.push(newRisk);
+            
+            // Initialize correlations
+            activeRisks.forEach(risk => {
+                if (risk.id !== newRisk.id) {
+                    const key = `${Math.min(risk.id, newRisk.id)}_${Math.max(risk.id, newRisk.id)}`;
+                    correlationMatrix[key] = risk.category === newRisk.category ? 0.5 : 0.2;
+                }
+            });
+            
+            closeModal('riskLibraryModal');
+            updateRiskRegister();
+            calculateRA();
+            updateHeatMap();
+            updateCharts();
+            saveData();
+        }
+
+        function filterRisks() {
+            const searchTerm = document.getElementById('riskSearch').value.toLowerCase();
+            const container = document.getElementById('riskLibraryContent');
+            const cards = container.querySelectorAll('.card');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        }
+
+        function showCorrelationMatrix() {
+            const container = document.getElementById('correlationMatrix');
+            
+            if (!activeRisks || activeRisks.length < 2) {
+                container.innerHTML = '<p class="text-gray-500 text-center">Add at least 2 risks to define correlations</p>';
+                document.getElementById('correlationModal').style.display = 'block';
+                return;
+            }
+            
+            let html = '<table class="w-full">';
+            html += '<tr><th></th>';
+            activeRisks.forEach(risk => {
+                html += `<th class="text-xs p-2 text-center">${risk.name.substring(0, 15)}...</th>`;
+            });
+            html += '</tr>';
+            
+            activeRisks.forEach((risk1, i) => {
+                html += `<tr><td class="text-xs p-2 font-medium">${risk1.name.substring(0, 15)}...</td>`;
+                activeRisks.forEach((risk2, j) => {
+                    if (i === j) {
+                        html += '<td class="p-2 text-center">-</td>';
+                    } else {
+                        const correlation = getCorrelation(risk1.id, risk2.id);
+                        const colorClass = correlation >= 0.7 ? 'correlation-high' : 
+                                         correlation >= 0.4 ? 'correlation-medium' : 'correlation-low';
+                        html += `
+                            <td class="p-2 text-center">
+                                <div class="correlation-cell ${colorClass} mx-auto"
+                                     onclick="updateCorrelation(${risk1.id}, ${risk2.id})">
+                                    ${correlation.toFixed(1)}
+                                </div>
+                            </td>
+                        `;
+                    }
+                });
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            container.innerHTML = html;
+            
+            document.getElementById('correlationModal').style.display = 'block';
+        }
+
+        function updateCorrelation(id1, id2) {
+            const currentValue = getCorrelation(id1, id2);
+            const newValue = prompt(`Set correlation (0.0 - 1.0). Current: ${currentValue}`, currentValue);
+            
+            if (newValue === null) return;
+            
+            const value = parseFloat(newValue);
+            if (isNaN(value) || value < 0 || value > 1) {
+                alert('Please enter a value between 0.0 and 1.0');
+                return;
+            }
+            
+            const key = `${Math.min(id1, id2)}_${Math.max(id1, id2)}`;
+            correlationMatrix[key] = value;
+            
+            showCorrelationMatrix();
+            calculateRA();
+            saveData();
+        }
+
+        function showScenarioBuilder() {
+            document.getElementById('scenarioModal').style.display = 'block';
+        }
+
+        function runScenarioAnalysis() {
+            alert('Scenario analysis would apply stress multipliers to all risks and recalculate RA with increased correlations and impacts.');
+            closeModal('scenarioModal');
+        }
+
+        function updateConfidence() {
+            confidenceLevel = parseFloat(document.getElementById('confidenceSelect').value);
+            calculateRA();
+            saveData();
+        }
+
+        function showMethodologyModal() {
+            alert('See Capital Calibration for methodology settings. Base rate: £' + capitalSettings.baseIntensity + ' per risk point.');
+        }
+
+        function runMonteCarlo() {
+            alert('Monte Carlo simulation would run 10,000 iterations with random variations in risk parameters to generate a distribution of potential RA values.');
+        }
+
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                activeRisks: activeRisks.map(risk => ({
+                    ...risk,
+                    grossRiskScore: calculateGrossRiskScore(risk),
+                    netRiskScore: calculateNetRiskScore(risk)
+                })),
+                correlationMatrix,
+                confidenceLevel,
+                capitalSettings,
+                raCapital: document.getElementById('raResult').textContent
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `RA_Assessment_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function generateReport() {
+            alert('ICARA Risk Assessment Report generated! This would create a comprehensive PDF with all risk assessments, correlations, and capital calculations.');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function saveData() {
+            try {
+                const data = {
+                    activeRisks,
+                    correlationMatrix,
+                    confidenceLevel,
+                    capitalSettings,
+                    controlsLibrary
+                };
+                localStorage.setItem('ra_calculator_data', JSON.stringify(data));
+            } catch (e) {
+                console.error('Error saving data:', e);
+            }
+        }
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('ra_calculator_data');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    
+                    // Ensure all data structures are properly initialized
+                    activeRisks = data.activeRisks || [];
+                    correlationMatrix = data.correlationMatrix || {};
+                    confidenceLevel = data.confidenceLevel || 95;
+                    capitalSettings = {
+                        ...capitalSettings,
+                        ...(data.capitalSettings || {})
+                    };
+                    
+                    // Ensure all risks have required properties
+                    activeRisks = activeRisks.map(risk => ({
+                        ...risk,
+                        controls: risk.controls || [],
+                        combinedMitigation: risk.combinedMitigation || 0,
+                        netImpact: risk.netImpact || risk.grossImpact || 5,
+                        netProbability: risk.netProbability || risk.grossProbability || 50
+                    }));
+                    
+                    // Merge custom controls if any
+                    if (data.controlsLibrary && data.controlsLibrary.custom) {
+                        controlsLibrary.custom = data.controlsLibrary.custom;
+                    }
+                    
+                    // Update confidence selector
+                    const confidenceSelect = document.getElementById('confidenceSelect');
+                    if (confidenceSelect) {
+                        confidenceSelect.value = confidenceLevel;
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading data:', e);
+                // Reset to defaults if there's an error
+                activeRisks = [];
+                correlationMatrix = {};
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                // Only close the specific modal that was clicked
+                if (event.target.id === 'controlsLibraryModal') {
+                    event.target.style.display = 'none';
+                } else {
+                    // For other modals, close normally
+                    event.target.style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

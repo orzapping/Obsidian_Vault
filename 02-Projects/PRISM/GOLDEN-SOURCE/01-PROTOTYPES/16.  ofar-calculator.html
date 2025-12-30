@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OFAR Calculator - Overall Financial Adequacy Rule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#a855f7;--accent-hi:#c084fc;--muted:#9ca3af;--subtle:#6b7280;--pmr:#3b82f6;--for:#10b981;--kfr:#f59e0b;--oftr:#ef4444}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1400px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#a855f7,#6366f1);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    .card:hover{border-color:var(--accent);transition:border-color 0.3s}
+    h2{margin:0 0 16px;color:#c084fc;font-weight:600;font-size:1.3rem}
+    h3{margin:16px 0 12px;color:#a78bfa;font-weight:600;font-size:1.1rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500;font-size:.9rem}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+    @media (max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr}}
+    .stat{background:#0f172a;border:1px solid #1e293b;border-radius:.75rem;padding:16px}
+    .stat h3{margin:0 0 8px;font-size:.9rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+    .stat p{margin:0;font-size:1.5rem;font-weight:700}
+    .stat.primary{border-color:var(--accent);background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(99,102,241,0.1))}
+    .stat.pmr{border-color:var(--pmr)}
+    .stat.for{border-color:var(--for)}
+    .stat.kfr{border-color:var(--kfr)}
+    .stat.oftr{border-color:var(--oftr)}
+    .stat.binding{border-color:#10b981;background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(34,211,238,0.1));box-shadow:0 0 20px rgba(16,185,129,0.2)}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    .mt{margin-top:20px}
+    .mb{margin-bottom:20px}
+    .formula{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.9rem;overflow-x:auto}
+    .formula-title{color:var(--accent);font-weight:600;margin-bottom:8px}
+    .waterfall{background:#0f172a;border:1px solid var(--border);border-radius:.75rem;padding:20px;margin:20px 0}
+    .waterfall-item{display:flex;align-items:center;justify-content:space-between;padding:12px;margin:8px 0;background:#1e293b;border-radius:.5rem;border-left:4px solid var(--border)}
+    .waterfall-item.pmr{border-left-color:var(--pmr)}
+    .waterfall-item.for{border-left-color:var(--for)}
+    .waterfall-item.kfr{border-left-color:var(--kfr)}
+    .waterfall-item.oftr{border-left-color:var(--oftr)}
+    .waterfall-item.binding{background:linear-gradient(90deg,rgba(16,185,129,0.1),transparent);border-left-color:#10b981}
+    .waterfall-label{font-weight:500}
+    .waterfall-value{font-weight:700;font-size:1.1rem}
+    .section-divider{border-top:1px solid var(--border);margin:24px 0;padding-top:24px}
+    .info-box{background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(99,102,241,0.1));border:1px solid var(--accent);border-radius:.75rem;padding:16px;margin-bottom:20px}
+    .info-box strong{color:#c084fc}
+    .k-factor-inputs{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0}
+    .k-factor-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;align-items:center;padding:8px 0}
+    .k-factor-row label{color:#e0e7ff;font-size:.9rem}
+    .input-small{padding:.5rem;font-size:.9rem}
+    .badge{display:inline-block;padding:4px 8px;border-radius:.375rem;font-size:.8rem;font-weight:600;margin-left:8px}
+    .badge-binding{background:#10b981;color:#fff}
+    .badge-not-binding{background:#6b7280;color:#e0e7ff}
+    canvas{background:#0f172a;border-radius:.75rem;border:1px solid #1e293b}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>OFAR Calculator</h1>
+    <p class="subtitle">Overall Financial Adequacy Rule • MIFIDPRU 7.6 • Master Capital Requirement</p>
+
+    <div class="card">
+      <h2>Firm Configuration</h2>
+      <div class="content">
+        <div class="grid-3">
+          <div>
+            <label class="label" for="firmType">Firm Type</label>
+            <select id="firmType" class="select" onchange="updatePMR()">
+              <option value="75000">Non-dealing (€75k PMR)</option>
+              <option value="150000">Dealing/Underwriting (€150k PMR)</option>
+              <option value="750000">MTF/OTF Operator (€750k PMR)</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="currency">Reporting Currency</label>
+            <select id="currency" class="select">
+              <option value="GBP">GBP (£)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="USD">USD ($)</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="ownFunds">Current Own Funds</label>
+            <input id="ownFunds" class="input" type="number" placeholder="Enter current own funds" value="5000000" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Own Funds Requirement (OFR) Components</h2>
+      
+      <div class="section">
+        <h3>1. Permanent Minimum Requirement (PMR)</h3>
+        <div class="info-box">
+          <strong>PMR</strong> is the absolute minimum capital based on your firm's permissions.
+        </div>
+        <div>
+          <label class="label" for="pmr">PMR Amount (in reporting currency)</label>
+          <input id="pmr" class="input" type="number" value="150000" readonly />
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section">
+        <h3>2. Fixed Overhead Requirement (FOR)</h3>
+        <div class="info-box">
+          <strong>FOR</strong> equals 25% of previous year's fixed overheads (3 months of operations).
+        </div>
+        <div>
+          <label class="label" for="for">FOR Amount (from FOR calculator)</label>
+          <input id="for" class="input" type="number" placeholder="Enter FOR from your FOR calculator" value="1200000" />
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section">
+        <h3>3. K-Factor Requirement (KFR)</h3>
+        <div class="info-box">
+          <strong>KFR</strong> is the sum of all applicable K-factors. Enter values from your K-factor calculators.
+        </div>
+        <div class="k-factor-inputs">
+          <div class="k-factor-row">
+            <label>K-AUM (Assets Under Management)</label>
+            <input id="kaum" class="input input-small" type="number" placeholder="0" value="100000" />
+            <span class="note">0.02% of AUM</span>
+          </div>
+          <div class="k-factor-row">
+            <label>K-CMH (Client Money Held)</label>
+            <input id="kcmh" class="input input-small" type="number" placeholder="0" value="50000" />
+            <span class="note">0.4-0.5% of CMH</span>
+          </div>
+          <div class="k-factor-row">
+            <label>K-ASA (Assets Safeguarded)</label>
+            <input id="kasa" class="input input-small" type="number" placeholder="0" value="80000" />
+            <span class="note">0.04% of ASA</span>
+          </div>
+          <div class="k-factor-row">
+            <label>K-COH (Client Orders Handled)</label>
+            <input id="kcoh" class="input input-small" type="number" placeholder="0" value="120000" />
+            <span class="note">0.1%/0.01%</span>
+          </div>
+          <div class="k-factor-row">
+            <label>K-DTF (Daily Trading Flow)</label>
+            <input id="kdtf" class="input input-small" type="number" placeholder="0" value="200000" />
+            <span class="note">0.1%/0.01%</span>
+          </div>
+          <div class="k-factor-row" style="border-top:1px solid #334155;padding-top:12px;margin-top:8px">
+            <label style="font-weight:600">Total KFR</label>
+            <input id="kfrTotal" class="input input-small" type="number" readonly style="background:#1e293b;font-weight:600" />
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Own Funds Threshold Requirement (OFTR) Components</h2>
+      
+      <div class="section">
+        <h3>1. Wind-down Requirement</h3>
+        <div class="info-box">
+          <strong>Wind-down</strong> costs to cease operations in an orderly manner (from wind-down calculator).
+        </div>
+        <div>
+          <label class="label" for="winddown">Wind-down Requirement</label>
+          <input id="winddown" class="input" type="number" placeholder="Enter from wind-down calculator" value="1800000" />
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section">
+        <h3>2. Stress Testing Add-on</h3>
+        <div class="info-box">
+          <strong>Stress Testing</strong> identifies capital needs under adverse scenarios.
+        </div>
+        <div class="grid-2">
+          <div>
+            <label class="label" for="stressMarket">Market Stress Impact</label>
+            <input id="stressMarket" class="input" type="number" placeholder="0" value="300000" />
+          </div>
+          <div>
+            <label class="label" for="stressOperational">Operational Stress Impact</label>
+            <input id="stressOperational" class="input" type="number" placeholder="0" value="200000" />
+          </div>
+          <div>
+            <label class="label" for="stressCredit">Credit Stress Impact</label>
+            <input id="stressCredit" class="input" type="number" placeholder="0" value="150000" />
+          </div>
+          <div>
+            <label class="label" for="stressOther">Other Stress Impacts</label>
+            <input id="stressOther" class="input" type="number" placeholder="0" value="100000" />
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section">
+        <h3>3. Additional Risk Add-ons</h3>
+        <div class="info-box">
+          <strong>Additional Risks</strong> not captured by K-factors or standard stress tests.
+        </div>
+        <div class="grid-2">
+          <div>
+            <label class="label" for="riskConcentration">Concentration Risk</label>
+            <input id="riskConcentration" class="input" type="number" placeholder="0" value="100000" />
+          </div>
+          <div>
+            <label class="label" for="riskReputational">Reputational Risk</label>
+            <input id="riskReputational" class="input" type="number" placeholder="0" value="50000" />
+          </div>
+          <div>
+            <label class="label" for="riskStrategic">Strategic Risk</label>
+            <input id="riskStrategic" class="input" type="number" placeholder="0" value="75000" />
+          </div>
+          <div>
+            <label class="label" for="riskOther">Other Risks</label>
+            <input id="riskOther" class="input" type="number" placeholder="0" value="25000" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Calculate OFAR</h2>
+      <div class="mt mb">
+        <button class="btn" onclick="calculateOFAR()">Calculate OFAR Requirement</button>
+      </div>
+    </div>
+
+    <div class="card" id="resultsCard" style="display:none">
+      <h2>OFAR Results</h2>
+      
+      <div class="grid mb">
+        <div class="stat pmr">
+          <h3>PMR</h3>
+          <p id="resultPMR">£0</p>
+          <div class="note">Permanent Minimum</div>
+        </div>
+        <div class="stat for">
+          <h3>FOR</h3>
+          <p id="resultFOR">£0</p>
+          <div class="note">Fixed Overheads</div>
+        </div>
+        <div class="stat kfr">
+          <h3>KFR</h3>
+          <p id="resultKFR">£0</p>
+          <div class="note">K-Factors Total</div>
+        </div>
+        <div class="stat primary">
+          <h3>OFR <span id="ofrBinding" class="badge"></span></h3>
+          <p id="resultOFR">£0</p>
+          <div class="note">Max(PMR, FOR, KFR)</div>
+        </div>
+      </div>
+      
+      <div class="grid mb">
+        <div class="stat">
+          <h3>Wind-down</h3>
+          <p id="resultWinddown">£0</p>
+        </div>
+        <div class="stat">
+          <h3>Stress Testing</h3>
+          <p id="resultStress">£0</p>
+        </div>
+        <div class="stat">
+          <h3>Additional Risks</h3>
+          <p id="resultAdditional">£0</p>
+        </div>
+        <div class="stat oftr">
+          <h3>OFTR</h3>
+          <p id="resultOFTR">£0</p>
+          <div class="note">Threshold Requirement</div>
+        </div>
+      </div>
+      
+      <div class="waterfall">
+        <h3 style="text-align:center;margin-bottom:20px">OFAR Determination Waterfall</h3>
+        <div id="waterfallContainer"></div>
+      </div>
+      
+      <div class="grid mt">
+        <div class="stat binding" style="grid-column:span 2">
+          <h3>OFAR REQUIREMENT <span class="badge badge-binding">BINDING</span></h3>
+          <p id="resultOFAR" style="font-size:2rem">£0</p>
+          <div class="note" id="ofarNote">Maximum of OFR and OFTR</div>
+        </div>
+        <div class="stat">
+          <h3>Current Own Funds</h3>
+          <p id="resultOwnFunds">£0</p>
+        </div>
+        <div class="stat">
+          <h3>Surplus/(Deficit)</h3>
+          <p id="resultSurplus" style="color:#10b981">£0</p>
+        </div>
+      </div>
+      
+      <canvas id="ofarChart" height="100" class="mt"></canvas>
+    </div>
+
+    <div class="card" id="analysisCard" style="display:none">
+      <h2>Capital Stack Analysis</h2>
+      <div class="formula">
+        <div class="formula-title">Your OFAR Calculation:</div>
+        <div id="calculationBreakdown"></div>
+      </div>
+      
+      <div class="grid-2 mt">
+        <div>
+          <h3>Binding Constraint Analysis</h3>
+          <div id="bindingAnalysis" class="info-box"></div>
+        </div>
+        <div>
+          <h3>Recommendations</h3>
+          <div id="recommendations" class="info-box"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Currency formatting
+function formatCurrency(value, currency = 'GBP') {
+  const symbols = { 'GBP': '£', 'EUR': '€', 'USD': '$' };
+  const symbol = symbols[currency] || '';
+  
+  if (value >= 1e9) {
+    return symbol + (value/1e9).toFixed(2) + 'B';
+  } else if (value >= 1e6) {
+    return symbol + (value/1e6).toFixed(2) + 'M';
+  } else if (value >= 1e3) {
+    return symbol + (value/1e3).toFixed(0) + 'K';
+  }
+  
+  return symbol + value.toLocaleString('en-GB', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
+}
+
+// Update PMR based on firm type
+function updatePMR() {
+  const firmType = document.getElementById('firmType').value;
+  const currency = document.getElementById('currency').value;
+  
+  // Convert EUR to other currencies (rough approximation)
+  const rates = { 'GBP': 0.87, 'EUR': 1, 'USD': 1.08 };
+  const pmrEUR = parseInt(firmType);
+  const pmrConverted = Math.round(pmrEUR * rates[currency]);
+  
+  document.getElementById('pmr').value = pmrConverted;
+}
+
+// Calculate total KFR
+function calculateKFR() {
+  const kaum = parseFloat(document.getElementById('kaum').value) || 0;
+  const kcmh = parseFloat(document.getElementById('kcmh').value) || 0;
+  const kasa = parseFloat(document.getElementById('kasa').value) || 0;
+  const kcoh = parseFloat(document.getElementById('kcoh').value) || 0;
+  const kdtf = parseFloat(document.getElementById('kdtf').value) || 0;
+  
+  const total = kaum + kcmh + kasa + kcoh + kdtf;
+  document.getElementById('kfrTotal').value = total;
+  return total;
+}
+
+// Update KFR total on input change
+document.querySelectorAll('#kaum, #kcmh, #kasa, #kcoh, #kdtf').forEach(input => {
+  input.addEventListener('input', calculateKFR);
+});
+
+// Main OFAR calculation
+function calculateOFAR() {
+  const currency = document.getElementById('currency').value;
+  
+  // Get OFR components
+  const pmr = parseFloat(document.getElementById('pmr').value) || 0;
+  const forValue = parseFloat(document.getElementById('for').value) || 0;
+  const kfr = calculateKFR();
+  
+  // Calculate OFR (max of PMR, FOR, KFR)
+  const ofr = Math.max(pmr, forValue, kfr);
+  let ofrBinding = 'PMR';
+  if (forValue === ofr) ofrBinding = 'FOR';
+  if (kfr === ofr) ofrBinding = 'KFR';
+  
+  // Get OFTR components
+  const winddown = parseFloat(document.getElementById('winddown').value) || 0;
+  
+  // Stress testing components
+  const stressMarket = parseFloat(document.getElementById('stressMarket').value) || 0;
+  const stressOperational = parseFloat(document.getElementById('stressOperational').value) || 0;
+  const stressCredit = parseFloat(document.getElementById('stressCredit').value) || 0;
+  const stressOther = parseFloat(document.getElementById('stressOther').value) || 0;
+  const stressTotal = stressMarket + stressOperational + stressCredit + stressOther;
+  
+  // Additional risks
+  const riskConcentration = parseFloat(document.getElementById('riskConcentration').value) || 0;
+  const riskReputational = parseFloat(document.getElementById('riskReputational').value) || 0;
+  const riskStrategic = parseFloat(document.getElementById('riskStrategic').value) || 0;
+  const riskOther = parseFloat(document.getElementById('riskOther').value) || 0;
+  const additionalTotal = riskConcentration + riskReputational + riskStrategic + riskOther;
+  
+  // Calculate OFTR (max of wind-down and sum of wind-down + stress + additional)
+  // Note: Typically OFTR = wind-down + stress + additional, but wind-down is the floor
+  const oftr = Math.max(winddown, winddown + stressTotal + additionalTotal);
+  
+  // Calculate OFAR (max of OFR and OFTR)
+  const ofar = Math.max(ofr, oftr);
+  const ofarBinding = ofr >= oftr ? 'OFR' : 'OFTR';
+  
+  // Get own funds
+  const ownFunds = parseFloat(document.getElementById('ownFunds').value) || 0;
+  const surplus = ownFunds - ofar;
+  
+  // Display results
+  document.getElementById('resultPMR').textContent = formatCurrency(pmr, currency);
+  document.getElementById('resultFOR').textContent = formatCurrency(forValue, currency);
+  document.getElementById('resultKFR').textContent = formatCurrency(kfr, currency);
+  document.getElementById('resultOFR').textContent = formatCurrency(ofr, currency);
+  document.getElementById('ofrBinding').textContent = ofrBinding === 'PMR' ? 'PMR Binding' : 
+                                                       ofrBinding === 'FOR' ? 'FOR Binding' : 'KFR Binding';
+  document.getElementById('ofrBinding').className = 'badge ' + (ofrBinding === ofrBinding ? 'badge-binding' : 'badge-not-binding');
+  
+  document.getElementById('resultWinddown').textContent = formatCurrency(winddown, currency);
+  document.getElementById('resultStress').textContent = formatCurrency(stressTotal, currency);
+  document.getElementById('resultAdditional').textContent = formatCurrency(additionalTotal, currency);
+  document.getElementById('resultOFTR').textContent = formatCurrency(oftr, currency);
+  
+  document.getElementById('resultOFAR').textContent = formatCurrency(ofar, currency);
+  document.getElementById('resultOwnFunds').textContent = formatCurrency(ownFunds, currency);
+  document.getElementById('resultSurplus').textContent = formatCurrency(surplus, currency);
+  document.getElementById('resultSurplus').style.color = surplus >= 0 ? '#10b981' : '#ef4444';
+  
+  document.getElementById('ofarNote').textContent = `${ofarBinding} is binding (${ofarBinding === 'OFR' ? ofrBinding + ' within OFR' : 'OFTR components'})`;
+  
+  // Create waterfall
+  createWaterfall(pmr, forValue, kfr, ofr, winddown, stressTotal, additionalTotal, oftr, ofar, currency);
+  
+  // Create analysis
+  createAnalysis(pmr, forValue, kfr, ofr, winddown, stressTotal, additionalTotal, oftr, ofar, ownFunds, currency, ofrBinding, ofarBinding);
+  
+  // Draw chart
+  drawOFARChart(pmr, forValue, kfr, winddown, stressTotal, additionalTotal, ofar, ownFunds, currency);
+  
+  // Show results
+  document.getElementById('resultsCard').style.display = 'block';
+  document.getElementById('analysisCard').style.display = 'block';
+}
+
+// Create waterfall visualization
+function createWaterfall(pmr, forValue, kfr, ofr, winddown, stress, additional, oftr, ofar, currency) {
+  const container = document.getElementById('waterfallContainer');
+  container.innerHTML = '';
+  
+  const items = [
+    { label: 'PMR (Permanent Minimum)', value: pmr, class: 'pmr' },
+    { label: 'FOR (Fixed Overheads)', value: forValue, class: 'for' },
+    { label: 'KFR (K-Factors)', value: kfr, class: 'kfr' },
+    { label: 'OFR (Maximum of above)', value: ofr, class: 'binding' },
+    { label: '---', value: null, class: '' },
+    { label: 'Wind-down Requirement', value: winddown, class: 'oftr' },
+    { label: 'Stress Testing Add-on', value: stress, class: 'oftr' },
+    { label: 'Additional Risks', value: additional, class: 'oftr' },
+    { label: 'OFTR (Total)', value: oftr, class: 'binding' },
+    { label: '---', value: null, class: '' },
+    { label: 'OFAR (Max of OFR and OFTR)', value: ofar, class: 'binding' }
+  ];
+  
+  items.forEach(item => {
+    if (item.value === null) {
+      const divider = document.createElement('div');
+      divider.style.borderTop = '1px solid #334155';
+      divider.style.margin = '8px 0';
+      container.appendChild(divider);
+    } else {
+      const div = document.createElement('div');
+      div.className = `waterfall-item ${item.class}`;
+      div.innerHTML = `
+        <span class="waterfall-label">${item.label}</span>
+        <span class="waterfall-value">${formatCurrency(item.value, currency)}</span>
+      `;
+      container.appendChild(div);
+    }
+  });
+}
+
+// Create analysis section
+function createAnalysis(pmr, forValue, kfr, ofr, winddown, stress, additional, oftr, ofar, ownFunds, currency, ofrBinding, ofarBinding) {
+  // Calculation breakdown
+  const breakdown = document.getElementById('calculationBreakdown');
+  breakdown.innerHTML = `
+    OFR = Max(PMR: ${formatCurrency(pmr, currency)}, FOR: ${formatCurrency(forValue, currency)}, KFR: ${formatCurrency(kfr, currency)})<br>
+    OFR = ${formatCurrency(ofr, currency)} (${ofrBinding} binding)<br>
+    <br>
+    OFTR = Wind-down + Stress + Additional<br>
+    OFTR = ${formatCurrency(winddown, currency)} + ${formatCurrency(stress, currency)} + ${formatCurrency(additional, currency)}<br>
+    OFTR = ${formatCurrency(oftr, currency)}<br>
+    <br>
+    OFAR = Max(OFR: ${formatCurrency(ofr, currency)}, OFTR: ${formatCurrency(oftr, currency)})<br>
+    OFAR = ${formatCurrency(ofar, currency)} (${ofarBinding} binding)
+  `;
+  
+  // Binding analysis
+  const bindingAnalysis = document.getElementById('bindingAnalysis');
+  const surplus = ownFunds - ofar;
+  const coverageRatio = ((ownFunds / ofar) * 100).toFixed(1);
+  
+  bindingAnalysis.innerHTML = `
+    <strong>Current Situation:</strong><br>
+    • ${ofarBinding} is your binding constraint<br>
+    • Within ${ofarBinding === 'OFR' ? 'OFR' : 'OFTR'}, ${ofarBinding === 'OFR' ? ofrBinding : 'Wind-down + risks'} drives the requirement<br>
+    • Own Funds Coverage: ${coverageRatio}%<br>
+    • ${surplus >= 0 ? 'Surplus' : 'Deficit'}: ${formatCurrency(Math.abs(surplus), currency)}
+  `;
+  
+  // Recommendations
+  const recommendations = document.getElementById('recommendations');
+  let recos = '<strong>Actions to Consider:</strong><br>';
+  
+  if (surplus < 0) {
+    recos += '• <span style="color:#ef4444">URGENT: Capital injection required</span><br>';
+  } else if (surplus < ofar * 0.1) {
+    recos += '• <span style="color:#f59e0b">WARNING: Low headroom - monitor closely</span><br>';
+  }
+  
+  if (ofarBinding === 'OFR') {
+    if (ofrBinding === 'KFR') {
+      recos += '• Review K-factor drivers for optimization<br>';
+      recos += '• Consider business model adjustments<br>';
+    } else if (ofrBinding === 'FOR') {
+      recos += '• Review fixed cost base<br>';
+      recos += '• Consider operational efficiency improvements<br>';
+    } else {
+      recos += '• PMR is binding - limited optimization options<br>';
+    }
+  } else {
+    recos += '• Review wind-down plan for efficiency<br>';
+    recos += '• Reassess stress scenarios and calibration<br>';
+    recos += '• Validate additional risk assessments<br>';
+  }
+  
+  recommendations.innerHTML = recos;
+}
+
+// Draw OFAR chart
+let ofarChart = null;
+
+function drawOFARChart(pmr, forValue, kfr, winddown, stress, additional, ofar, ownFunds, currency) {
+  if (ofarChart) ofarChart.destroy();
+  
+  const ctx = document.getElementById('ofarChart').getContext('2d');
+  
+  ofarChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['PMR', 'FOR', 'KFR', 'Wind-down', 'Stress', 'Add. Risks', 'OFAR', 'Own Funds'],
+      datasets: [{
+        data: [pmr, forValue, kfr, winddown, stress, additional, ofar, ownFunds],
+        backgroundColor: [
+          '#3b82f6',
+          '#10b981',
+          '#f59e0b',
+          '#ef4444',
+          '#ef4444',
+          '#ef4444',
+          '#a855f7',
+          ownFunds >= ofar ? '#10b981' : '#ef4444'
+        ],
+        borderColor: [
+          '#60a5fa',
+          '#34d399',
+          '#fbbf24',
+          '#f87171',
+          '#f87171',
+          '#f87171',
+          '#c084fc',
+          ownFunds >= ofar ? '#34d399' : '#f87171'
+        ],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return formatCurrency(context.raw, currency);
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(51, 65, 85, 0.3)' },
+          ticks: { 
+            color: '#9ca3af',
+            callback: function(value) {
+              return formatCurrency(value, currency);
+            }
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#e0e7ff' }
+        }
+      }
+    }
+  });
+}
+
+// Initialize
+updatePMR();
+calculateKFR();
+
+// Set Chart.js defaults
+Chart.defaults.color = '#e0e7ff';
+Chart.defaults.borderColor = '#334155';
+</script>
+</body>
+</html>

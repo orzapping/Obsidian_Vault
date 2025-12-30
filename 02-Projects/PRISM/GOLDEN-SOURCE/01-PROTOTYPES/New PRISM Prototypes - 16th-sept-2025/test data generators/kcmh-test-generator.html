@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-CMH Test Data Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0e1a;--panel:rgba(30,41,59,.55);--border:#334155;--accent:#f59e0b;--accent-hi:#fbbf24;--muted:#9ca3af;--subtle:#6b7280}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px;background:var(--bg);color:#e0e7ff;font-family:Inter,system-ui,sans-serif;line-height:1.6}
+    .container{max-width:1000px;margin:0 auto}
+    h1{margin:0 0 36px;text-align:center;font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#f59e0b,#dc2626);-webkit-background-clip:text;color:transparent}
+    .subtitle{text-align:center;margin:-20px 0 30px;color:var(--muted);font-size:1.1rem}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:1rem;padding:24px;margin-bottom:24px;backdrop-filter:blur(10px)}
+    h2{margin:0 0 16px;color:#fbbf24;font-weight:600;font-size:1.3rem}
+    .input{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;font-size:1rem}
+    .select{width:100%;padding:.75rem;border-radius:.5rem;background:#1e293b;border:1px solid var(--border);color:#e0e7ff;cursor:pointer;font-size:1rem}
+    .label{display:block;margin:0 0 .5rem;color:var(--muted);font-weight:500}
+    .btn{background:linear-gradient(135deg,var(--accent),var(--accent-hi));color:#fff;border:0;padding:.75rem 2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s;margin-right:10px}
+    .btn:hover{transform:translateY(-2px)}
+    .btn:active{transform:translateY(0)}
+    .btn-secondary{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:768px){.row{grid-template-columns:1fr}}
+    .note{color:var(--subtle);font-size:.9rem;margin-top:.5rem}
+    .range-container{margin:16px 0}
+    .range-label{display:flex;justify-content:space-between;margin-bottom:8px}
+    .range-value{color:var(--accent);font-weight:600}
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}
+    .checkbox-item{display:flex;align-items:center;gap:8px}
+    .checkbox-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
+    .preview{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:16px;margin:16px 0;font-family:monospace;font-size:.85rem;max-height:300px;overflow-y:auto;white-space:pre}
+    .stat-box{background:#0f172a;border:1px solid var(--border);border-radius:.5rem;padding:12px;text-align:center}
+    .stat-box h4{margin:0 0 4px;color:var(--muted);font-size:.85rem;font-weight:500}
+    .stat-box p{margin:0;font-size:1.2rem;font-weight:700;color:var(--accent)}
+    .pattern-desc{background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(220,38,38,0.1));border:1px solid var(--accent);border-radius:.5rem;padding:12px;margin:12px 0;font-size:.9rem}
+    .download-info{background:#0f172a;border:1px solid #10b981;border-radius:.5rem;padding:16px;margin-top:20px;text-align:center}
+    .download-info h3{margin:0 0 8px;color:#10b981}
+    .scenario-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:16px 0}
+    .scenario-card{background:#0f172a;border:2px solid var(--border);border-radius:.5rem;padding:16px;cursor:pointer;transition:all 0.3s}
+    .scenario-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .scenario-card.selected{border-color:var(--accent);background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(220,38,38,0.1))}
+    .scenario-card h3{margin:0 0 8px;color:var(--accent);font-size:1rem}
+    .scenario-card p{margin:0;font-size:.85rem;color:var(--muted)}
+    .seg-indicator{display:inline-block;padding:2px 6px;border-radius:.25rem;font-size:.75rem;font-weight:600;margin-left:4px}
+    .seg-high{background:#f97316;color:#fff}
+    .seg-mixed{background:#f59e0b;color:#fff}
+    .seg-low{background:#dc2626;color:#fff}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>K-CMH Test Data Generator</h1>
+    <p class="subtitle">Generate realistic client money data • Segregated & Non-Segregated</p>
+
+    <div class="card">
+      <h2>Quick Scenarios</h2>
+      <div class="scenario-grid">
+        <div class="scenario-card" onclick="loadScenario('retail')">
+          <h3>Retail Broker <span class="seg-indicator seg-high">90% Seg</span></h3>
+          <p>High segregation, trading patterns, T+2 settlement cycles. CASS compliant.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('prime')">
+          <h3>Prime Broker <span class="seg-indicator seg-mixed">50% Seg</span></h3>
+          <p>Mixed model, margin lending, securities financing. Complex flows.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('payment')">
+          <h3>Payment Firm <span class="seg-indicator seg-low">20% Seg</span></h3>
+          <p>High volume, rapid turnover, mostly non-segregated operational float.</p>
+        </div>
+        <div class="scenario-card" onclick="loadScenario('wealth')">
+          <h3>Wealth Platform <span class="seg-indicator seg-high">95% Seg</span></h3>
+          <p>Stable balances, monthly fees, high segregation. Long-term holdings.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Data Configuration</h2>
+      <div class="row">
+        <div>
+          <label class="label" for="startDate">Start Date</label>
+          <input type="date" id="startDate" class="input" />
+        </div>
+        <div>
+          <label class="label" for="endDate">End Date</label>
+          <input type="date" id="endDate" class="input" />
+        </div>
+      </div>
+      
+      <div class="row" style="margin-top:16px">
+        <div>
+          <label class="label" for="firmType">Firm Type</label>
+          <select id="firmType" class="select" onchange="updateFirmType()">
+            <option value="retail">Retail Broker</option>
+            <option value="prime">Prime Broker</option>
+            <option value="payment">Payment Services</option>
+            <option value="wealth">Wealth Manager</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="includeWeekends">Weekend Activity</label>
+          <select id="includeWeekends" class="select">
+            <option value="zero">Zero on Weekends</option>
+            <option value="carry">Carry Forward Friday</option>
+            <option value="reduced">Reduced Activity (10%)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Client Money Parameters</h2>
+      
+      <h3 style="color:#f59e0b;font-size:1.1rem;margin-bottom:16px">Base Configuration</h3>
+      <div class="range-container">
+        <div class="range-label">
+          <span>Base Daily CMH</span>
+          <span class="range-value" id="baseCMHValue">£10,000,000</span>
+        </div>
+        <input type="range" id="baseCMH" class="input" min="100000" max="100000000" step="100000" value="10000000" 
+               oninput="updateValue('baseCMH', 'baseCMHValue')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Segregation Ratio</span>
+          <span class="range-value" id="segRatioValue">70%</span>
+        </div>
+        <input type="range" id="segRatio" class="input" min="0" max="100" step="5" value="70" 
+               oninput="updateValue('segRatio', 'segRatioValue', '%')" />
+        <div class="note">Percentage held in CASS 7 compliant accounts</div>
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Daily Volatility</span>
+          <span class="range-value" id="volatilityValue">15%</span>
+        </div>
+        <input type="range" id="volatility" class="input" min="0" max="50" step="5" value="15" 
+               oninput="updateValue('volatility', 'volatilityValue', '%')" />
+      </div>
+      
+      <div class="range-container">
+        <div class="range-label">
+          <span>Intraday Peak Factor</span>
+          <span class="range-value" id="peakValue">1.5x</span>
+        </div>
+        <input type="range" id="peak" class="input" min="1" max="3" step="0.1" value="1.5" 
+               oninput="updateValue('peak', 'peakValue', 'x')" />
+        <div class="note">Peak vs end-of-day balances</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Trading & Settlement Patterns</h2>
+      <div class="pattern-desc">
+        Configure realistic client money movement patterns
+      </div>
+      
+      <div class="checkbox-group">
+        <div class="checkbox-item">
+          <input type="checkbox" id="settlementCycle" checked>
+          <label for="settlementCycle">T+2 Settlement Patterns</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="monthEnd" checked>
+          <label for="monthEnd">Month-end Sweeps</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="marginCalls">
+          <label for="marginCalls">Margin Call Volatility</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="dividends">
+          <label for="dividends">Dividend/Corporate Actions</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="largeWithdrawals">
+          <label for="largeWithdrawals">Large Client Movements</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="regulatoryChanges">
+          <label for="regulatoryChanges">Segregation Improvements</label>
+        </div>
+      </div>
+      
+      <div class="range-container" id="marginSection" style="display:none">
+        <div class="range-label">
+          <span>Margin Call Impact</span>
+          <span class="range-value" id="marginValue">30%</span>
+        </div>
+        <input type="range" id="marginImpact" class="input" min="10" max="50" step="5" value="30" 
+               oninput="updateValue('marginImpact', 'marginValue', '%')" />
+        <div class="note">Spike in non-segregated during margin calls</div>
+      </div>
+      
+      <div class="range-container" id="segImprovementSection" style="display:none">
+        <div class="range-label">
+          <span>Segregation Migration</span>
+          <span class="range-value" id="migrationValue">+20%</span>
+        </div>
+        <input type="range" id="migration" class="input" min="0" max="50" step="5" value="20" 
+               oninput="updateValue('migration', 'migrationValue', '%', true)" />
+        <div class="note">Gradual shift from non-seg to segregated</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Generate Data</h2>
+      <div style="margin-bottom:16px">
+        <button class="btn" onclick="generateData()">Generate CSV</button>
+        <button class="btn btn-secondary" onclick="previewData()">Preview First 10 Days</button>
+      </div>
+      
+      <div id="stats" class="grid" style="display:none;margin-bottom:16px"></div>
+      <div id="preview" class="preview" style="display:none"></div>
+      
+      <div id="downloadSection" class="download-info" style="display:none">
+        <h3>✓ Data Generated Successfully!</h3>
+        <p id="downloadInfo"></p>
+        <button class="btn" id="downloadBtn" style="margin-top:12px">Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Initialize dates
+function initDates() {
+  const end = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - 1); // 1 year of data
+  
+  document.getElementById('startDate').value = formatDateInput(start);
+  document.getElementById('endDate').value = formatDateInput(end);
+}
+
+function formatDateInput(date) {
+  return date.toISOString().split('T')[0];
+}
+
+function formatDateOutput(date) {
+  const d = date.getDate().toString().padStart(2, '0');
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}.${m}.${y}`;
+}
+
+// Update display values
+function updateValue(inputId, displayId, suffix = '', prefix = false) {
+  const value = parseFloat(document.getElementById(inputId).value);
+  const display = document.getElementById(displayId);
+  
+  if (suffix === '%') {
+    display.textContent = (prefix ? '+' : '') + value + suffix;
+  } else if (suffix === 'x') {
+    display.textContent = value.toFixed(1) + suffix;
+  } else {
+    display.textContent = '£' + value.toLocaleString('en-GB');
+  }
+}
+
+function updateFirmType() {
+  const type = document.getElementById('firmType').value;
+  
+  // Adjust defaults based on firm type
+  switch(type) {
+    case 'retail':
+      document.getElementById('segRatio').value = 90;
+      updateValue('segRatio', 'segRatioValue', '%');
+      break;
+    case 'prime':
+      document.getElementById('segRatio').value = 50;
+      updateValue('segRatio', 'segRatioValue', '%');
+      break;
+    case 'payment':
+      document.getElementById('segRatio').value = 20;
+      updateValue('segRatio', 'segRatioValue', '%');
+      break;
+    case 'wealth':
+      document.getElementById('segRatio').value = 95;
+      updateValue('segRatio', 'segRatioValue', '%');
+      break;
+  }
+}
+
+// Pattern handlers
+document.getElementById('marginCalls').addEventListener('change', function(e) {
+  document.getElementById('marginSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+document.getElementById('regulatoryChanges').addEventListener('change', function(e) {
+  document.getElementById('segImprovementSection').style.display = e.target.checked ? 'block' : 'none';
+});
+
+// Load scenarios
+function loadScenario(scenario) {
+  // Clear all checkboxes first
+  document.querySelectorAll('.checkbox-item input').forEach(cb => cb.checked = false);
+  
+  // Remove selected class from all cards
+  document.querySelectorAll('.scenario-card').forEach(card => card.classList.remove('selected'));
+  
+  // Add selected class to clicked card
+  event.currentTarget.classList.add('selected');
+  
+  switch(scenario) {
+    case 'retail':
+      document.getElementById('firmType').value = 'retail';
+      document.getElementById('baseCMH').value = 15000000;
+      document.getElementById('segRatio').value = 90;
+      document.getElementById('volatility').value = 20;
+      document.getElementById('peak').value = 1.8;
+      document.getElementById('settlementCycle').checked = true;
+      document.getElementById('monthEnd').checked = true;
+      document.getElementById('dividends').checked = true;
+      updateValue('baseCMH', 'baseCMHValue');
+      updateValue('segRatio', 'segRatioValue', '%');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('peak', 'peakValue', 'x');
+      break;
+      
+    case 'prime':
+      document.getElementById('firmType').value = 'prime';
+      document.getElementById('baseCMH').value = 50000000;
+      document.getElementById('segRatio').value = 50;
+      document.getElementById('volatility').value = 30;
+      document.getElementById('peak').value = 2.0;
+      document.getElementById('marginCalls').checked = true;
+      document.getElementById('largeWithdrawals').checked = true;
+      document.getElementById('marginSection').style.display = 'block';
+      updateValue('baseCMH', 'baseCMHValue');
+      updateValue('segRatio', 'segRatioValue', '%');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('peak', 'peakValue', 'x');
+      break;
+      
+    case 'payment':
+      document.getElementById('firmType').value = 'payment';
+      document.getElementById('baseCMH').value = 5000000;
+      document.getElementById('segRatio').value = 20;
+      document.getElementById('volatility').value = 40;
+      document.getElementById('peak').value = 2.5;
+      document.getElementById('includeWeekends').value = 'reduced';
+      updateValue('baseCMH', 'baseCMHValue');
+      updateValue('segRatio', 'segRatioValue', '%');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('peak', 'peakValue', 'x');
+      break;
+      
+    case 'wealth':
+      document.getElementById('firmType').value = 'wealth';
+      document.getElementById('baseCMH').value = 25000000;
+      document.getElementById('segRatio').value = 95;
+      document.getElementById('volatility').value = 5;
+      document.getElementById('peak').value = 1.1;
+      document.getElementById('monthEnd').checked = true;
+      document.getElementById('regulatoryChanges').checked = true;
+      document.getElementById('segImprovementSection').style.display = 'block';
+      updateValue('baseCMH', 'baseCMHValue');
+      updateValue('segRatio', 'segRatioValue', '%');
+      updateValue('volatility', 'volatilityValue', '%');
+      updateValue('peak', 'peakValue', 'x');
+      break;
+  }
+}
+
+// Generate data
+function generateData() {
+  const startDate = new Date(document.getElementById('startDate').value);
+  const endDate = new Date(document.getElementById('endDate').value);
+  const firmType = document.getElementById('firmType').value;
+  const weekendActivity = document.getElementById('includeWeekends').value;
+  
+  // Get parameters
+  const baseCMH = parseInt(document.getElementById('baseCMH').value);
+  const segRatio = parseInt(document.getElementById('segRatio').value) / 100;
+  const volatility = parseInt(document.getElementById('volatility').value) / 100;
+  const peakFactor = parseFloat(document.getElementById('peak').value);
+  
+  // Get patterns
+  const patterns = {
+    settlement: document.getElementById('settlementCycle').checked,
+    monthEnd: document.getElementById('monthEnd').checked,
+    marginCalls: document.getElementById('marginCalls').checked,
+    dividends: document.getElementById('dividends').checked,
+    largeWithdrawals: document.getElementById('largeWithdrawals').checked,
+    regulatory: document.getElementById('regulatoryChanges').checked,
+    marginImpact: parseInt(document.getElementById('marginImpact').value) / 100,
+    migration: parseInt(document.getElementById('migration').value) / 100
+  };
+  
+  // Generate data
+  const data = [];
+  let currentDate = new Date(startDate);
+  let dayCount = 0;
+  let currentSegRatio = segRatio;
+  
+  // Track settlement cycle (T+2)
+  let settlementQueue = [];
+  
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getDay();
+    const dayOfMonth = currentDate.getDate();
+    const month = currentDate.getMonth();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Handle weekends
+    if (isWeekend && weekendActivity === 'zero') {
+      data.push({
+        date: formatDateOutput(currentDate),
+        seg: 0,
+        nonSeg: 0
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayCount++;
+      continue;
+    }
+    
+    // Base calculations
+    let segBase = baseCMH * currentSegRatio;
+    let nonSegBase = baseCMH * (1 - currentSegRatio);
+    
+    // Apply daily volatility
+    const randomFactor = 1 + (Math.random() - 0.5) * 2 * volatility;
+    segBase *= randomFactor;
+    nonSegBase *= randomFactor;
+    
+    // Weekend reduction
+    if (isWeekend && weekendActivity === 'reduced') {
+      segBase *= 0.1;
+      nonSegBase *= 0.1;
+    }
+    
+    // Settlement cycle (T+2)
+    if (patterns.settlement && !isWeekend) {
+      // Add today's trading to queue
+      const todayTrade = baseCMH * 0.3 * Math.random();
+      settlementQueue.push({ day: dayCount + 2, amount: todayTrade });
+      
+      // Process settlements
+      settlementQueue = settlementQueue.filter(s => {
+        if (s.day === dayCount) {
+          segBase += s.amount * 0.7; // Most settlements go to segregated
+          nonSegBase += s.amount * 0.3;
+          return false;
+        }
+        return true;
+      });
+    }
+    
+    // Month-end sweeps
+    if (patterns.monthEnd && dayOfMonth >= 28) {
+      nonSegBase *= 0.6; // Clients sweep excess to segregated
+      segBase *= 1.2;
+    }
+    
+    // Margin calls (spikes in non-segregated)
+    if (patterns.marginCalls && Math.random() < 0.05) {
+      nonSegBase *= (1 + patterns.marginImpact);
+    }
+    
+    // Dividends/Corporate actions
+    if (patterns.dividends && dayOfMonth === 15) {
+      segBase *= 1.15; // Dividend payments
+    }
+    
+    // Large withdrawals
+    if (patterns.largeWithdrawals && Math.random() < 0.02) {
+      const withdrawal = Math.random() < 0.5;
+      if (withdrawal) {
+        segBase *= 0.7 + Math.random() * 0.2;
+      } else {
+        segBase *= 1.2 + Math.random() * 0.3;
+      }
+    }
+    
+    // Regulatory changes (gradual segregation improvement)
+    if (patterns.regulatory) {
+      const progress = dayCount / 365;
+      currentSegRatio = Math.min(1, segRatio + (patterns.migration * progress));
+    }
+    
+    // Apply peak factor (intraday peaks vs end-of-day)
+    // End-of-day is lower than peak
+    const eodFactor = 1 / peakFactor;
+    segBase *= eodFactor;
+    nonSegBase *= eodFactor;
+    
+    // Weekend carry forward
+    if (isWeekend && weekendActivity === 'carry' && data.length > 0) {
+      segBase = data[data.length - 1].seg;
+      nonSegBase = data[data.length - 1].nonSeg;
+    }
+    
+    // Ensure non-negative
+    segBase = Math.max(0, segBase);
+    nonSegBase = Math.max(0, nonSegBase);
+    
+    data.push({
+      date: formatDateOutput(currentDate),
+      seg: Math.round(segBase),
+      nonSeg: Math.round(nonSegBase)
+    });
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+    dayCount++;
+  }
+  
+  // Generate CSV
+  let csv = 'Date,Segregated_CMH,Non_Segregated_CMH\n';
+  data.forEach(row => {
+    csv += `${row.date},${row.seg},${row.nonSeg}\n`;
+  });
+  
+  // Store for download
+  window.generatedCSV = csv;
+  window.generatedData = data;
+  
+  // Show stats
+  showStats(data);
+  
+  // Show download section
+  const downloadSection = document.getElementById('downloadSection');
+  downloadSection.style.display = 'block';
+  document.getElementById('downloadInfo').textContent = 
+    `Generated ${data.length} days of data from ${data[0].date} to ${data[data.length-1].date}`;
+}
+
+function showStats(data) {
+  const statsDiv = document.getElementById('stats');
+  statsDiv.style.display = 'grid';
+  statsDiv.innerHTML = '';
+  
+  // Calculate stats
+  const segValues = data.map(d => d.seg).filter(v => v > 0);
+  const nonSegValues = data.map(d => d.nonSeg).filter(v => v > 0);
+  const totalValues = data.map(d => d.seg + d.nonSeg).filter(v => v > 0);
+  
+  const avgSeg = segValues.reduce((a,b) => a+b, 0) / segValues.length;
+  const avgNonSeg = nonSegValues.reduce((a,b) => a+b, 0) / nonSegValues.length;
+  const avgTotal = totalValues.reduce((a,b) => a+b, 0) / totalValues.length;
+  const avgSegRatio = avgSeg / (avgSeg + avgNonSeg) * 100;
+  
+  const stats = [
+    {
+      label: 'Total Days',
+      value: data.length.toLocaleString()
+    },
+    {
+      label: 'Avg Total CMH',
+      value: '£' + Math.round(avgTotal).toLocaleString('en-GB')
+    },
+    {
+      label: 'Avg Segregation',
+      value: avgSegRatio.toFixed(1) + '%'
+    },
+    {
+      label: 'Zero Days',
+      value: data.filter(d => d.seg === 0 && d.nonSeg === 0).length
+    }
+  ];
+  
+  stats.forEach(stat => {
+    const box = document.createElement('div');
+    box.className = 'stat-box';
+    box.innerHTML = `<h4>${stat.label}</h4><p>${stat.value}</p>`;
+    statsDiv.appendChild(box);
+  });
+}
+
+function previewData() {
+  if (!window.generatedData) {
+    alert('Generate data first!');
+    return;
+  }
+  
+  const preview = document.getElementById('preview');
+  preview.style.display = 'block';
+  
+  let text = 'Date,Segregated_CMH,Non_Segregated_CMH\n';
+  window.generatedData.slice(0, 10).forEach(row => {
+    text += `${row.date},${row.seg.toLocaleString('en-GB')},${row.nonSeg.toLocaleString('en-GB')}\n`;
+  });
+  
+  if (window.generatedData.length > 10) {
+    text += '...\n';
+    text += `(${window.generatedData.length - 10} more rows)`;
+  }
+  
+  preview.textContent = text;
+}
+
+// Download handler
+document.getElementById('downloadBtn').addEventListener('click', function() {
+  const blob = new Blob([window.generatedCSV], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kcmh_test_data_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// Initialize
+initDates();
+</script>
+</body>
+</html>

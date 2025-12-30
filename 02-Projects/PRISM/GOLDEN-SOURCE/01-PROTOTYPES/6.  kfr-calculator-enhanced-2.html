@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Factor Requirement (KFR) Calculator - Enhanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e1a;
+            color: #e0e7ff;
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+        }
+        .input-field {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #e0e7ff;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+        }
+        .input-field:focus {
+            background-color: #0f172a;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 7px 15px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        .formula-box {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+        .k-factor-card {
+            border-left: 4px solid #4f46e5;
+            transition: all 0.3s ease;
+        }
+        .k-factor-card.rtc { border-left-color: #3b82f6; }
+        .k-factor-card.rtm { border-left-color: #10b981; }
+        .k-factor-card.rtf { border-left-color: #f59e0b; }
+        
+        .sni-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .sni-badge.sni {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+        .sni-badge.non-sni {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+        
+        .threshold-indicator {
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .threshold-bar {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .threshold-bar.safe { background: #10b981; }
+        .threshold-bar.warning { background: #f59e0b; }
+        .threshold-bar.exceeded { background: #ef4444; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        .modal-content {
+            background: #111827;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+        .tab-button:hover {
+            background: rgba(79, 70, 229, 0.1);
+        }
+        .tab-button.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+        }
+        .metric-card {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid #4f46e5;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        .complex-calculator-link {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid #8b5cf6;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+        }
+        .complex-calculator-link:hover {
+            background: rgba(139, 92, 246, 0.2);
+            transform: translateX(2px);
+        }
+        .category-content {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-600">
+                K-Factor Requirement (KFR) Calculator
+            </h1>
+            <p class="text-lg text-gray-400 mt-2">MiFIDPRU 4.6 - Risk-Based Capital for Business Activities</p>
+        </header>
+
+        <!-- SNI Classification Status -->
+        <div class="card p-6 mb-6 bg-gradient-to-r from-indigo-900/20 to-purple-900/20 border-indigo-500">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold mb-2">Firm Classification</h2>
+                    <p class="text-gray-400" id="classificationDesc">Based on activity thresholds and business model</p>
+                </div>
+                <div class="text-center">
+                    <div id="sniStatus" class="sni-badge sni">SNI Firm</div>
+                    <div class="text-sm text-gray-400 mt-2">K-Factor: <span id="kfrApplicability">Not Required</span></div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button onclick="showFirmInfoModal()" class="btn-primary">
+                    Update Firm Information
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Formula Display -->
+        <div class="card p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-indigo-400">KFR Formula</h2>
+            <div class="formula-box text-center text-lg">
+                KFR = Σ(K-RtC) + Σ(K-RtM) + Σ(K-RtF)
+                <div class="text-sm mt-2 text-gray-400">
+                    Sum of all applicable K-factors across risk categories
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <button onclick="showHistoricalModal()" class="card p-4 text-center hover:border-indigo-500 transition-all">
+                <div class="text-2xl mb-2">📊</div>
+                <div class="font-bold">Historical Trends</div>
+                <div class="text-sm text-gray-400">Track KFR over time</div>
+            </button>
+            <button onclick="showThresholdsModal()" class="card p-4 text-center hover:border-indigo-500 transition-all">
+                <div class="text-2xl mb-2">🚨</div>
+                <div class="font-bold">SNI Thresholds</div>
+                <div class="text-sm text-gray-400">Monitor classification</div>
+            </button>
+            <button onclick="showScenarioModal()" class="card p-4 text-center hover:border-indigo-500 transition-all">
+                <div class="text-2xl mb-2">🔮</div>
+                <div class="font-bold">What-If Analysis</div>
+                <div class="text-sm text-gray-400">Model growth impact</div>
+            </button>
+        </div>
+
+        <!-- Risk to Client (RtC) K-Factors -->
+        <div class="mb-6">
+            <div class="card p-4">
+                <div class="flex justify-between items-center cursor-pointer" onclick="toggleCategory('rtc')">
+                    <h3 class="text-xl font-bold text-blue-400">Risk to Client (RtC) K-Factors</h3>
+                    <span id="rtcToggle" class="text-2xl">▼</span>
+                </div>
+                <div id="rtcContent" class="mt-4 space-y-4">
+                    <!-- Dynamic RtC factors -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk to Market (RtM) K-Factors -->
+        <div class="mb-6">
+            <div class="card p-4">
+                <div class="flex justify-between items-center cursor-pointer" onclick="toggleCategory('rtm')">
+                    <h3 class="text-xl font-bold text-green-400">Risk to Market (RtM) K-Factors</h3>
+                    <span id="rtmToggle" class="text-2xl">▼</span>
+                </div>
+                <div id="rtmContent" class="mt-4 space-y-4">
+                    <!-- Dynamic RtM factors -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk to Firm (RtF) K-Factors -->
+        <div class="mb-6">
+            <div class="card p-4">
+                <div class="flex justify-between items-center cursor-pointer" onclick="toggleCategory('rtf')">
+                    <h3 class="text-xl font-bold text-yellow-400">Risk to Firm (RtF) K-Factors</h3>
+                    <span id="rtfToggle" class="text-2xl">▼</span>
+                </div>
+                <div id="rtfContent" class="mt-4 space-y-4">
+                    <!-- Dynamic RtF factors -->
+                </div>
+            </div>
+        </div>
+
+        <!-- KFR Calculation Result -->
+        <div class="card p-6 mb-6 bg-gradient-to-r from-indigo-900/20 to-purple-900/20 border-indigo-500">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-2">Total K-Factor Requirement (KFR)</h3>
+                <div class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-600">
+                    £<span id="kfrResult">0</span>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-4">
+                    <div>
+                        <div class="text-sm text-gray-400">RtC Total</div>
+                        <div class="text-xl font-bold text-blue-400">£<span id="rtcTotal">0</span></div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-400">RtM Total</div>
+                        <div class="text-xl font-bold text-green-400">£<span id="rtmTotal">0</span></div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-400">RtF Total</div>
+                        <div class="text-xl font-bold text-yellow-400">£<span id="rtfTotal">0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- K-Factor Distribution Chart -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-purple-400">K-Factor Distribution</h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- SNI Threshold Monitoring -->
+            <div class="card p-6">
+                <h3 class="text-lg font-bold mb-4 text-green-400">SNI Threshold Status</h3>
+                <div id="thresholdMonitor" class="space-y-3">
+                    <!-- Dynamic threshold indicators -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="dominantFactor">-</div>
+                <div class="text-sm text-gray-400">Dominant K-Factor</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="activeFactors">0</div>
+                <div class="text-sm text-gray-400">Active K-Factors</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="monthlyChange">0%</div>
+                <div class="text-sm text-gray-400">Monthly Change</div>
+            </div>
+            <div class="metric-card">
+                <div class="text-2xl font-bold" id="projectedKFR">£0</div>
+                <div class="text-sm text-gray-400">Projected (12m)</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-4 justify-center">
+            <button onclick="exportData()" class="btn-primary">
+                📥 Export Calculation
+            </button>
+            <button onclick="generateReport()" class="btn-primary">
+                📄 Generate Report
+            </button>
+            <button onclick="integrateSupplementary()" class="btn-primary">
+                🔗 Link Calculators
+            </button>
+        </div>
+    </div>
+
+    <!-- Firm Information Modal -->
+    <div id="firmInfoModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Firm Information</h2>
+                    <button onclick="closeModal('firmInfoModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <form id="firmInfoForm" onsubmit="saveFirmInfo(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Firm Name</label>
+                            <input type="text" id="firmName" class="input-field" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">FCA Reference</label>
+                            <input type="text" id="fcaRef" class="input-field">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Total Assets (£)</label>
+                            <input type="number" id="totalAssets" class="input-field" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Balance Sheet Total (£)</label>
+                            <input type="number" id="balanceSheet" class="input-field" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Annual Gross Income (£)</label>
+                            <input type="number" id="annualIncome" class="input-field" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Primary Business</label>
+                            <select id="businessType" class="input-field">
+                                <option value="investment_management">Investment Management</option>
+                                <option value="dealing">Dealing on Own Account</option>
+                                <option value="advisory">Investment Advisory</option>
+                                <option value="arranging">Arranging Deals</option>
+                                <option value="execution">Execution Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h3 class="font-bold mb-3">Business Activities</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="holdsClientMoney" class="mr-2">
+                                <span>Holds Client Money</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="safeguardsAssets" class="mr-2">
+                                <span>Safeguards Client Assets</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="dealsOwnAccount" class="mr-2">
+                                <span>Deals on Own Account</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="executesOrders" class="mr-2">
+                                <span>Executes Client Orders</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary w-full mt-6">
+                        Save Information
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historical Data Modal -->
+    <div id="historicalModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Historical K-Factor Trends</h2>
+                    <button onclick="closeModal('historicalModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div style="height: 400px; position: relative;">
+                    <canvas id="historicalChart"></canvas>
+                </div>
+                
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="card p-4">
+                        <h4 class="font-bold text-sm text-gray-400">Average KFR</h4>
+                        <p class="text-2xl font-bold" id="avgKFR">£0</p>
+                    </div>
+                    <div class="card p-4">
+                        <h4 class="font-bold text-sm text-gray-400">Peak KFR</h4>
+                        <p class="text-2xl font-bold" id="peakKFR">£0</p>
+                    </div>
+                    <div class="card p-4">
+                        <h4 class="font-bold text-sm text-gray-400">Trend</h4>
+                        <p class="text-2xl font-bold" id="kfrTrend">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SNI Thresholds Modal -->
+    <div id="thresholdsModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">SNI Classification Thresholds</h2>
+                    <button onclick="closeModal('thresholdsModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="space-y-4" id="thresholdDetails">
+                    <!-- Dynamic threshold details -->
+                </div>
+                
+                <div class="mt-6 p-4 bg-blue-900/20 border border-blue-500 rounded-lg">
+                    <h4 class="font-bold mb-2">SNI Classification Rules</h4>
+                    <ul class="text-sm space-y-1 text-gray-300">
+                        <li>• All thresholds must be met to qualify as SNI</li>
+                        <li>• Exceeding any threshold = Non-SNI classification</li>
+                        <li>• Non-SNI firms must calculate full KFR</li>
+                        <li>• SNI firms: KFR = £0</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // K-Factor definitions
+        const kFactorDefinitions = {
+            rtc: {
+                name: 'Risk to Client',
+                factors: {
+                    kaum: {
+                        name: 'K-AUM',
+                        description: 'Assets Under Management',
+                        coefficient: 0.0002,
+                        unit: '£',
+                        sniThreshold: 1200000000,
+                        components: ['aum']
+                    },
+                    kcmh: {
+                        name: 'K-CMH',
+                        description: 'Client Money Held',
+                        unit: '£',
+                        sniThreshold: 0,
+                        components: [
+                            { key: 'segregated', name: 'Segregated', coefficient: 0.004 },
+                            { key: 'nonSegregated', name: 'Non-Segregated', coefficient: 0.005 }
+                        ]
+                    },
+                    kasa: {
+                        name: 'K-ASA',
+                        description: 'Assets Safeguarded & Administered',
+                        coefficient: 0.0004,
+                        unit: '£',
+                        sniThreshold: 0,
+                        components: ['asa']
+                    },
+                    kcoh: {
+                        name: 'K-COH',
+                        description: 'Client Orders Handled',
+                        unit: '£/day',
+                        sniThreshold: { cash: 100000000, derivatives: 1000000000 },
+                        components: [
+                            { key: 'cash', name: 'Cash Trades', coefficient: 0.001 },
+                            { key: 'derivatives', name: 'Derivative Trades', coefficient: 0.0001 }
+                        ]
+                    }
+                }
+            },
+            rtm: {
+                name: 'Risk to Market',
+                factors: {
+                    knpr: {
+                        name: 'K-NPR',
+                        description: 'Net Position Risk',
+                        complex: true,
+                        unit: '£',
+                        sniThreshold: 300000000,
+                        calculator: 'knpr-calculator.html'
+                    },
+                    kcmg: {
+                        name: 'K-CMG',
+                        description: 'Clearing Margin Given',
+                        coefficient: 1.3,
+                        unit: '£',
+                        sniThreshold: null,
+                        components: ['margin']
+                    }
+                }
+            },
+            rtf: {
+                name: 'Risk to Firm',
+                factors: {
+                    ktcd: {
+                        name: 'K-TCD',
+                        description: 'Trading Counterparty Default',
+                        complex: true,
+                        unit: '£',
+                        sniThreshold: null,
+                        calculator: 'ktcd-calculator.html'
+                    },
+                    kdtf: {
+                        name: 'K-DTF',
+                        description: 'Daily Trading Flow',
+                        unit: '£/day',
+                        sniThreshold: null,
+                        components: [
+                            { key: 'cash', name: 'Cash Trading Flow', coefficient: 0.001 },
+                            { key: 'derivatives', name: 'Derivatives Trading Flow', coefficient: 0.0001 }
+                        ]
+                    },
+                    kcon: {
+                        name: 'K-CON',
+                        description: 'Concentration Risk',
+                        complex: true,
+                        unit: '£',
+                        sniThreshold: null,
+                        calculator: 'kcon-calculator.html'
+                    }
+                }
+            }
+        };
+
+        // Data storage
+        let firmInfo = {};
+        let kFactorData = {};
+        let historicalData = [];
+        let distributionChart = null;
+        let historicalChart = null;
+
+        // Initialize data structure
+        function initializeKFactorData() {
+            Object.entries(kFactorDefinitions).forEach(([category, catDef]) => {
+                kFactorData[category] = {};
+                Object.entries(catDef.factors).forEach(([factor, factorDef]) => {
+                    kFactorData[category][factor] = {
+                        active: false,
+                        value: 0,
+                        componentValues: {}
+                    };
+                });
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeKFactorData();
+            loadData();
+            setupKFactorInputs();
+            updateSNIStatus();
+            calculateKFR();
+            updateCharts();
+        });
+
+        function toggleCategory(category) {
+            const content = document.getElementById(`${category}Content`);
+            const toggle = document.getElementById(`${category}Toggle`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+
+        function setupKFactorInputs() {
+            const isSNI = checkIfSNI();
+            
+            ['rtc', 'rtm', 'rtf'].forEach(category => {
+                const container = document.getElementById(`${category}Content`);
+                const categoryDef = kFactorDefinitions[category];
+                
+                container.innerHTML = Object.entries(categoryDef.factors).map(([factorKey, factorDef]) => {
+                    const factorData = kFactorData[category][factorKey];
+                    
+                    let inputSection = '';
+                    if (factorDef.complex) {
+                        // Complex calculators
+                        inputSection = `
+                            <div class="mt-3">
+                                <a href="#" onclick="openCalculator('${factorDef.calculator}')" 
+                                   class="complex-calculator-link">
+                                    Open ${factorDef.name} Calculator →
+                                </a>
+                                <div class="mt-3">
+                                    <label class="block text-sm font-medium mb-2">Calculated ${factorDef.name} Value</label>
+                                    <input type="number" 
+                                           id="${category}_${factorKey}_value" 
+                                           class="input-field" 
+                                           placeholder="Enter calculated value"
+                                           value="${factorData.value || 0}"
+                                           oninput="updateKFactorValue('${category}', '${factorKey}', this.value)"
+                                           ${!factorData.active || isSNI ? 'disabled' : ''}>
+                                </div>
+                                ${factorDef.coefficient ? `
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Coefficient: ${factorDef.coefficient}
+                                    </p>
+                                ` : ''}
+                            </div>
+                        `;
+                    } else if (factorDef.components && Array.isArray(factorDef.components)) {
+                        // Single component factors
+                        if (factorDef.components.length === 1) {
+                            inputSection = `
+                                <div class="mt-3">
+                                    <label class="block text-sm font-medium mb-2">Average ${factorDef.name} Base Value</label>
+                                    <input type="number" 
+                                           id="${category}_${factorKey}_value" 
+                                           class="input-field" 
+                                           placeholder="0"
+                                           value="${factorData.value || 0}"
+                                           oninput="updateKFactorValue('${category}', '${factorKey}', this.value)"
+                                           ${!factorData.active || isSNI ? 'disabled' : ''}>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Coefficient: ${factorDef.coefficient} | 
+                                        Requirement = Base Value × ${factorDef.coefficient}
+                                    </p>
+                                </div>
+                            `;
+                        } else {
+                            // Multiple component factors
+                            inputSection = `
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                                    ${factorDef.components.map(comp => `
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">${comp.name}</label>
+                                            <input type="number" 
+                                                   id="${category}_${factorKey}_${comp.key}" 
+                                                   class="input-field" 
+                                                   placeholder="0"
+                                                   value="${factorData.componentValues[comp.key] || 0}"
+                                                   oninput="updateComponentValue('${category}', '${factorKey}', '${comp.key}', this.value)"
+                                                   ${!factorData.active || isSNI ? 'disabled' : ''}>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                Coefficient: ${comp.coefficient}
+                                            </p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    return `
+                        <div class="card k-factor-card ${category} p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" 
+                                               id="${category}_${factorKey}_active"
+                                               ${factorData.active ? 'checked' : ''}
+                                               ${isSNI ? 'disabled' : ''}
+                                               onchange="toggleKFactor('${category}', '${factorKey}', this.checked)">
+                                        <label for="${category}_${factorKey}_active" class="font-bold text-lg ${isSNI ? 'text-gray-500' : ''}">
+                                            ${factorDef.name}
+                                        </label>
+                                    </div>
+                                    <p class="text-sm text-gray-400 mt-1 ml-6">${factorDef.description}</p>
+                                </div>
+                                <div class="text-right ml-4">
+                                    <div class="text-sm text-gray-400">Requirement</div>
+                                    <div class="text-xl font-bold">£<span id="${category}_${factorKey}_result">0</span></div>
+                                </div>
+                            </div>
+                            <div class="${factorData.active && !isSNI ? '' : 'opacity-50'}" id="${category}_${factorKey}_inputs">
+                                ${inputSection}
+                            </div>
+                            ${factorDef.sniThreshold !== null && factorDef.sniThreshold !== undefined ? `
+                                <div class="mt-3">
+                                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                        <span>SNI Threshold</span>
+                                        <span>${formatThreshold(factorDef.sniThreshold)}</span>
+                                    </div>
+                                    <div class="threshold-indicator">
+                                        <div id="${category}_${factorKey}_threshold" class="threshold-bar safe" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            });
+            
+            // Add notice for SNI firms
+            if (isSNI) {
+                document.getElementById('kfrApplicability').textContent = 'Not Required (£0)';
+            }
+        }
+
+        function checkIfSNI() {
+            // Quick check if firm is SNI
+            if (firmInfo.dealsOwnAccount || firmInfo.holdsClientMoney) return false;
+            
+            // Check K-factor thresholds
+            const checks = checkSNIThresholds();
+            const exceededThreshold = checks.some(check => check.exceeded);
+            
+            return !exceededThreshold;
+        }
+
+        function formatThreshold(threshold) {
+            if (threshold === null || threshold === undefined) return 'N/A';
+            if (typeof threshold === 'object') {
+                return Object.entries(threshold).map(([k,v]) => `${k}: £${(v/1000000).toFixed(0)}M`).join(', ');
+            }
+            return threshold === 0 ? '£0' : `£${(threshold/1000000).toFixed(0)}M`;
+        }
+
+        function toggleKFactor(category, factor, active) {
+            kFactorData[category][factor].active = active;
+            
+            // Enable/disable inputs
+            const inputsDiv = document.getElementById(`${category}_${factor}_inputs`);
+            if (inputsDiv) {
+                inputsDiv.classList.toggle('opacity-50', !active);
+                inputsDiv.querySelectorAll('input').forEach(input => {
+                    input.disabled = !active;
+                });
+            }
+            
+            calculateKFR();
+            saveData();
+        }
+
+        function updateKFactorValue(category, factor, value) {
+            kFactorData[category][factor].value = parseFloat(value) || 0;
+            calculateKFR();
+            saveData();
+        }
+
+        function updateComponentValue(category, factor, component, value) {
+            if (!kFactorData[category][factor].componentValues) {
+                kFactorData[category][factor].componentValues = {};
+            }
+            kFactorData[category][factor].componentValues[component] = parseFloat(value) || 0;
+            calculateKFR();
+            saveData();
+        }
+
+        function calculateKFR() {
+            const isSNI = checkIfSNI();
+            
+            if (isSNI) {
+                // SNI firms have KFR = 0
+                document.getElementById('kfrResult').textContent = '0';
+                document.getElementById('rtcTotal').textContent = '0';
+                document.getElementById('rtmTotal').textContent = '0';
+                document.getElementById('rtfTotal').textContent = '0';
+                
+                // Clear all factor results
+                Object.entries(kFactorDefinitions).forEach(([category, catDef]) => {
+                    Object.entries(catDef.factors).forEach(([factorKey, factorDef]) => {
+                        document.getElementById(`${category}_${factorKey}_result`).textContent = '0';
+                    });
+                });
+                
+                updateMetrics(0, { rtc: 0, rtm: 0, rtf: 0 }, 0);
+                updateCharts();
+                return;
+            }
+            
+            let totalKFR = 0;
+            let categoryTotals = { rtc: 0, rtm: 0, rtf: 0 };
+            let activeCount = 0;
+            
+            Object.entries(kFactorDefinitions).forEach(([category, catDef]) => {
+                Object.entries(catDef.factors).forEach(([factorKey, factorDef]) => {
+                    const factorData = kFactorData[category][factorKey];
+                    
+                    if (!factorData.active) {
+                        document.getElementById(`${category}_${factorKey}_result`).textContent = '0';
+                        return;
+                    }
+                    
+                    activeCount++;
+                    let factorValue = 0;
+                    
+                    if (factorDef.complex) {
+                        // Complex calculators - use direct value
+                        factorValue = factorData.value || 0;
+                    } else if (factorDef.components && Array.isArray(factorDef.components)) {
+                        if (factorDef.components.length === 1) {
+                            // Single component with coefficient
+                            factorValue = (factorData.value || 0) * (factorDef.coefficient || 1);
+                        } else {
+                            // Multiple components with individual coefficients
+                            factorValue = factorDef.components.reduce((sum, comp) => {
+                                const compValue = factorData.componentValues[comp.key] || 0;
+                                return sum + (compValue * comp.coefficient);
+                            }, 0);
+                        }
+                    }
+                    
+                    categoryTotals[category] += factorValue;
+                    totalKFR += factorValue;
+                    
+                    // Update display
+                    document.getElementById(`${category}_${factorKey}_result`).textContent = 
+                        Math.round(factorValue).toLocaleString();
+                    
+                    // Update threshold indicator if applicable
+                    updateThresholdIndicator(category, factorKey, factorDef, factorData);
+                });
+            });
+            
+            // Update totals
+            document.getElementById('kfrResult').textContent = Math.round(totalKFR).toLocaleString();
+            document.getElementById('rtcTotal').textContent = Math.round(categoryTotals.rtc).toLocaleString();
+            document.getElementById('rtmTotal').textContent = Math.round(categoryTotals.rtm).toLocaleString();
+            document.getElementById('rtfTotal').textContent = Math.round(categoryTotals.rtf).toLocaleString();
+            
+            // Update metrics
+            updateMetrics(totalKFR, categoryTotals, activeCount);
+            
+            // Update SNI status
+            updateSNIStatus();
+            
+            // Update charts
+            updateCharts();
+            
+            // Save snapshot for historical tracking
+            saveHistoricalSnapshot(totalKFR, categoryTotals);
+        }
+
+        function updateThresholdIndicator(category, factorKey, factorDef, factorData) {
+            if (!factorDef.sniThreshold) return;
+            
+            const indicator = document.getElementById(`${category}_${factorKey}_threshold`);
+            if (!indicator) return;
+            
+            let value = 0;
+            let threshold = factorDef.sniThreshold;
+            
+            // Get the base value before coefficient
+            if (factorDef.components && Array.isArray(factorDef.components)) {
+                if (factorDef.components.length === 1) {
+                    value = factorData.value || 0;
+                } else {
+                    // For multi-component factors, sum the component values
+                    value = Object.values(factorData.componentValues || {}).reduce((sum, val) => sum + val, 0);
+                }
+            } else {
+                value = factorData.value || 0;
+            }
+            
+            // Handle complex thresholds
+            if (typeof threshold === 'object') {
+                // For K-COH, use the lower threshold for display
+                threshold = Math.min(...Object.values(threshold));
+            }
+            
+            const percentage = threshold > 0 ? Math.min((value / threshold) * 100, 100) : 0;
+            indicator.style.width = `${percentage}%`;
+            
+            // Update color based on percentage
+            indicator.classList.remove('safe', 'warning', 'exceeded');
+            if (percentage >= 100) indicator.classList.add('exceeded');
+            else if (percentage >= 80) indicator.classList.add('warning');
+            else indicator.classList.add('safe');
+        }
+
+        function updateSNIStatus() {
+            const sniChecks = checkSNIThresholds();
+            const isSNI = sniChecks.every(check => !check.exceeded);
+            
+            const statusBadge = document.getElementById('sniStatus');
+            const applicability = document.getElementById('kfrApplicability');
+            
+            statusBadge.textContent = isSNI ? 'SNI Firm' : 'Non-SNI Firm';
+            statusBadge.className = `sni-badge ${isSNI ? 'sni' : 'non-sni'}`;
+            
+            applicability.textContent = isSNI ? 'Not Required (£0)' : 'Required';
+            
+            // Update threshold monitor
+            updateThresholdMonitor(sniChecks);
+        }
+
+        function checkSNIThresholds() {
+            const checks = [];
+            
+            // Check business activities
+            if (firmInfo.dealsOwnAccount) {
+                checks.push({
+                    name: 'Dealing on Own Account',
+                    value: 'Yes',
+                    threshold: 'Not Permitted',
+                    exceeded: true
+                });
+            }
+            
+            if (firmInfo.holdsClientMoney) {
+                checks.push({
+                    name: 'Client Money Held',
+                    value: 'Yes',
+                    threshold: 'Not Permitted',
+                    exceeded: true
+                });
+            }
+            
+            // Check K-factor thresholds
+            Object.entries(kFactorDefinitions).forEach(([category, catDef]) => {
+                Object.entries(catDef.factors).forEach(([factorKey, factorDef]) => {
+                    if (!factorDef.sniThreshold) return;
+                    
+                    const factorData = kFactorData[category][factorKey];
+                    if (!factorData.active) return;
+                    
+                    let value = 0;
+                    
+                    // Get base values
+                    if (factorDef.components && Array.isArray(factorDef.components)) {
+                        if (factorDef.components.length === 1) {
+                            value = factorData.value || 0;
+                        } else {
+                            // For multi-component factors, check each component
+                            if (factorKey === 'kcoh') {
+                                value = Math.max(
+                                    factorData.componentValues.cash || 0,
+                                    factorData.componentValues.derivatives || 0
+                                );
+                            } else {
+                                value = Object.values(factorData.componentValues || {}).reduce((sum, val) => sum + val, 0);
+                            }
+                        }
+                    } else {
+                        value = factorData.value || 0;
+                    }
+                    
+                    const threshold = typeof factorDef.sniThreshold === 'object' 
+                        ? Math.min(...Object.values(factorDef.sniThreshold))
+                        : factorDef.sniThreshold;
+                    
+                    checks.push({
+                        name: factorDef.name,
+                        value: `£${(value/1000000).toFixed(1)}M`,
+                        threshold: `£${(threshold/1000000).toFixed(0)}M`,
+                        exceeded: value > threshold
+                    });
+                });
+            });
+            
+            return checks;
+        }
+
+        function updateThresholdMonitor(checks) {
+            const monitor = document.getElementById('thresholdMonitor');
+            
+            monitor.innerHTML = checks.map(check => `
+                <div class="flex justify-between items-center p-2 rounded ${check.exceeded ? 'bg-red-900/20' : 'bg-green-900/20'}">
+                    <span class="text-sm">${check.name}</span>
+                    <div class="text-right">
+                        <span class="text-sm font-bold ${check.exceeded ? 'text-red-400' : 'text-green-400'}">
+                            ${check.value}
+                        </span>
+                        <span class="text-xs text-gray-500 ml-2">/ ${check.threshold}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateMetrics(totalKFR, categoryTotals, activeCount) {
+            // Dominant factor
+            const dominant = Object.entries(categoryTotals)
+                .sort(([,a], [,b]) => b - a)[0];
+            document.getElementById('dominantFactor').textContent = 
+                dominant[1] > 0 ? kFactorDefinitions[dominant[0]].name : '-';
+            
+            // Active factors
+            document.getElementById('activeFactors').textContent = activeCount;
+            
+            // Monthly change (from historical data)
+            if (historicalData.length > 1) {
+                const lastMonth = historicalData[historicalData.length - 2].total;
+                const change = ((totalKFR - lastMonth) / lastMonth) * 100;
+                document.getElementById('monthlyChange').textContent = 
+                    `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+            }
+            
+            // Projected KFR (simple linear projection)
+            const projectedKFR = totalKFR * 1.1; // 10% growth assumption
+            document.getElementById('projectedKFR').textContent = 
+                `£${Math.round(projectedKFR).toLocaleString()}`;
+        }
+
+        function updateCharts() {
+            updateDistributionChart();
+            updateHistoricalChart();
+        }
+
+        function updateDistributionChart() {
+            const ctx = document.getElementById('distributionChart');
+            if (!ctx) return;
+            
+            const data = [];
+            const labels = [];
+            const colors = [];
+            
+            Object.entries(kFactorDefinitions).forEach(([category, catDef]) => {
+                Object.entries(catDef.factors).forEach(([factorKey, factorDef]) => {
+                    const factorData = kFactorData[category][factorKey];
+                    if (!factorData.active) return;
+                    
+                    const value = parseFloat(document.getElementById(`${category}_${factorKey}_result`).textContent.replace(/,/g, '')) || 0;
+                    if (value > 0) {
+                        data.push(value);
+                        labels.push(factorDef.name);
+                        colors.push(category === 'rtc' ? '#3b82f6' : category === 'rtm' ? '#10b981' : '#f59e0b');
+                    }
+                });
+            });
+            
+            if (data.length === 0) {
+                if (distributionChart) {
+                    distributionChart.destroy();
+                    distributionChart = null;
+                }
+                return;
+            }
+            
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors
+                }]
+            };
+            
+            if (distributionChart) {
+                distributionChart.data = chartData;
+                distributionChart.update();
+            } else {
+                distributionChart = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#e0e7ff' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateHistoricalChart() {
+            if (!document.getElementById('historicalChart')) return;
+            
+            if (historicalData.length === 0) {
+                // Generate sample data
+                const now = new Date();
+                for (let i = 11; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setMonth(date.getMonth() - i);
+                    historicalData.push({
+                        date: date.toISOString().split('T')[0],
+                        total: Math.round(100000 + Math.random() * 50000),
+                        rtc: Math.round(40000 + Math.random() * 20000),
+                        rtm: Math.round(30000 + Math.random() * 15000),
+                        rtf: Math.round(30000 + Math.random() * 15000)
+                    });
+                }
+            }
+            
+            const ctx = document.getElementById('historicalChart').getContext('2d');
+            const chartData = {
+                labels: historicalData.map(d => new Date(d.date).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })),
+                datasets: [
+                    {
+                        label: 'Total KFR',
+                        data: historicalData.map(d => d.total),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'RtC',
+                        data: historicalData.map(d => d.rtc),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'RtM',
+                        data: historicalData.map(d => d.rtm),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'RtF',
+                        data: historicalData.map(d => d.rtf),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+            
+            if (historicalChart) {
+                historicalChart.data = chartData;
+                historicalChart.update();
+            } else {
+                historicalChart = new Chart(ctx, {
+                    type: 'line',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#e0e7ff' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: '#1e293b' }
+                            },
+                            x: {
+                                ticks: { color: '#e0e7ff' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Update historical metrics
+            if (historicalData.length > 0) {
+                const avg = historicalData.reduce((sum, d) => sum + d.total, 0) / historicalData.length;
+                const peak = Math.max(...historicalData.map(d => d.total));
+                const trend = historicalData[historicalData.length - 1].total > historicalData[0].total ? '📈 Increasing' : '📉 Decreasing';
+                
+                document.getElementById('avgKFR').textContent = `£${Math.round(avg).toLocaleString()}`;
+                document.getElementById('peakKFR').textContent = `£${Math.round(peak).toLocaleString()}`;
+                document.getElementById('kfrTrend').textContent = trend;
+            }
+        }
+
+        function saveHistoricalSnapshot(total, categoryTotals) {
+            const today = new Date().toISOString().split('T')[0];
+            const existing = historicalData.find(d => d.date === today);
+            
+            if (existing) {
+                existing.total = total;
+                existing.rtc = categoryTotals.rtc;
+                existing.rtm = categoryTotals.rtm;
+                existing.rtf = categoryTotals.rtf;
+            } else {
+                historicalData.push({
+                    date: today,
+                    total: total,
+                    rtc: categoryTotals.rtc,
+                    rtm: categoryTotals.rtm,
+                    rtf: categoryTotals.rtf
+                });
+                
+                // Keep only last 12 months
+                if (historicalData.length > 12) {
+                    historicalData = historicalData.slice(-12);
+                }
+            }
+            
+            saveData();
+        }
+
+        function showFirmInfoModal() {
+            // Populate form with existing data
+            document.getElementById('firmName').value = firmInfo.firmName || '';
+            document.getElementById('fcaRef').value = firmInfo.fcaRef || '';
+            document.getElementById('totalAssets').value = firmInfo.totalAssets || '';
+            document.getElementById('balanceSheet').value = firmInfo.balanceSheet || '';
+            document.getElementById('annualIncome').value = firmInfo.annualIncome || '';
+            document.getElementById('businessType').value = firmInfo.businessType || 'investment_management';
+            document.getElementById('holdsClientMoney').checked = firmInfo.holdsClientMoney || false;
+            document.getElementById('safeguardsAssets').checked = firmInfo.safeguardsAssets || false;
+            document.getElementById('dealsOwnAccount').checked = firmInfo.dealsOwnAccount || false;
+            document.getElementById('executesOrders').checked = firmInfo.executesOrders || false;
+            
+            document.getElementById('firmInfoModal').style.display = 'block';
+        }
+
+        function saveFirmInfo(event) {
+            event.preventDefault();
+            
+            firmInfo = {
+                firmName: document.getElementById('firmName').value,
+                fcaRef: document.getElementById('fcaRef').value,
+                totalAssets: parseFloat(document.getElementById('totalAssets').value) || 0,
+                balanceSheet: parseFloat(document.getElementById('balanceSheet').value) || 0,
+                annualIncome: parseFloat(document.getElementById('annualIncome').value) || 0,
+                businessType: document.getElementById('businessType').value,
+                holdsClientMoney: document.getElementById('holdsClientMoney').checked,
+                safeguardsAssets: document.getElementById('safeguardsAssets').checked,
+                dealsOwnAccount: document.getElementById('dealsOwnAccount').checked,
+                executesOrders: document.getElementById('executesOrders').checked
+            };
+            
+            updateSNIStatus();
+            saveData();
+            closeModal('firmInfoModal');
+        }
+
+        function showHistoricalModal() {
+            updateHistoricalChart();
+            document.getElementById('historicalModal').style.display = 'block';
+        }
+
+        function showThresholdsModal() {
+            const container = document.getElementById('thresholdDetails');
+            const checks = checkSNIThresholds();
+            
+            container.innerHTML = `
+                <div class="space-y-3">
+                    ${checks.map(check => `
+                        <div class="card p-4 ${check.exceeded ? 'border-red-500' : 'border-green-500'}">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-bold">${check.name}</h4>
+                                    <p class="text-sm text-gray-400">Threshold: ${check.threshold}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold ${check.exceeded ? 'text-red-400' : 'text-green-400'}">
+                                        ${check.value}
+                                    </p>
+                                    <p class="text-sm ${check.exceeded ? 'text-red-400' : 'text-green-400'}">
+                                        ${check.exceeded ? 'Exceeded' : 'Within Limit'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('thresholdsModal').style.display = 'block';
+        }
+
+        function showScenarioModal() {
+            alert('What-If Analysis coming soon! This will allow you to model the impact of business growth on K-factor requirements.');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function openCalculator(calculatorFile) {
+            window.open(calculatorFile, '_blank');
+        }
+
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                firmInfo,
+                kfrRequirement: document.getElementById('kfrResult').textContent,
+                kFactorData,
+                historicalData
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `KFR_Calculation_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function generateReport() {
+            alert('KFR Report generated! This would create a comprehensive PDF report with all K-factor calculations, SNI status, and historical trends.');
+        }
+
+        function integrateSupplementary() {
+            alert('Supplementary calculator integration active! The complex K-factors (K-CON, K-TCD, K-NPR, K-CMG) can now pass values directly to this calculator.');
+        }
+
+        function saveData() {
+            const data = {
+                firmInfo,
+                kFactorData,
+                historicalData
+            };
+            localStorage.setItem('kfr_calculator_data', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('kfr_calculator_data');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    firmInfo = data.firmInfo || {};
+                    
+                    // Merge saved k-factor data
+                    if (data.kFactorData) {
+                        Object.keys(data.kFactorData).forEach(category => {
+                            if (kFactorData[category]) {
+                                Object.keys(data.kFactorData[category]).forEach(factor => {
+                                    if (kFactorData[category][factor]) {
+                                        Object.assign(kFactorData[category][factor], data.kFactorData[category][factor]);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    historicalData = data.historicalData || [];
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
