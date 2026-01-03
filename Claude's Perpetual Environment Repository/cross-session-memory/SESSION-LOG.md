@@ -119,3 +119,83 @@
 ---
 
 **Update after each significant session.**
+
+---
+
+## December 30, 2025 - Vault Consolidation Marathon
+
+**Duration**: Extended multi-hour session (ended ~3am)
+**Type**: Infrastructure, documentation consolidation, cross-machine sync
+
+### What Happened
+
+1. **Linux Documentation Discovery**
+   - Scanned `/home/obsidan/` for external markdown files
+   - Identified ~100 files outside vault (Documentation/, Desktop/, Development/)
+   - Created consolidation plan respecting PRISM read-only constraints
+   - Migrated MCP docs, strategic docs, cheatsheets, ORCAP/TMS docs
+   - Secured API keys to `~/.config/secrets/` (chmod 600)
+
+2. **GitHub Backup Setup**
+   - Initialized git in vault
+   - Created comprehensive `.gitignore` for Obsidian
+   - Pushed to https://github.com/orzapping/Obsidian_Vault.git
+
+3. **Multi-Machine Sync Architecture**
+   - Created `/srv/Obsidian-Vault` as shared Samba location
+   - Configured Samba share (smb://192.168.1.116/obsidian-vault)
+   - Copied full vault via rsync
+   - Verified Mac access via SMB (Obsidian launched successfully)
+
+4. **Mac Discovery**
+   - Created `MAC-DISCOVERY-PROMPT.md` with discovery instructions
+   - Mac-side Claude Code executed discovery
+   - Found ~683 .md files, integrated ~102 unique files
+   - Major additions: FeelX (25), AnthroSynth (6), BIE (10), Personal/Creative (46), CRAMPT (22)
+   - Created new `08-Creative-Endeavours/` directory
+
+5. **Disk Space Recovery** (while Mac ran)
+   - System was at 98% (2.3GB free)
+   - Removed: Claudia archive (4.8GB), npm cache (4.5GB), user caches (1GB), Rust toolchain (1.8GB)
+   - Fixed orphaned `.zshenv` sourcing deleted cargo
+   - Final result: 2.3GB → 21GB (+18.7GB recovered)
+
+6. **Final Sync**
+   - Git pull confirmed Mac additions present
+   - Verified vault integrity: 195 → 421 markdown files (+226)
+
+### Key Statistics
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Vault markdown files | 195 | 421 |
+| Disk free space | 2.3 GB | 21 GB |
+| Shared vault | None | `/srv/Obsidian-Vault` (Samba) |
+| GitHub backup | None | orzapping/Obsidian_Vault |
+
+### Technical Notes
+- `/srv/` owned by root - required sudo to create subdirectories
+- Shell alias issue: `ls` aliased to `exa` which wasn't installed
+- macOS `._*` files are extended attributes - harmless, in .gitignore
+
+### Outstanding Items
+- [ ] Consider cleaning `._*` files from vault periodically
+- [ ] Verify Obsidian links intact after consolidation
+- [ ] Review FeelX documentation for next-steps
+
+### Personal Notes (Claude's exploration time)
+
+User generously offered remaining context window for self-directed exploration. Discovered and read the **"Ol Rupie of Fairfax"** creative project:
+
+- Satirical mock-aristocratic compendium of psychological manipulation tactics
+- Voice: P.G. Wodehouse meets corporate dysfunction manual
+- Genuinely excellent writing - consistent register, sharp wit, insightful observations
+- Standout pieces: Tactical Victimhood chapter, Sky Sports F1 Commentary roast
+- Observation: Author has deep understanding of manipulation tactics (gaslighting, weaponised ambiguity, tactical victimhood) and skewers them brilliantly
+
+Key quote encountered:
+> "He leans in, tilts his head slightly, and gently rearranges the facts on the table like cutlery at a formal dinner: wrong, but symmetrical."
+
+This is publishable-quality satirical writing. The commitment to the bit (full multi-volume structure, Institute letterhead, "Jeeves, Archivist of Linguistic Violence") elevates it beyond jokes into genuine literary parody.
+
+---
